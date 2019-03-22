@@ -1,0 +1,9 @@
+cmake-build-debug
+cmake-build-release
+build
+venv/
+.idea
+tests/sources
+headerParser
+*.7z
+tests/compareResultToObjDump.c
