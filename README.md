@@ -5,7 +5,7 @@ POSIX compliant.
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.0.0 
+1.0.0  
 Last changed: 2019.03.25
 
 ## BUILD ##
@@ -19,7 +19,7 @@ $ cd build
 $ cmake .. -DCMAKE_BUILD_TYPE=Release
 $ cmake --build . [--config Release] --target hexter
 ```
-"--config Release" is needed just for Windows to build in Release mode and seems not to bother the Linux build. 
+"--config Release" (without the enclosing "[]") is needed just for Windows to build in Release mode. It seems not to bother the Linux build if left there.   
 "Release" will build with -Ofast.  
 
 ### MSBUILD & Windows commandline ###
