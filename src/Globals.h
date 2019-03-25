@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <limits.h>
 
-#define DEBUG_PRINT_INFO 1
+#define DEBUG_PRINT_INFO 0
 #define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
 
 #define BLOCKSIZE 0x200

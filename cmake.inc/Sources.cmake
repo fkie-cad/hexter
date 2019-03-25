@@ -9,7 +9,6 @@ set(HEXTER_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/common_fileio.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/common_fileio.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Globals.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/stringPool.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Printer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Printer.c
 	)

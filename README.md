@@ -1,11 +1,12 @@
 # Hexter #
-A hex viewer for the terminal supporting big files and offsets.
+A minimal terminal hex viewer supporting big files and offsets.
 
 POSIX compliant.  
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.0.0 (2019.03.22)
+1.0.0 
+Last changed: 2019.03.25
 
 ## BUILD ##
 ### GCC & Linux commandline ### 
@@ -32,8 +33,8 @@ The "p" options are more or less mandatory and used without the enclosing "()".
 $ ./hexter a/file/name [options]
 ```
 Optional Parameters:
- * -s:uint64_t Startoffset. Default = 0.
- * -l:uint64_t Length of the part to display. Default = 50.
+ * -s:uint64_t Start offset in hex or dec. Default = 0x00.
+ * -l:uint64_t Length of the part to display in hex or dec. Default = 0x50.
  * -a ASCII only print.
  * -x HEX only print.
 
@@ -41,6 +42,11 @@ Optional Parameters:
 $ ./headerParser a/file/name -s 20 -l 100 -x
 ```
 Prints 100 bytes from offset 20 in hex only style.
+
+
+## TESTS ##
+Not implemented yet.
+
 
 ## CREDITS & CONTACT ## 
 #### Author ####
