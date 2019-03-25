@@ -8,6 +8,10 @@
 #define DEBUG_PRINT_INFO 0
 #define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 #define BLOCKSIZE 0x200
 #define BLOCKSIZE_LARGE 0x400
 

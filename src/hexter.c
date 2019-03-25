@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     sanitizeOffsets();
 
 	debug_info("file_name: %s\n", file_name);
-	debug_info("file_size: %lu b\n", file_size);
+	debug_info("file_size: %lu\n", file_size);
 	debug_info("start: %lu\n", start);
 	debug_info("length: %lu\n", length);
 	debug_info("ascii only: %d\n", ascii_only);
@@ -93,7 +93,8 @@ void sanitizeOffsets()
 	}
 	if ( start + length > file_size )
 	{
-		fprintf(stdout, "Info: Start offset %lu plus length %lu is greater the the file size %lu\nPrinting only to file size.\n", start, length, file_size);
+		fprintf(stdout, "Info: Start offset %lu plus length %lu is greater the the file size %lu\nPrinting only to file size.\n",
+				start, length, file_size);
 		length = file_size - start;
 		info_line_break = 1;
 	}

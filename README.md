@@ -9,14 +9,17 @@ Compilable under Linux and Windows.
 Last changed: 2019.03.25
 
 ## BUILD ##
-### GCC & Linux commandline ### 
+
+### Building with cmake (Cross OS) ###
+Using a build directory for a clean layout:
+
 ```bash
 $ mkdir build
 $ cd build
-$ cmake .. -DCMAKE_BUILD_TYPE=Release/Debug
-$ cmake --build . --target hexter
+$ cmake .. -DCMAKE_BUILD_TYPE=Release
+$ cmake --build . [--config Release] --target hexter
 ```
-
+"--config Release" is needed just for Windows to build in Release mode and seems not to bother the Linux build. 
 "Release" will build with -Ofast.  
 
 ### MSBUILD & Windows commandline ###
@@ -26,7 +29,6 @@ $ cmake . -G "Visual Studio 14 2015 Win64"
 $ msbuild (/p:PlatformToolset=v140) (/p:Platform=x64) (/p:Configuration=Release) hexter.vcxproj
 ```
 The "p" options are more or less mandatory and used without the enclosing "()".  
-
 
 ## USAGE ##
 ```bash
