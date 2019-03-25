@@ -25,7 +25,7 @@ void print()
 
 	unsigned char* block = NULL;
 
-	debug_info("end: %d\n", end);
+	debug_info("end: %lu\n", end);
 	debug_info("block_size: %d\n", block_size);
 	debug_info("block_start: %lu\n", block_start);
 	debug_info("block_end: %lu\n", block_end);

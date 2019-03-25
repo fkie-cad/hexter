@@ -38,10 +38,11 @@ Optional Parameters:
  * -a ASCII only print.
  * -x HEX only print.
 
+For example  
 ```bash
 $ ./headerParser a/file/name -s 20 -l 100 -x
 ```
-Prints 100 bytes from offset 20 in hex only style.
+prints 100 bytes from offset 20 in hex only style.
 
 
 ## TESTS ##
