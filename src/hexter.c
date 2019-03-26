@@ -53,13 +53,13 @@ int main(int argc, char **argv)
 
 void printUsage()
 {
-	printf("Usage: ./%s filename [options]\nVersion 1.0.0\n",BINARYNAME);
+	printf("Usage: ./%s filename [options]\n",BINARYNAME);
+	printf("Version: 1.0.1\n",BINARYNAME);
 	printf(" * -s:uint64_t Startoffset. Default = 0.\n"
 		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n");
 	printf("Example: ./%s path/to/a.file -s 100 -l 128 -x\n",BINARYNAME);
-	printf("Version: 1.0.1\n");
 }
 
 void parseArgs(int argc, char **argv)

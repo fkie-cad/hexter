@@ -66,9 +66,9 @@ void print()
 		if ( ascii_hex_print )
 			printDoubleCols(block, size);
 		else if ( ascii_only == 1 )
-			printAsciiCol(block, size);
+			printAsciiCols(block, size);
 		else if ( hex_only == 1 )
-			printHexCol(block, size);
+			printHexCols(block, size);
 
 		block_start += block_size;
 	}
@@ -91,7 +91,7 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 			if ( temp_i >= size )
 				break;
 
-			printf("%02X", block[temp_i]);
+			printf("%02X ", block[temp_i]);
 		}
 
 		uint8_t gap = DOUBLE_COL_SIZE - k;
@@ -103,7 +103,7 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 			}
 		}
 
-		printf("%c", COL_SEPARATOR);
+		printf("%c ", COL_SEPARATOR);
 
 		for ( k = 0; k < DOUBLE_COL_SIZE; k++ )
 		{
@@ -122,7 +122,7 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 	}
 }
 
-void printAsciiCol(unsigned char* block, uint64_t size)
+void printAsciiCols(unsigned char* block, uint64_t size)
 {
 	uint64_t i;
 	uint64_t k = 0;
@@ -148,7 +148,7 @@ void printAsciiCol(unsigned char* block, uint64_t size)
 	}
 }
 
-void printHexCol(unsigned char* block, uint64_t size)
+void printHexCols(unsigned char* block, uint64_t size)
 {
 	uint64_t i;
 	uint64_t k = 0;
@@ -162,7 +162,7 @@ void printHexCol(unsigned char* block, uint64_t size)
 			if ( temp_i >= size )
 				break;
 
-			printf("%02X", block[temp_i]);
+			printf("%02X ", block[temp_i]);
 		}
 
 		printf("\n");

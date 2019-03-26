@@ -3,7 +3,7 @@
 
 void print();
 void printDoubleCols(unsigned char* block, uint64_t size);
-void printAsciiCol(unsigned char* block, uint64_t size);
-void printHexCol(unsigned char* block, uint64_t size);
+void printAsciiCols(unsigned char* block, uint64_t size);
+void printHexCols(unsigned char* block, uint64_t size);
 
 #endif
