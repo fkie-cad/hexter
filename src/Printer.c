@@ -81,18 +81,10 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 {
 	uint64_t i;
 	uint64_t k = 0;
-	uint64_t temp_i;
 
 	for ( i = 0; i < size; i += DOUBLE_COL_SIZE )
 	{
-		for ( k = 0; k < DOUBLE_COL_SIZE; k++ )
-		{
-			temp_i = i + k;
-			if ( temp_i >= size )
-				break;
-
-			printf("%02X ", block[temp_i]);
-		}
+		k = printHexCol(block, i, size, DOUBLE_COL_SIZE);
 
 		uint8_t gap = DOUBLE_COL_SIZE - k;
 		if ( gap > 0 )
@@ -105,19 +97,8 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 
 		printf("%c ", COL_SEPARATOR);
 
-		for ( k = 0; k < DOUBLE_COL_SIZE; k++ )
-		{
-			temp_i = i + k;
-			if ( temp_i >= size )
-				break;
+		printAsciiCol(block, i, size, DOUBLE_COL_SIZE);
 
-			char c = block[temp_i];
-//			if ( MIN_PRINT_ASCII_RANGE <= c && c <= MAX_PRINT_ASCII_RANGE )
-			if ( MIN_PRINT_ASCII_RANGE <= c )
-				printf("%c", c);
-			else
-				printf("%c", NO_PRINT_ASCII_SUBSTITUTION);
-		}
 		printf("\n");
 	}
 }
@@ -125,46 +106,58 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 void printAsciiCols(unsigned char* block, uint64_t size)
 {
 	uint64_t i;
-	uint64_t k = 0;
-	uint64_t temp_i;
 
 	for ( i = 0; i < size; i += ASCII_COL_SIZE )
 	{
-		for ( k = 0; k < ASCII_COL_SIZE; k++ )
-		{
-			temp_i = i + k;
-			if ( temp_i >= size )
-				break;
-
-//			unsigned char c = block[temp_i];
-			char c = block[temp_i];
-//			if ( MIN_PRINT_ASCII_RANGE <= c && c <= MAX_PRINT_ASCII_RANGE )
-			if ( MIN_PRINT_ASCII_RANGE <= c )
-				printf("%c", c);
-			else
-				printf("%c", NO_PRINT_ASCII_SUBSTITUTION);
-		}
+		printAsciiCol(block, i, size, ASCII_COL_SIZE);
 		printf("\n");
+	}
+}
+
+void printAsciiCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size)
+{
+	uint64_t k = 0;
+	uint64_t temp_i;
+
+	for ( k = 0; k < col_size; k++ )
+	{
+		temp_i = i + k;
+		if ( temp_i >= size )
+			break;
+
+		char c = block[temp_i];
+		if ( MIN_PRINT_ASCII_RANGE <= c )
+			printf("%c", c);
+		else
+			printf("%c", NO_PRINT_ASCII_SUBSTITUTION);
 	}
 }
 
 void printHexCols(unsigned char* block, uint64_t size)
 {
 	uint64_t i;
-	uint64_t k = 0;
-	uint64_t temp_i;
 
 	for ( i = 0; i < size; i += HEX_COL_SIZE )
 	{
-		for ( k = 0; k < HEX_COL_SIZE; k++ )
-		{
-			temp_i = i + k;
-			if ( temp_i >= size )
-				break;
-
-			printf("%02X ", block[temp_i]);
-		}
+		printHexCol(block, i, size, HEX_COL_SIZE);
 
 		printf("\n");
 	}
+}
+
+uint64_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size)
+{
+	uint64_t k = 0;
+	uint64_t temp_i;
+
+	for ( k = 0; k < col_size; k++ )
+	{
+		temp_i = i + k;
+		if ( temp_i >= size )
+			break;
+
+		printf("%02X ", block[temp_i]);
+	}
+
+	return k;
 }
