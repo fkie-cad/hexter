@@ -1,7 +1,6 @@
 # Hexter #
 A minimal terminal hex viewer supporting big files and offsets.
 
-POSIX compliant.  
 Compilable under Linux and Windows.  
 
 ## Version ##

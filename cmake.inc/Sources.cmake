@@ -5,7 +5,6 @@ set(UTILS_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Converter.c
 	)
 set(HEXTER_FILES
-	${CMAKE_CURRENT_SOURCE_DIR}/src/hexter.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/common_fileio.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/common_fileio.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Globals.h

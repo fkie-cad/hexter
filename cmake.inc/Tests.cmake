@@ -8,6 +8,7 @@ if ( ${GTEST_FOUND} )
 
 	set(UNIT_TEST_SUITE hexter_tests)
 
+
 	add_executable(
 		${UNIT_TEST_SUITE}
 		${G_TESTS_DIR}/unitTests.cpp
@@ -15,6 +16,12 @@ if ( ${GTEST_FOUND} )
 		${HEXTER_FILES}
 		${HEXTER_TEST_FILES}
 	)
+
+	set_target_properties(${UNIT_TEST_SUITE} PROPERTIES
+		CXX_STANDARD 11
+		CXX_STANDARD_REQUIRED YES
+		CXX_EXTENSIONS NO
+		)
 
 	target_link_libraries(${UNIT_TEST_SUITE} PRIVATE
 		${GTEST_BOTH_LIBRARIES}
