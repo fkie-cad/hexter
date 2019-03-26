@@ -1,3 +1,4 @@
+#include <memory.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,18 +20,26 @@ void print()
 	uint64_t end = start + length;
 	uint16_t block_size = BLOCKSIZE_LARGE;
 	uint64_t block_start = start;
-	uint64_t block_end = 0;
+	uint64_t read_size = 0;
 	uint64_t parts = length / block_size;
 	if ( length % block_size != 0 ) parts++;
 
 	unsigned char* block = NULL;
 
+	debug_info("start: %lu\n", start);
 	debug_info("end: %lu\n", end);
 	debug_info("block_size: %d\n", block_size);
 	debug_info("block_start: %lu\n", block_start);
-	debug_info("block_end: %lu\n", block_end);
 	debug_info("parts: %lu\n", parts);
 	debug_info("\n");
+
+	FILE* fi;
+	fi = fopen(file_name, "rb");
+	if ( !fi )
+	{
+		printf("File %s does not exist.\n", file_name);
+		return;
+	}
 
 	block = (unsigned char*) malloc(block_size);
 	if ( !block )
@@ -41,10 +50,13 @@ void print()
 
 	for ( p = 0; p < parts; p++ )
 	{
-		block_end = block_start + block_size;
-		if ( block_end > end ) block_end = end;
+		debug_info("%lu / %lu\n", (p+1), parts);
+		read_size = block_size;
+		if ( block_start + read_size > end ) read_size = end - block_start;
+		debug_info(" - read_size: %lu\n", read_size);
 
-		uint64_t size = readCharArrayFileNA(file_name, block, block_size, block_start, block_end);
+		memset(block, 0, block_size);
+		uint64_t size = readFile(fi, block_start, read_size, block);
 		if ( !size )
 		{
 			fprintf(stderr, "Reading block of bytes failed!\n");
@@ -62,6 +74,7 @@ void print()
 	}
 
 	free(block);
+	fclose(fi);
 }
 
 void printDoubleCols(unsigned char* block, uint64_t size)

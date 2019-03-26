@@ -59,6 +59,7 @@ void printUsage()
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n");
 	printf("Example: ./%s path/to/a.file -s 100 -l 128 -x\n",BINARYNAME);
+	printf("Version: 1.0.1\n");
 }
 
 void parseArgs(int argc, char **argv)
