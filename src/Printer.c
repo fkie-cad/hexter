@@ -86,20 +86,25 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 	{
 		k = printHexCol(block, i, size, DOUBLE_COL_SIZE);
 
-		uint8_t gap = DOUBLE_COL_SIZE - k;
-		if ( gap > 0 )
-		{
-			for ( k = 0; k < gap; k++ )
-			{
-				printf("   ");
-			}
-		}
+		fillGap(k);
 
 		printf("%c ", COL_SEPARATOR);
 
 		printAsciiCol(block, i, size, DOUBLE_COL_SIZE);
 
 		printf("\n");
+	}
+}
+
+void fillGap(uint64_t k)
+{
+	uint8_t gap = DOUBLE_COL_SIZE - k;
+	if ( gap > 0 )
+	{
+		for ( k = 0; k < gap; k++ )
+		{
+			printf("   ");
+		}
 	}
 }
 
@@ -155,8 +160,23 @@ uint64_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t co
 		temp_i = i + k;
 		if ( temp_i >= size )
 			break;
-
+#ifdef linux
+		uint8_t b = block[temp_i];
+		if ( b == 0)
+		{
+			printf("\033[0;30m"); //Set the color
+			printf("%02X ", b);
+			printf("\033[0m"); // reset
+		}
+		else
+		{
+			printf("\033[1;30m"); //Set color
+			printf("%02X ", b);
+			printf("\033[0m"); // reset
+		}
+#else
 		printf("%02X ", block[temp_i]);
+#endif
 	}
 
 	return k;
