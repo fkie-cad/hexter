@@ -99,7 +99,7 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 		{
 			for ( k = 0; k < gap; k++ )
 			{
-				printf("  ");
+				printf("   ");
 			}
 		}
 
