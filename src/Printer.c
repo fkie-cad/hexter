@@ -160,7 +160,9 @@ uint64_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t co
 		temp_i = i + k;
 		if ( temp_i >= size )
 			break;
-#ifdef linux
+#ifdef TESTING
+		printf("%02X ", block[temp_i]);
+#elif linux
 		uint8_t b = block[temp_i];
 		if ( b == 0)
 		{

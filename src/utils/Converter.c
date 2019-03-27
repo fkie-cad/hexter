@@ -8,7 +8,7 @@ uint64_t parseUint64(char* argv)
 {
 	if ( argv[0] ==  '-' )
 	{
-		fprintf(stderr, "%s could not be converted to a number: is negative!\n", argv);
+		fprintf(stderr, "Error: %s could not be converted to a number: is negative!\n", argv);
 		exit(0);
 	}
 	char* endptr;

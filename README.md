@@ -7,6 +7,10 @@ Compilable under Linux and Windows.
 1.0.2  
 Last changed: 2019.03.27
 
+## REQUIREMENTS ##
+- A decent c compiler (gcc, msbuild) is required.  
+- Building with cmake obviously requires cmake.  
+
 ## BUILD ##
 
 ### Building with cmake (Cross OS) ###
@@ -48,7 +52,15 @@ prints 100 bytes from offset 20 in hex only style.
 
 
 ## TESTS ##
-Not implemented yet.
+### REQUIREMENTS ###
+ - The google c++ testing framework gtest [1]  
+ - A c++ compiler available to cmake
+ - hexter compiled with uncommented TESTING flag in Globals.h
+
+The test may be built with the target_name=hexter_tests which is the name of the test program as well.
+
+
+[1] https://github.com/google/googletest
 
 
 ## CREDITS & CONTACT ## 
