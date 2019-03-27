@@ -21,6 +21,7 @@ if ( ${GTEST_FOUND} )
 		CXX_STANDARD 11
 		CXX_STANDARD_REQUIRED YES
 		CXX_EXTENSIONS NO
+		LANGUAGES CXX
 		)
 
 	target_link_libraries(${UNIT_TEST_SUITE} PRIVATE
@@ -33,3 +34,4 @@ if ( ${GTEST_FOUND} )
 	)
 
 endif()
+

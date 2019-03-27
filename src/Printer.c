@@ -164,13 +164,14 @@ uint64_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t co
 		uint8_t b = block[temp_i];
 		if ( b == 0)
 		{
-			printf("\033[0;30m"); //Set the color
+//			printf("\033[0;30m"); //Set the color
 			printf("%02X ", b);
-			printf("\033[0m"); // reset
+//			printf("\033[0m"); // reset
 		}
 		else
 		{
-			printf("\033[1;30m"); //Set color
+			printf("\033[1m"); //Set bold
+//			printf("\033[1;30m"); //Set color
 			printf("%02X ", b);
 			printf("\033[0m"); // reset
 		}

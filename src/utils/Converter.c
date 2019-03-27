@@ -23,12 +23,12 @@ uint64_t parseUint64(char* argv)
 
 	if (endptr == argv)
 	{
-		fprintf(stderr, "%s could not be converted to a number: Not a number!\n", argv);
+		fprintf(stderr, "Error: %s could not be converted to a number: Not a number!\n", argv);
 		exit(0);
 	}
 	if ( result == UINT64_MAX && err_no == ERANGE)
 	{
-		fprintf(stderr, "%s could not be converted to a number: Out of range!\n", argv);
+		fprintf(stderr, "Error: %s could not be converted to a number: Out of range!\n", argv);
 		exit(0);
 	}
 

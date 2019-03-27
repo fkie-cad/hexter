@@ -187,19 +187,19 @@ TEST_F(HexterTest, testMainWithRandomFileNegativeArgs)
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 	const vector<string> argv = {src, "-s -10", "-l -100"};
 
-	vector<string> expected_lines = {"-10 could not be converted to a number: is negative!"};
+	vector<string> expected_lines = {"Error: -10 could not be converted to a number: is negative!"};
 	callApp(argv, expected_lines);
 
 	const vector<string> argv2 = {src, "-s 10", "-l -100"};
-	vector<string> expected_lines2 = {"-100 could not be converted to a number: is negative!"};
+	vector<string> expected_lines2 = {"Error: -100 could not be converted to a number: is negative!"};
 	callApp(argv2, expected_lines2);
 
 	const vector<string> argv3 = {src, "-s dd", "-l -100"};
-	vector<string> expected_lines3 = {"dd could not be converted to a number: Not a number!"};
+	vector<string> expected_lines3 = {"Error: dd could not be converted to a number: Not a number!"};
 	callApp(argv3, expected_lines3);
 
 	const vector<string> argv4 = {src, "-s 10", "-l ff"};
-	vector<string> expected_lines4 = {"ff could not be converted to a number: Not a number!"};
+	vector<string> expected_lines4 = {"Error: ff could not be converted to a number: Not a number!"};
 	callApp(argv4, expected_lines4);
 
 	remove(src.c_str());
