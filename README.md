@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting big files and offsets.
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.0.2  
-Last changed: 2019.03.27
+1.0.3 
+Last changed: 2019.04.01
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  
@@ -22,8 +22,8 @@ $ cd build
 $ cmake .. -DCMAKE_BUILD_TYPE=Release
 $ cmake --build . [--config Release] --target hexter
 ```
-"--config Release" (without the enclosing "[]") is needed just for Windows to build in Release mode. It seems not to bother the Linux build if left there.
-"-DCMAKE_BUILD_TYPE=Release" is only meaningful to Linux.   
+"--config Release" (without the enclosing "[]") is needed just for Windows to build in Release mode. It seems not to bother the Linux build if left there.  
+"-DCMAKE_BUILD_TYPE=Release" on the other hand is only meaningful to Linux.  
 "Release" will build with -Ofast.  
 
 ### MSBUILD & Windows commandline ###
@@ -43,6 +43,7 @@ Optional Parameters:
  * -l:uint64_t Length of the part to display in hex or dec. Default = 0x50.
  * -a ASCII only print.
  * -x HEX only print.
+ * -c for a clean, not ANSI formated output. 
 
 For example  
 ```bash
@@ -55,7 +56,6 @@ prints 100 bytes from offset 20 in hex only style.
 ### REQUIREMENTS ###
  - The google c++ testing framework gtest [1]  
  - A c++ compiler available to cmake
- - hexter compiled with uncommented TESTING flag in Globals.h
 
 The test may be built with the target_name=hexter_tests which is the name of the test program as well.
 

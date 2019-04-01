@@ -14,6 +14,7 @@
 #define BINARYNAME ("hexter")
 
 void printUsage();
+void initParameters();
 void parseArgs(int argc, char **argv);
 void sanitizeOffsets();
 
@@ -25,11 +26,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    file_size = 0;
-	start = 0;
-	length = DEFAULT_LENGTH;
-	ascii_only = 0;
-	hex_only = 0;
+	initParameters();
 
 	parseArgs(argc, argv);
 
@@ -51,6 +48,16 @@ int main(int argc, char **argv)
 	return 0;
 }
 
+void initParameters()
+{
+	file_size = 0;
+	start = 0;
+	length = DEFAULT_LENGTH;
+	ascii_only = 0;
+	hex_only = 0;
+	clean_printing = 0;
+}
+
 void printUsage()
 {
 	printf("Usage: ./%s filename [options]\n",BINARYNAME);
@@ -58,7 +65,9 @@ void printUsage()
 	printf(" * -s:uint64_t Startoffset. Default = 0.\n"
 		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
-		   " * -x HEX only print.\n");
+		   " * -x HEX only print.\n"
+		   " * -c clean output without ANSI console formating.\n"
+		   );
 	printf("Example: ./%s path/to/a.file -s 100 -l 128 -x\n",BINARYNAME);
 }
 
@@ -81,6 +90,8 @@ void parseArgs(int argc, char **argv)
 			ascii_only = 1;
 		if ( strncmp(argv[i], "-x", 2) == 0 )
 			hex_only = 1;
+		if ( strncmp(argv[i], "-c", 2) == 0 )
+			clean_printing = 1;
 	}
 }
 

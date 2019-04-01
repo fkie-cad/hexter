@@ -2,10 +2,15 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef linux
+	#include <unistd.h>
+#endif
 
 #include "Printer.h"
 #include "Globals.h"
 #include "common_fileio.h"
+
+void (*printHexValue)(uint8_t);
 
 /**
  * Prints the values depending on the mode.
@@ -47,6 +52,17 @@ void print()
 		printf("Malloc block failed.\n");
 		return;
 	}
+
+#ifdef CLEAN_PRINTING
+	printHexValue = &printCleanHexValue;
+#elif linux
+	if ( clean_printing || !isatty(fileno(stdout)) )
+		printHexValue = &printCleanHexValue;
+	else
+		printHexValue = &printFormatedHexValue;
+#else
+	printHexValue = &printCleanHexValue;
+#endif
 
 	for ( p = 0; p < parts; p++ )
 	{
@@ -160,27 +176,35 @@ uint64_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t co
 		temp_i = i + k;
 		if ( temp_i >= size )
 			break;
-#ifdef TESTING
-		printf("%02X ", block[temp_i]);
-#elif linux
-		uint8_t b = block[temp_i];
-		if ( b == 0)
-		{
-//			printf("\033[0;30m"); //Set the color
-			printf("%02X ", b);
-//			printf("\033[0m"); // reset
-		}
-		else
-		{
-			printf("\033[1m"); //Set bold
-//			printf("\033[1;30m"); //Set color
-			printf("%02X ", b);
-			printf("\033[0m"); // reset
-		}
-#else
-		printf("%02X ", block[temp_i]);
-#endif
+
+		(*printHexValue)(block[temp_i]);
 	}
 
 	return k;
+}
+
+void printCleanHexValue(uint8_t b)
+{
+	printf("%02X ", b);
+}
+
+void printFormatedHexValue(unsigned char b)
+{
+#ifdef linux
+	if ( b == 0 )
+	{
+//			printf("\033[0;30m"); //Set the color
+		printf("%02X ", b);
+//			printf("\033[0m"); // reset
+	}
+	else
+	{
+		printf("\033[1m"); //Set bold
+//			printf("\033[1;30m"); //Set color
+		printf("%02X ", b);
+		printf("\033[0m"); // reset
+	}
+#else
+	printf("%02X ", b);
+#endif
 }

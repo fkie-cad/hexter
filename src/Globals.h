@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <limits.h>
 
-//#define TESTING 1
+//#define CLEAN_PRINT 1
 
 #define DEBUG_PRINT_INFO 0
 #define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
@@ -36,5 +36,6 @@ uint64_t start;
 uint64_t length;
 uint8_t ascii_only;
 uint8_t hex_only;
+uint8_t clean_printing;
 
 #endif
