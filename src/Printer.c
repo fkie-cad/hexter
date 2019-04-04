@@ -2,8 +2,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef linux
+#if defined(__linux__) || defined(__linux) || defined(linux)
 	#include <unistd.h>
+#endif
+#if defined(_WIN32)
+	#include <windows.h>
 #endif
 
 #include "Printer.h"
@@ -11,6 +14,11 @@
 #include "common_fileio.h"
 
 void (*printHexValue)(uint8_t);
+
+#if defined(_WIN32)
+	HANDLE hStdout;
+	WORD wOldColorAttrs;
+#endif
 
 /**
  * Prints the values depending on the mode.
@@ -55,11 +63,22 @@ void print()
 
 #ifdef CLEAN_PRINTING
 	printHexValue = &printCleanHexValue;
-#elif linux
+#elif defined(__linux__) || defined(__linux) || defined(linux)
 	if ( clean_printing || !isatty(fileno(stdout)) )
 		printHexValue = &printCleanHexValue;
 	else
-		printHexValue = &printFormatedHexValue;
+		printHexValue = &printAnsiFormatedHexValue;
+#elif defined(_WIN32)
+	if ( clean_printing || !isatty(fileno(stdout)) )
+		printHexValue = &printCleanHexValue;
+	else
+	{
+		hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+		CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+		GetConsoleScreenBufferInfo(hStdout, &csbiInfo)
+		wOldColorAttrs = csbiInfo.wAttributes;
+		printHexValue = &printWinFormatedHexValue;
+	}
 #else
 	printHexValue = &printCleanHexValue;
 #endif
@@ -188,9 +207,8 @@ void printCleanHexValue(uint8_t b)
 	printf("%02X ", b);
 }
 
-void printFormatedHexValue(unsigned char b)
+void printAnsiFormatedHexValue(unsigned char b)
 {
-#ifdef linux
 	if ( b == 0 )
 	{
 //			printf("\033[0;30m"); //Set the color
@@ -204,7 +222,20 @@ void printFormatedHexValue(unsigned char b)
 		printf("%02X ", b);
 		printf("\033[0m"); // reset
 	}
-#else
-	printf("%02X ", b);
+}
+
+void printWinFormatedHexValue(unsigned char b)
+{
+#ifdef _WIN32
+	if ( b == 0 )
+	{
+		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
+		printf("%02X ", b);
+    	SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+	}
+	else
+	{
+		printf("%02X ", b);
+	}
 #endif
 }
