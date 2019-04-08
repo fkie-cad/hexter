@@ -21,7 +21,7 @@ uint64_t parseUint64(char* argv)
 	uint64_t result = strtoul(argv, &endptr, base);
 	err_no = errno;
 
-	if (endptr == argv)
+	if ( endptr == argv )
 	{
 		fprintf(stderr, "Error: %s could not be converted to a number: Not a number!\n", argv);
 		exit(0);
