@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting big files and offsets.
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.0.3 
-Last changed: 2019.04.01
+1.0.4 
+Last changed: 2019.04.20
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  
@@ -47,7 +47,7 @@ Optional Parameters:
 
 For example  
 ```bash
-$ ./headerParser a/file/name -s 20 -l 100 -x
+$ ./hexter a/file/name -s 20 -l 100 -x
 ```
 prints 100 bytes from offset 20 in hex only style.
 

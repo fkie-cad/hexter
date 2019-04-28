@@ -75,7 +75,7 @@ void print()
 	{
 		hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 		CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
-		GetConsoleScreenBufferInfo(hStdout, &csbiInfo)
+		GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 		wOldColorAttrs = csbiInfo.wAttributes;
 		printHexValue = &printWinFormatedHexValue;
 	}
