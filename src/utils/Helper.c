@@ -27,3 +27,20 @@ void expandFilePath(char* src, char* dest)
 	}
 	dest[PATH_MAX-1] = 0;
 }
+
+/**
+ *
+ * @param buf char[128]
+ * @param prefix
+ * @return
+ */
+int getTempFile(char* buf, char* prefix)
+{
+//	buf = (char*) malloc(128);
+	snprintf(buf, 128, "/tmp/%sXXXXXX.tmp", prefix);
+	buf[127] = 0;
+
+	int s = mkstemps(buf, 4);
+
+	return s;
+}

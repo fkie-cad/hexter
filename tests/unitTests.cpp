@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
+#include "utils/ConverterTest.h"
 #include "HexterTest.h"
+#include "PayloaderTest.h"
 
 int main(int argc, char **argv)
 {

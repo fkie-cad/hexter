@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 
 #include "../src/Globals.h"
+//#include "../src/hexter.c"
 
 using namespace std;
 
@@ -362,5 +363,17 @@ uint64_t HexterTest::fillHexCol(uint64_t i, vector<uint8_t>& block, stringstream
 	return k;
 }
 
+//TEST_F(HexterTest, testParsePayload)
+//{
+//	payload_ln = 0;
+//	const char* bytes = "0123456789abcdef";
+//	unsigned char* payload = parsePayload(bytes);
+//	cout << "payload_ln: " << payload_ln << endl;
+//	for ( int i = 0; i < payload_ln; i++ )
+//	{
+//		cout << hex << setw(2)<<setfill('0')<< +payload[i]<<"|";
+//	}
+//	cout << endl;
+//}
 
 #endif
