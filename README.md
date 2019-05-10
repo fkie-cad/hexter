@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting big files and offsets.
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.0.4 
-Last changed: 2019.04.20
+1.1.1  
+Last changed: 2019.05.10
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  
@@ -44,12 +44,18 @@ Optional Parameters:
  * -a ASCII only print.
  * -x HEX only print.
  * -c for a clean, not ANSI formated output. 
+ * -i insert hex byte sequence (hex only, no "0x" needed) [in progress]
+ * -o overwrite hex byte sequence (hex only, no "0x" needed)
 
-For example  
+Examples:  
+Print 100 bytes from offset 20 in hex only style.
 ```bash
 $ ./hexter a/file/name -s 20 -l 100 -x
 ```
-prints 100 bytes from offset 20 in hex only style.
+Overwrite bytes at offset 0x20 with 0xdead0bea
+```bash
+$ ./hexter a/file/name -s 0x20 -o dead0bea
+```
 
 
 ## TESTS ##

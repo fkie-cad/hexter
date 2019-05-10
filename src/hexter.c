@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 	file_size = getSize(file_name);
     if ( file_size == 0 ) return 0;
 
-    sanitizeOffsets();
+//    sanitizeOffsets();
 
 	debug_info("file_name: %s\n", file_name);
 	debug_info("file_size: %lu\n", file_size);
@@ -52,6 +52,9 @@ int main(int argc, char **argv)
 		insert();
 	if ( overwrite_f )
 		overwrite();
+
+	file_size = getSize(file_name);
+	sanitizeOffsets();
 
 	print();
 
@@ -73,19 +76,20 @@ void initParameters()
 
 void printUsage()
 {
-	printf("Usage: ./%s filename [options]\n",BINARYNAME);
-	printf("Version: 1.0.1\n",BINARYNAME);
+	printf("Usage: ./%s filename [options]\n", BINARYNAME);
+	printf("Version: 1.1.1\n", BINARYNAME);
 	printf(" * -s:uint64_t Startoffset. Default = 0.\n"
 		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n"
 		   " * -c clean output (no text formatin in the console).\n"
-		   " * -i insert hex byte sequence (only works with a given -s offset)\n"
-		   " * -o overwrite hex byte sequence (only works with a given -s offset)\n"
+		   " * -i insert hex byte sequence (destructive!)\n"
+		   " * -o overwrite hex byte sequence (destructive!)\n"
 		   );
+	printf("\n");
 	printf("Example: ./%s path/to/a.file -s 100 -l 128 -x\n",BINARYNAME);
-	printf("Example: ./%s path/to/a.file -i dead -s 0x200\n",BINARYNAME);
-	printf("Example: ./%s path/to/a.file -o beef -s 0x200\n",BINARYNAME);
+	printf("Example: ./%s path/to/a.file -i dead -s 0x100\n",BINARYNAME);
+	printf("Example: ./%s path/to/a.file -o 0bea -s 0x100\n",BINARYNAME);
 }
 
 void parseArgs(int argc, char **argv)

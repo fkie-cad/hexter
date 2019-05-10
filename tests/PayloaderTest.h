@@ -103,7 +103,7 @@ TEST_F(PayloaderTest, testOverwriteInFile)
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 
 	unsigned char pl[] = {
-		0,0,222,173,190,175,0,0
+		0,0,222,173,190,239,0,0
 	};
 	payload = pl;
 	payload_ln = sizeof(pl);
@@ -152,7 +152,7 @@ TEST_F(PayloaderTest, testOverwriteOverEndOfFile)
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 
 	unsigned char pl[] = {
-		0,0,222,173,190,175,0,0
+		0,0,222,173,190,239,0,0
 	};
 	payload = pl;
 	payload_ln = sizeof(pl);
@@ -206,7 +206,7 @@ TEST_F(PayloaderTest, testOverwriteOutOfFile)
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 
 	unsigned char pl[] = {
-		255,255,222,173,190,175,0,0
+		255,255,222,173,190,239,0,0
 	};
 	payload = pl;
 	payload_ln = sizeof(pl);

@@ -33,12 +33,18 @@ class HexterTest : public testing::Test
 
 		const vector<string> missing_args_lines = {
 				"Usage: ./"+prog+" filename [options]",
-				"Version: 1.0.1",
+				"Version: 1.1.1",
 				" * -s:uint64_t Startoffset. Default = 0.",
 				" * -l:uint64_t Length of the part to display. Default = 50.",
 				" * -a ASCII only print.",
 				" * -x HEX only print.",
+				" * -c clean output (no text formatin in the console).",
+				" * -i insert hex byte sequence (destructive!)",
+				" * -o overwrite hex byte sequence (destructive!)",
+				"",
 				"Example: "+prog_dir+prog+" path/to/a.file -s 100 -l 128 -x",
+				"Example: "+prog_dir+prog+" path/to/a.file -i dead -s 0x100",
+				"Example: "+prog_dir+prog+" path/to/a.file -o 0bea -s 0x100",
 				""
 		};
 
@@ -363,17 +369,31 @@ uint64_t HexterTest::fillHexCol(uint64_t i, vector<uint8_t>& block, stringstream
 	return k;
 }
 
-//TEST_F(HexterTest, testParsePayload)
-//{
-//	payload_ln = 0;
-//	const char* bytes = "0123456789abcdef";
-//	unsigned char* payload = parsePayload(bytes);
-//	cout << "payload_ln: " << payload_ln << endl;
-//	for ( int i = 0; i < payload_ln; i++ )
-//	{
-//		cout << hex << setw(2)<<setfill('0')<< +payload[i]<<"|";
-//	}
-//	cout << endl;
-//}
+TEST_F(HexterTest, testOverwrite)
+{
+	uint64_t binary_size = 0x50;
+	string src = temp_dir+"/testOverwrite.bla";
+	vector<uint8_t> bytes = createBinary(src, binary_size);
+	const vector<string> argv = {src, "-o 0000dead0bea0000", "-x"};
+
+	bytes[0] = '\x00';
+	bytes[1] = '\x00';
+	bytes[2] = '\xde';
+	bytes[3] = '\xad';
+	bytes[4] = '\x0b';
+	bytes[5] = '\xea';
+	bytes[6] = '\x00';
+	bytes[7] = '\x00';
+
+	vector<string> expected_lines = getExpectedLines(bytes, 0, 0x0, binary_size);
+
+	cout << "expected_lines"<<endl;
+	for ( string s : expected_lines )
+		cout << s << endl;
+
+	callApp(argv, expected_lines);
+
+	remove(src.c_str());
+}
 
 #endif
