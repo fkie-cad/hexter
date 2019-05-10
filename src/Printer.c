@@ -166,7 +166,8 @@ void printAsciiCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_
 			break;
 
 		char c = block[temp_i];
-		if ( MIN_PRINT_ASCII_RANGE <= c )
+//		printf("[%d] %d|", temp_i, +c);
+		if ( MIN_PRINT_ASCII_RANGE <= c && c <= MAX_PRINT_ASCII_RANGE )
 			printf("%c", c);
 		else
 			printf("%c", NO_PRINT_ASCII_SUBSTITUTION);

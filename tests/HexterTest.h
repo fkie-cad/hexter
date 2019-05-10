@@ -124,6 +124,10 @@ class HexterTest : public testing::Test
 
 			lines.resize(expected_lines.size());
 
+			cout << "lines"<<endl;
+			for ( string s : lines )
+				cout << s << endl;
+
 			fclose(fi);
 			EXPECT_EQ(lines, expected_lines);
 		}
