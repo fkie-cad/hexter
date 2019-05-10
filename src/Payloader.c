@@ -51,12 +51,12 @@ void overwrite()
 {
 	FILE* src;
 	// backup
-	FILE* bck;
-	char buf[1024];
-	int buf_ln = 1024;
-	char dest_file_name[128];
-	getTempFile(dest_file_name, "hexter.bck");
-	int n = buf_ln;
+//	FILE* bck;
+//	char buf[1024];
+//	int buf_ln = 1024;
+//	char dest_file_name[128];
+//	getTempFile(dest_file_name, "hexter.bck");
+//	int n = buf_ln;
 	// end backup
 
 	src = fopen(file_name, "rb+");
@@ -66,23 +66,23 @@ void overwrite()
 		return;
 	}
 	// backup
-	bck = fopen(dest_file_name, "wb");
-	if ( !bck )
-	{
-		printf("File %s could not be created.\n", dest_file_name);
-		return;
-	}
-
-	while ( n == buf_ln )
-	{
-		n = fread(buf, 1, buf_ln, src);
-		fwrite(buf, 1, n, bck);
-	}
+//	bck = fopen(dest_file_name, "wb");
+//	if ( !bck )
+//	{
+//		printf("File %s could not be created.\n", dest_file_name);
+//		return;
+//	}
+//
+//	while ( n == buf_ln )
+//	{
+//		n = fread(buf, 1, buf_ln, src);
+//		fwrite(buf, 1, n, bck);
+//	}
 	// end backup
 
 	fseek(src, start, SEEK_SET);
 	fwrite(payload, 1, payload_ln, src);
 
 	fclose(src);
-	fclose(bck);
+//	fclose(bck);
 }

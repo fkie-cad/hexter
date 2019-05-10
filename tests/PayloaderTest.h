@@ -31,8 +31,6 @@ class PayloaderTest : public testing::Test
 		static mt19937_64* gen;
 		static uniform_int_distribution<uint8_t>* dis;
 
-		void overwrite();
-
 		static string getTempDir(const std::string& prefix)
 		{
 			string tmp = "/tmp/"+prefix+"XXXXXX";
@@ -120,25 +118,18 @@ TEST_F(PayloaderTest, testOverwriteInFile)
 
 	ifstream check_fs(src);
 	check_fs.seekg(0);
-	ifstream check_dest_fs("/tmp/PayloaderTestDest.tmp");
-	check_fs.seekg(0);
-	check_dest_fs.seekg(0);
 
 	int j = 0;
 	for ( int i = 0; i < binary_size; i++ )
 	{
 		unsigned char cs;
-		unsigned char cd;
 		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
-		check_dest_fs.read(reinterpret_cast<char *>(&(cd)), 1);
-		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+bytes[i]<<" = "<<+cd<<dec<<endl;
+		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+bytes[i]<<dec<<endl;
 
 		if ( start <= i && i < start+payload_ln )
 			EXPECT_EQ(cs, payload[j++]);
 		else
 			EXPECT_EQ(cs, bytes[i]);
-
-		EXPECT_EQ(cd, bytes[i]);
 	}
 
 	remove(src.c_str());
@@ -169,16 +160,13 @@ TEST_F(PayloaderTest, testOverwriteOverEndOfFile)
 
 	ifstream check_fs(src);
 	check_fs.seekg(0);
-	ifstream check_dest_fs("/tmp/PayloaderTestDest.tmp");
-	check_fs.seekg(0);
-	check_dest_fs.seekg(0);
 
 	int j = 0;
 	for ( int i = 0; i < binary_size; i++ )
 	{
 		unsigned char cs;
 		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
-		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+bytes[i]<<" = "<<dec<<endl;
+		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+bytes[i]<<dec<<endl;
 
 		if ( start <= i && i < start+payload_ln )
 			EXPECT_EQ(cs, payload[j++]);
@@ -223,9 +211,6 @@ TEST_F(PayloaderTest, testOverwriteOutOfFile)
 
 	ifstream check_fs(src);
 	check_fs.seekg(0);
-	ifstream check_dest_fs("/tmp/PayloaderTestDest.tmp");
-	check_fs.seekg(0);
-	check_dest_fs.seekg(0);
 
 	for ( int i = 0; i < binary_size; i++ )
 	{
@@ -250,44 +235,44 @@ TEST_F(PayloaderTest, testOverwriteOutOfFile)
 //	remove(src.c_str());
 }
 
-void PayloaderTest::overwrite()
-{
-	FILE* src;
-	FILE* dest;
-	char buf[1024];
-	int buf_ln = 1024;
-//	char dest_file_name[128];
-//	getTempFile(dest_file_name, "PayloaderTestDest");
-	const char* dest_file_name = "/tmp/PayloaderTestDest.tmp";
-	uint32_t i;
-	int n = buf_ln;
-	cout << "dest_file_name: "<<dest_file_name<<endl;
-
-	src = fopen(file_name, "rb+");
-	dest = fopen(dest_file_name, "wb");
-	if ( !src )
-	{
-		printf("File %s does not exist.\n", file_name);
-		return;
-	}
-	if ( !dest )
-	{
-		printf("File %s could not be created.\n", dest_file_name);
-		return;
-	}
-
-	while ( n == buf_ln )
-	{
-		n = fread(buf, 1, buf_ln, src);
-		fwrite(buf, 1, n, dest);
-	}
-//	fseek(dest, start, SEEK_SET);
-//	fwrite(payload, 1, payload_ln, dest);
-	fseek(src, start, SEEK_SET);
-	fwrite(payload, 1, payload_ln, src);
-
-	fclose(src);
-	fclose(dest);
-}
+//void PayloaderTest::overwrite()
+//{
+//	FILE* src;
+//	FILE* dest;
+//	char buf[1024];
+//	int buf_ln = 1024;
+////	char dest_file_name[128];
+////	getTempFile(dest_file_name, "PayloaderTestDest");
+//	const char* dest_file_name = "/tmp/PayloaderTestDest.tmp";
+//	uint32_t i;
+//	int n = buf_ln;
+//	cout << "dest_file_name: "<<dest_file_name<<endl;
+//
+//	src = fopen(file_name, "rb+");
+//	dest = fopen(dest_file_name, "wb");
+//	if ( !src )
+//	{
+//		printf("File %s does not exist.\n", file_name);
+//		return;
+//	}
+//	if ( !dest )
+//	{
+//		printf("File %s could not be created.\n", dest_file_name);
+//		return;
+//	}
+//
+//	while ( n == buf_ln )
+//	{
+//		n = fread(buf, 1, buf_ln, src);
+//		fwrite(buf, 1, n, dest);
+//	}
+////	fseek(dest, start, SEEK_SET);
+////	fwrite(payload, 1, payload_ln, dest);
+//	fseek(src, start, SEEK_SET);
+//	fwrite(payload, 1, payload_ln, src);
+//
+//	fclose(src);
+//	fclose(dest);
+//}
 
 #endif
