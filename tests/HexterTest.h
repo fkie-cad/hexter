@@ -379,6 +379,8 @@ TEST_F(HexterTest, testOverwrite)
 	string src = temp_dir+"/testOverwrite.bla";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 	const vector<string> argv = {src, "-o 0000dead0bea0000", "-x"};
+	uint32_t start = 0x0;
+	uint32_t length = 0x50;
 
 	bytes[0] = '\x00';
 	bytes[1] = '\x00';
@@ -389,7 +391,39 @@ TEST_F(HexterTest, testOverwrite)
 	bytes[6] = '\x00';
 	bytes[7] = '\x00';
 
-	vector<string> expected_lines = getExpectedLines(bytes, 0, 0x0, binary_size);
+	vector<string> expected_lines = getExpectedLines(bytes, 0, start, length);
+
+	cout << "expected_lines"<<endl;
+	for ( string s : expected_lines )
+		cout << s << endl;
+
+	callApp(argv, expected_lines);
+
+	remove(src.c_str());
+}
+
+TEST_F(HexterTest, testInsert)
+{
+	uint64_t binary_size = 0x60;
+	string src = temp_dir+"/testInsert.bla";
+	vector<uint8_t> bytes = createBinary(src, binary_size);
+	uint32_t start = 0x0;
+	uint32_t length = 0x50;
+	unsigned char pl[] = {
+			0,0,222,173,11,234,0,0
+	};
+	payload_ln = 8;
+	vector<uint8_t> payloaded_bytes(bytes.begin(), bytes.end());
+	stringstream pl_ss;
+	for ( int i = 0; i < payload_ln; i++ )
+	{
+		payloaded_bytes.insert(payloaded_bytes.begin() + (start + i), pl[i]);
+		pl_ss << hex << setw(2) << setfill('0') << +pl[i];
+	}
+	const vector<string> argv = {src, "-i "+pl_ss.str(), "-s "+to_string(start), "-x"};
+	for ( string arg : argv ) cout << arg << endl;
+
+	vector<string> expected_lines = getExpectedLines(payloaded_bytes, 0, start, length);
 
 	cout << "expected_lines"<<endl;
 	for ( string s : expected_lines )

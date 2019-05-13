@@ -35,7 +35,7 @@ void insert()
 	{
 		n = fread(buf, 1, buf_ln, fi);
 
-		fseek(fi, offset, SEEK_SET);			// f: .....0123456789ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
+		fseek(fi, offset, SEEK_SET);		// f: .....0123456789ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
 		fwrite(payload, 1, payload_ln, fi); // f: .....DEAD0BEA89ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
 		if ( n > payload_ln )
 		{

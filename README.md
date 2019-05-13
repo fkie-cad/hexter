@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting big files and offsets.
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.1.1  
-Last changed: 2019.05.10
+1.2.0  
+Last changed: 2019.05.13
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  

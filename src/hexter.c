@@ -89,7 +89,7 @@ void initParameters()
 void printUsage()
 {
 	printf("Usage: ./%s filename [options]\n", BINARYNAME);
-	printf("Version: 1.1.1\n", BINARYNAME);
+	printf("Version: 1.2.0\n", BINARYNAME);
 	printf(" * -s:uint64_t Startoffset. Default = 0.\n"
 		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
