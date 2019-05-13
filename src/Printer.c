@@ -115,7 +115,7 @@ void print()
 void printDoubleCols(unsigned char* block, uint64_t size)
 {
 	uint64_t i;
-	uint64_t k = 0;
+	uint8_t k = 0;
 
 	for ( i = 0; i < size; i += DOUBLE_COL_SIZE )
 	{
@@ -131,9 +131,9 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 	}
 }
 
-void fillGap(uint64_t k)
+void fillGap(uint8_t k)
 {
-	uint64_t gap = DOUBLE_COL_SIZE - k;
+	uint8_t gap = DOUBLE_COL_SIZE - k;
 	if ( gap > 0 )
 	{
 		for ( k = 0; k < gap; k++ )
@@ -187,9 +187,9 @@ void printHexCols(unsigned char* block, uint64_t size)
 	}
 }
 
-uint64_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size)
+uint8_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size)
 {
-	uint64_t k = 0;
+	uint8_t k = 0;
 	uint64_t temp_i;
 
 	for ( k = 0; k < col_size; k++ )

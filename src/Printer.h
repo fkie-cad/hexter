@@ -3,11 +3,11 @@
 
 void print();
 void printDoubleCols(unsigned char* block, uint64_t size);
-void fillGap(uint64_t k);
+void fillGap(uint8_t k);
 void printAsciiCols(unsigned char* block, uint64_t size);
 void printAsciiCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size);
 void printHexCols(unsigned char* block, uint64_t size);
-uint64_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size);
+uint8_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size);
 void printCleanHexValue(uint8_t b);
 void printAnsiFormatedHexValue(uint8_t b);
 void printWinFormatedHexValue(uint8_t b);
