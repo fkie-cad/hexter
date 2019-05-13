@@ -16,6 +16,12 @@ void insert()
 	FILE* fi;
 	uint64_t i, j, offset;
 
+	if ( start > file_size )
+	{
+		overwrite();
+		return;
+	}
+
 	fi = fopen(file_name, "rb+");
 	if ( !fi )
 	{

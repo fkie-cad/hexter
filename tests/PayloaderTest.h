@@ -21,6 +21,8 @@
 #include "../src/Globals.h"
 #include "../src/Payloader.c"
 
+#define BLOCKSIZE_LARGE 0x10
+
 using namespace std;
 
 class PayloaderTest : public testing::Test
@@ -153,10 +155,10 @@ TEST_F(PayloaderTest, testOverwriteOverEndOfFile)
 	start = binary_size - payload_ln / 2;
 	file_size = getSize(file_name);
 
-	cout << "start: "<<start<<endl;
-	cout << "payload_ln: "<<payload_ln<<endl;
-	cout << "file_name: "<<file_name<<endl;
-	cout << "file_size: "<<file_size<<endl;
+//	cout << "start: "<<start<<endl;
+//	cout << "payload_ln: "<<payload_ln<<endl;
+//	cout << "file_name: "<<file_name<<endl;
+//	cout << "file_size: "<<file_size<<endl;
 
 	overwrite();
 
@@ -190,7 +192,7 @@ TEST_F(PayloaderTest, testOverwriteOverEndOfFile)
 
 TEST_F(PayloaderTest, testOverwriteOutOfFile)
 {
-	uint64_t binary_size = 8;
+	uint64_t binary_size = 64;
 //	string src = temp_dir+"/testOverwriteOutOfFile.bind";
 	string src = "/tmp/PayloaderTestSrc.tmp";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
@@ -239,7 +241,7 @@ TEST_F(PayloaderTest, testOverwriteOutOfFile)
 
 TEST_F(PayloaderTest, testInsertInFile)
 {
-	uint64_t binary_size = 8;
+	uint64_t binary_size = 64;
 	string src = temp_dir+"/testInsertInFile.hex";
 //	string src = "/tmp/testInsertInFile.tmp";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
@@ -261,7 +263,8 @@ TEST_F(PayloaderTest, testInsertInFile)
 
 	ifstream check_fs(src);
 	uint64_t size = getSize(file_name);
-	cout << " new size: "<<size<<endl;
+//	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
+//	cout << " new size: "<<size<<endl;
 	EXPECT_EQ(size, binary_size + payload_ln);
 	check_fs.seekg(0);
 //
@@ -280,9 +283,9 @@ TEST_F(PayloaderTest, testInsertInFile)
 
 TEST_F(PayloaderTest, testInsertOverFileBounds)
 {
-	uint64_t binary_size = 8;
-//	string src = temp_dir+"/testInsertInFile.hex";
-	string src = "/tmp/testInsertInFile.tmp";
+	uint64_t binary_size = 64;
+	string src = temp_dir+"/testInsertOverFileBounds.hex";
+//	string src = "/tmp/testInsertOverFileBounds.tmp";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 
 	unsigned char pl[] = {
@@ -291,9 +294,10 @@ TEST_F(PayloaderTest, testInsertOverFileBounds)
 	payload = pl;
 	payload_ln = sizeof(pl);
 	snprintf(file_name, PATH_MAX, "%s", &src[0]);
-	start = 6;
+	start = binary_size - 2;
 	file_size = getSize(file_name);
 
+//	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
 //	cout << "start: "<<start<<endl;
 //	cout << "payload_ln: "<<payload_ln<<endl;
 //	cout << "file_name: "<<file_name<<endl;
@@ -329,7 +333,58 @@ TEST_F(PayloaderTest, testInsertOverFileBounds)
 	}
 //
 	check_fs.close();
-//	remove(src.c_str());
+	remove(src.c_str());
+}
+
+TEST_F(PayloaderTest, testInsertOutOfFileBounds)
+{
+	uint64_t binary_size = 64;
+	string src = temp_dir+"/testInsertOutOfFileBounds.hex";
+//	string src = "/tmp/testInsertOutOfFileBounds.tmp";
+	vector<uint8_t> bytes = createBinary(src, binary_size);
+
+	unsigned char pl[] = {
+			222,173,11,234
+	};
+	payload = pl;
+	payload_ln = sizeof(pl);
+	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	start = binary_size + 2;
+	file_size = getSize(file_name);
+
+//	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
+	vector<uint8_t> payloaded_bytes(bytes.begin(), bytes.end());
+	for ( int i = 0; i < start-bytes.size(); i++ )
+		payloaded_bytes.push_back(0);
+	for ( int i = 0; i < payload_ln; i++ )
+		payloaded_bytes.push_back(pl[i]);
+
+	for ( uint8_t p : bytes )
+		cout << hex << +p << "|";
+	cout << endl;
+	for ( uint8_t p : payloaded_bytes )
+		cout << hex << +p << "|";
+	cout << endl;
+
+	insert();
+
+	ifstream check_fs(src);
+	uint64_t size = getSize(file_name);
+	cout << " new size: "<<size<<endl;
+	EXPECT_EQ(size, start + payload_ln);
+	check_fs.seekg(0);
+
+	for ( int i = 0; i < size; i++ )
+	{
+		unsigned char cs;
+		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+payloaded_bytes[i]<<dec<<endl;
+
+		EXPECT_EQ(cs, payloaded_bytes[i]);
+	}
+
+	check_fs.close();
+	remove(src.c_str());
 }
 
 #endif
