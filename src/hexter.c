@@ -29,14 +29,14 @@ uint32_t payload_ln;
 void printUsage();
 void initParameters();
 void parseArgs(int argc, char **argv);
-uint8_t isStandaloneArg(char* arg, char* expected);
-uint8_t isValueArg(char* arg, char* expected, int i, int argc);
+uint8_t isArgOfType(char* arg, char* type);
+uint8_t hasValue(char* type, int i, int end_i);
 void sanitizeOffsets();
 unsigned char* parsePayload(const char* arg);
 
 int main(int argc, char **argv)
 {
-    if (argc < 2)
+    if ( argc < 2 )
     {
         printUsage();
         return -1;
@@ -89,6 +89,7 @@ void initParameters()
 void printUsage()
 {
 	printf("Usage: ./%s filename [options]\n", BINARYNAME);
+	printf("Usage: ./%s [options] filename\n", BINARYNAME);
 	printf("Version: 1.2.0\n", BINARYNAME);
 	printf(" * -s:uint64_t Startoffset. Default = 0.\n"
 		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
@@ -106,48 +107,121 @@ void printUsage()
 
 void parseArgs(int argc, char **argv)
 {
+	int start_i = 1;
+	int end_i = argc - 1;
 	int i;
+	uint8_t arg_found = 0;
 
-	expandFilePath(argv[1], file_name);
-
-	if ( argc <= 2 )
-		return;
-
-	for ( i = 2; i < argc; i++ )
+	if ( argv[1][0] != '-' )
 	{
-		if ( isValueArg(argv[i], "-s", i, argc) )
-			start = parseUint64(argv[i + 1]);
-		if ( isValueArg(argv[i], "-l", i, argc) )
-			length = parseUint64(argv[i + 1]);
-		if ( isStandaloneArg(argv[i], "-a") )
-			ascii_only = 1;
-		if ( isStandaloneArg(argv[i], "-x") )
+		expandFilePath(argv[1], file_name);
+		start_i  = 2;
+		end_i = argc;
+	}
+
+	for ( i = start_i; i < end_i; i++ )
+	{
+		if ( argv[i][0] != '-' )
+			break;
+
+		arg_found = 0;
+
+		if ( isArgOfType(argv[i], "-x") )
+		{
 			hex_only = 1;
-		if ( isStandaloneArg(argv[i], "-c") )
-			clean_printing = 1;
-		if ( isValueArg(argv[i], "-i", i, argc) )
-		{
-			insert_f = 1;
-			payload = parsePayload(argv[i + 1]);
-			if ( payload == NULL ) exit(0);
+			arg_found = 1;
 		}
-		if ( isValueArg(argv[i], "-o", i, argc) )
+		if ( arg_found == 0 && isArgOfType(argv[i], "-a") )
 		{
-			overwrite_f = 1;
-			payload = parsePayload(argv[i + 1]);
-			if ( payload == NULL ) exit(0);
+			ascii_only = 1;
+			arg_found = 1;
+		}
+		if ( arg_found == 0 && isArgOfType(argv[i], "-c") )
+		{
+			clean_printing = 1;
+			arg_found = 1;
+		}
+		if ( arg_found == 0 && isArgOfType(argv[i], "-s") )
+		{
+			arg_found = 1;
+			if ( hasValue("-s", i, end_i) )
+			{
+				start = parseUint64(argv[i + 1]);
+				i++;
+			}
+		}
+		if ( arg_found == 0 && isArgOfType(argv[i], "-l") )
+		{
+			arg_found = 1;
+			if ( hasValue("-l", i, end_i) )
+			{
+				length = parseUint64(argv[i + 1]);
+				i++;
+			}
+		}
+		if ( arg_found == 0 && isArgOfType(argv[i], "-i") )
+		{
+			arg_found = 1;
+			if ( hasValue("-i", i, end_i) )
+			{
+				insert_f = 1;
+				payload = parsePayload(argv[i + 1]);
+				if ( payload == NULL ) exit(0);
+				i++;
+			}
+		}
+		if ( arg_found == 0 && isArgOfType(argv[i], "-o") )
+		{
+			arg_found = 1;
+			if ( hasValue("-o", i, end_i) )
+			{
+				overwrite_f = 1;
+				payload = parsePayload(argv[i + 1]);
+				if ( payload == NULL ) exit(0);
+				i++;
+			}
+		}
+
+		if ( !arg_found )
+		{
+			printf("INFO: Unknown arg type \"%s\"\n", argv[i]);
 		}
 	}
+
+	if ( start_i == 1 )
+		expandFilePath(argv[i], file_name);
+}
+
+uint8_t isArgOfType(char* arg, char* type)
+{
+	int type_ln;
+
+	type_ln = strlen(type);
+
+	return strnlen(arg, 10) == type_ln && strncmp(arg, type, type_ln) == 0;
+}
+
+uint8_t hasValue(char* type, int i, int end_i)
+{
+	if ( i >= end_i -1 )
+	{
+		printf("INFO: Arg \"%s\" has no value! Skipped!\n", type);
+		return 0;
+	}
+
+	return 1;
 }
 
 uint8_t isStandaloneArg(char* arg, char* expected)
 {
-	return strncmp(arg, expected, 2) == 0;
+	int expected_ln = strlen(expected);
+	return strnlen(arg, 10) == expected_ln && strncmp(arg, expected, 2) == 0;
 }
 
 uint8_t isValueArg(char* arg, char* expected, int i, int argc)
 {
-	return strncmp(arg, expected, 2) == 0 && i < argc - 1 ;
+	int expected_ln = strlen(expected);
+	return strnlen(arg, 10) == expected_ln && strncmp(arg, expected, 2) == 0 && i < argc - 1 ;
 }
 
 void sanitizeOffsets()

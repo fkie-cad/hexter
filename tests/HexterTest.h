@@ -33,7 +33,7 @@ class HexterTest : public testing::Test
 
 		const vector<string> missing_args_lines = {
 				"Usage: ./"+prog+" filename [options]",
-				"Version: 1.1.1",
+				"Version: 1.2.0",
 				" * -s:uint64_t Startoffset. Default = 0.",
 				" * -l:uint64_t Length of the part to display. Default = 50.",
 				" * -a ASCII only print.",
@@ -45,6 +45,18 @@ class HexterTest : public testing::Test
 				"Example: "+prog_dir+prog+" path/to/a.file -s 100 -l 128 -x",
 				"Example: "+prog_dir+prog+" path/to/a.file -i dead -s 0x100",
 				"Example: "+prog_dir+prog+" path/to/a.file -o 0bea -s 0x100",
+				""
+		};
+
+		const vector<string> unknown_args_lines = {
+				"INFO: Unknown arg type \"-x0\"",
+				"File a does not exist.",
+				""
+		};
+
+		const vector<string> not_passed_value_args_lines = {
+				"INFO: Arg \"-s\" has no value! Skipped!",
+				"File a does not exist.",
 				""
 		};
 
@@ -169,6 +181,17 @@ TEST_F(HexterTest, testMainWithoutArgs)
 	callApp(argv, missing_args_lines);
 }
 
+TEST_F(HexterTest, testMainWithFalseFormatedArgs)
+{
+	const vector<string> argv_x0 = {"-x0 a"};
+	const vector<string> argv_x1 = {"a -x0"};
+	const vector<string> argv_s = {"a -s"};
+
+	callApp(argv_x0, unknown_args_lines);
+	callApp(argv_x1, unknown_args_lines);
+	callApp(argv_s, not_passed_value_args_lines);
+}
+
 TEST_F(HexterTest, testMainWithNotExistingFile)
 {
 	string src = "not/ex/ist.ing";
@@ -230,7 +253,7 @@ TEST_F(HexterTest, testMainWithRandomFileCustomParams)
 	remove(src.c_str());
 }
 
-TEST_F(HexterTest, testMainWithRandomFileHex)
+TEST_F(HexterTest, testMainWithRandomFileHexOnlyPrint)
 {
 	uint64_t binary_size = 0x100;
 	string src = temp_dir+"/testMainWithRandomFileHex.bind";
@@ -244,7 +267,7 @@ TEST_F(HexterTest, testMainWithRandomFileHex)
 	remove(src.c_str());
 }
 
-TEST_F(HexterTest, testMainWithRandomFileAscii)
+TEST_F(HexterTest, testMainWithRandomFileAsciiOnlyPrint)
 {
 	uint64_t binary_size = 0x100;
 	string src = temp_dir+"/testMainWithRandomFileAscii.bind";
@@ -336,7 +359,7 @@ void HexterTest::fillAsciiCol(uint64_t i, vector<uint8_t>& block, stringstream& 
 			break;
 
 		char c = block[temp_i];
-		if ( MIN_PRINT_ASCII_RANGE <= c )
+		if ( MIN_PRINTABLE_ASCII_RANGE <= c && c <= MAX_PRINTABLE_ASCII_RANGE )
 			ss << c;
 		else
 			ss << NO_PRINT_ASCII_SUBSTITUTION;

@@ -37,6 +37,7 @@ The "p" options are more or less mandatory and used without the enclosing "()".
 ## USAGE ##
 ```bash
 $ ./hexter a/file/name [options]
+$ ./hexter [options] a/file/name
 ```
 Optional Parameters:
  * -s:uint64_t Start offset in hex or dec. Default = 0x00.
