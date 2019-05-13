@@ -30,14 +30,15 @@ void print()
 {
 	uint8_t ascii_hex_print = (ascii_only == 0 && hex_only == 0) || (ascii_only == 1 && hex_only == 1);
 	uint64_t p;
+	FILE* fi;
+	unsigned char* block = NULL;
 	uint64_t end = start + length;
 	uint16_t block_size = BLOCKSIZE_LARGE;
 	uint64_t block_start = start;
 	uint64_t read_size = 0;
+	uint64_t size;
 	uint64_t parts = length / block_size;
 	if ( length % block_size != 0 ) parts++;
-
-	unsigned char* block = NULL;
 
 	debug_info("start: %lu\n", start);
 	debug_info("end: %lu\n", end);
@@ -46,7 +47,6 @@ void print()
 	debug_info("parts: %lu\n", parts);
 	debug_info("\n");
 
-	FILE* fi;
 	fi = fopen(file_name, "rb");
 	if ( !fi )
 	{
@@ -91,7 +91,7 @@ void print()
 		debug_info(" - read_size: %lu\n", read_size);
 
 		memset(block, 0, block_size);
-		uint64_t size = readFile(fi, block_start, read_size, block);
+		size = readFile(fi, block_start, read_size, block);
 		if ( !size )
 		{
 			fprintf(stderr, "Reading block of bytes failed!\n");
@@ -133,7 +133,7 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 
 void fillGap(uint64_t k)
 {
-	uint8_t gap = DOUBLE_COL_SIZE - k;
+	uint64_t gap = DOUBLE_COL_SIZE - k;
 	if ( gap > 0 )
 	{
 		for ( k = 0; k < gap; k++ )
@@ -158,6 +158,7 @@ void printAsciiCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_
 {
 	uint64_t k = 0;
 	uint64_t temp_i;
+	char c;
 
 	for ( k = 0; k < col_size; k++ )
 	{
@@ -165,7 +166,7 @@ void printAsciiCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_
 		if ( temp_i >= size )
 			break;
 
-		char c = block[temp_i];
+		c = block[temp_i];
 //		printf("[%d] %d|", temp_i, +c);
 		if ( MIN_PRINT_ASCII_RANGE <= c && c <= MAX_PRINT_ASCII_RANGE )
 			printf("%c", c);

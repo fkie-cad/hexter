@@ -10,40 +10,51 @@
 
 void insert()
 {
-	uint64_t p;
-	uint64_t end = start + length;
-	uint16_t block_size = BLOCKSIZE_LARGE;
-	uint64_t block_start = start;
-	uint64_t read_size = 0;
-	uint64_t parts = length / block_size;
-	if ( length % block_size != 0 ) parts++;
-
-	unsigned char* block = NULL;
-
-	debug_info("start: %lu\n", start);
-	debug_info("end: %lu\n", end);
-	debug_info("block_size: %d\n", block_size);
-	debug_info("block_start: %lu\n", block_start);
-	debug_info("parts: %lu\n", parts);
-	debug_info("\n");
-
+	unsigned char buf[BLOCKSIZE_LARGE];
+	const int buf_ln = BLOCKSIZE_LARGE;
+	int n = buf_ln;
 	FILE* fi;
-	fi = fopen(file_name, "rb");
+	uint64_t i, j, offset;
+
+	fi = fopen(file_name, "rb+");
 	if ( !fi )
 	{
 		printf("File %s does not exist.\n", file_name);
 		return;
 	}
 
-	block = (unsigned char*) malloc(block_size);
-	if ( !block )
+	offset = start;
+	fseek(fi, start, SEEK_SET);
+	while ( n == buf_ln )
 	{
-		printf("Malloc block failed.\n");
-		return;
+		n = fread(buf, 1, buf_ln, fi);
+
+		fseek(fi, offset, SEEK_SET);			// f: .....0123456789ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
+		fwrite(payload, 1, payload_ln, fi); // f: .....DEAD0BEA89ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
+		if ( n > payload_ln )
+		{
+			fwrite(buf, 1, n-payload_ln, fi);   // f: .....DEAD0BEA01234567, buf = 0123456789ABCDEF, payload = DEAD0BEA
+
+			for ( i = n-payload_ln, j=0; i < n; i++ )
+			{
+				payload[j++] = buf[i]; // , buf = 0123456789ABCDEF, payload = 89ABCDEF
+			}
+		}
+		else
+		{
+			for ( i = 0; i < n; i++ )
+			{
+				payload[i] = buf[i];
+			}
+		}
+
+		offset += n;
 	}
+	if ( n > payload_ln )
+		fwrite(payload, 1, payload_ln, fi);
+	else
+		fwrite(payload, 1, n, fi);
 
-
-	free(block);
 	fclose(fi);
 }
 
@@ -78,11 +89,11 @@ void overwrite()
 //		n = fread(buf, 1, buf_ln, src);
 //		fwrite(buf, 1, n, bck);
 //	}
+//	fclose(bck);
 	// end backup
 
 	fseek(src, start, SEEK_SET);
 	fwrite(payload, 1, payload_ln, src);
 
 	fclose(src);
-//	fclose(bck);
 }

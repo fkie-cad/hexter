@@ -14,6 +14,18 @@
 
 #define BINARYNAME ("hexter")
 
+uint64_t file_size;
+char file_name[PATH_MAX];
+uint64_t start;
+uint64_t length;
+uint8_t ascii_only;
+uint8_t hex_only;
+uint8_t clean_printing;
+uint8_t insert_f;
+uint8_t overwrite_f;
+unsigned char* payload;
+uint32_t payload_ln;
+
 void printUsage();
 void initParameters();
 void parseArgs(int argc, char **argv);
@@ -36,7 +48,7 @@ int main(int argc, char **argv)
 	file_size = getSize(file_name);
     if ( file_size == 0 ) return 0;
 
-//    sanitizeOffsets();
+// sanitizeOffsets();
 
 	debug_info("file_name: %s\n", file_name);
 	debug_info("file_size: %lu\n", file_size);

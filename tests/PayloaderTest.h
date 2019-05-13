@@ -14,6 +14,7 @@
 #include <string>
 
 #include <gtest/gtest.h>
+#include <deque>
 
 #include "../src/utils/common_fileio.c"
 #include "../src/utils/Helper.c"
@@ -47,6 +48,7 @@ class PayloaderTest : public testing::Test
 			values.resize(f_size);
 
 			f.open(file_src, ios::binary | std::ios::out);
+			f.clear();
 
 			for ( size_t i = 0; i < f_size; i++ )
 			{
@@ -183,7 +185,7 @@ TEST_F(PayloaderTest, testOverwriteOverEndOfFile)
 		EXPECT_EQ(cs, payload[j++]);
 	}
 
-//	remove(src.c_str());
+	remove(src.c_str());
 }
 
 TEST_F(PayloaderTest, testOverwriteOutOfFile)
@@ -232,47 +234,102 @@ TEST_F(PayloaderTest, testOverwriteOutOfFile)
 		EXPECT_EQ(cs, payload[j++]);
 	}
 
-//	remove(src.c_str());
+	remove(src.c_str());
 }
 
-//void PayloaderTest::overwrite()
-//{
-//	FILE* src;
-//	FILE* dest;
-//	char buf[1024];
-//	int buf_ln = 1024;
-////	char dest_file_name[128];
-////	getTempFile(dest_file_name, "PayloaderTestDest");
-//	const char* dest_file_name = "/tmp/PayloaderTestDest.tmp";
-//	uint32_t i;
-//	int n = buf_ln;
-//	cout << "dest_file_name: "<<dest_file_name<<endl;
+TEST_F(PayloaderTest, testInsertInFile)
+{
+	uint64_t binary_size = 8;
+	string src = temp_dir+"/testInsertInFile.hex";
+//	string src = "/tmp/testInsertInFile.tmp";
+	vector<uint8_t> bytes = createBinary(src, binary_size);
+
+	unsigned char pl[] = {
+			222,173,11,234
+	};
+	payload = pl;
+	payload_ln = sizeof(pl);
+	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	start = 2;
+	file_size = getSize(file_name);
+
+	vector<uint8_t> payloaded_bytes(bytes.begin(), bytes.end());
+	for ( int i = 0; i < payload_ln; i++ )
+		payloaded_bytes.insert(payloaded_bytes.begin() + (start + i), pl[i]);
+
+	insert();
+
+	ifstream check_fs(src);
+	uint64_t size = getSize(file_name);
+	cout << " new size: "<<size<<endl;
+	EXPECT_EQ(size, binary_size + payload_ln);
+	check_fs.seekg(0);
 //
-//	src = fopen(file_name, "rb+");
-//	dest = fopen(dest_file_name, "wb");
-//	if ( !src )
-//	{
-//		printf("File %s does not exist.\n", file_name);
-//		return;
-//	}
-//	if ( !dest )
-//	{
-//		printf("File %s could not be created.\n", dest_file_name);
-//		return;
-//	}
+	for ( int i = 0; i < size; i++ )
+	{
+		unsigned char cs;
+		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+//		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+payloaded_bytes[i]<<dec<<endl;
+
+		EXPECT_EQ(cs, payloaded_bytes[i]);
+	}
 //
-//	while ( n == buf_ln )
-//	{
-//		n = fread(buf, 1, buf_ln, src);
-//		fwrite(buf, 1, n, dest);
-//	}
-////	fseek(dest, start, SEEK_SET);
-////	fwrite(payload, 1, payload_ln, dest);
-//	fseek(src, start, SEEK_SET);
-//	fwrite(payload, 1, payload_ln, src);
+	check_fs.close();
+	remove(src.c_str());
+}
+
+TEST_F(PayloaderTest, testInsertOverFileBounds)
+{
+	uint64_t binary_size = 8;
+//	string src = temp_dir+"/testInsertInFile.hex";
+	string src = "/tmp/testInsertInFile.tmp";
+	vector<uint8_t> bytes = createBinary(src, binary_size);
+
+	unsigned char pl[] = {
+			222,173,11,234
+	};
+	payload = pl;
+	payload_ln = sizeof(pl);
+	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	start = 6;
+	file_size = getSize(file_name);
+
+//	cout << "start: "<<start<<endl;
+//	cout << "payload_ln: "<<payload_ln<<endl;
+//	cout << "file_name: "<<file_name<<endl;
+//	cout << "file_size: "<<file_size<<endl;
+
+	vector<uint8_t> payloaded_bytes(bytes.begin(), bytes.end());
+	for ( int i = 0; i < payload_ln; i++ )
+	{
+		payloaded_bytes.insert(payloaded_bytes.begin() + (start + i), pl[i]);
+	}
+	for ( uint8_t p : bytes )
+		cout << hex << +p << "|";
+	cout << endl;
+	for ( uint8_t p : payloaded_bytes )
+		cout << hex << +p << "|";
+	cout << endl;
+
+	insert();
+
+	ifstream check_fs(src);
+	uint64_t size = getSize(file_name);
+	cout << " new size: "<<size<<endl;
+	EXPECT_EQ(size, binary_size + payload_ln);
+	check_fs.seekg(0);
 //
-//	fclose(src);
-//	fclose(dest);
-//}
+	for ( int i = 0; i < size; i++ )
+	{
+		unsigned char cs;
+		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+payloaded_bytes[i]<<dec<<endl;
+
+		EXPECT_EQ(cs, payloaded_bytes[i]);
+	}
+//
+	check_fs.close();
+//	remove(src.c_str());
+}
 
 #endif

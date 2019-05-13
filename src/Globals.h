@@ -5,8 +5,6 @@
 #include <stddef.h>
 #include <limits.h>
 
-//#define CLEAN_PRINT 1
-
 #define DEBUG_PRINT_INFO 0
 #define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
 
@@ -31,17 +29,17 @@
 
 #define MAX_PAYLOAD_LN 512
 
-uint64_t file_size;
-char file_name[PATH_MAX];
+extern uint64_t file_size;
+extern char file_name[PATH_MAX];
 
-uint64_t start;
-uint64_t length;
-uint8_t ascii_only;
-uint8_t hex_only;
-uint8_t clean_printing;
-uint8_t insert_f;
-uint8_t overwrite_f;
-unsigned char* payload;
-uint32_t payload_ln;
+extern uint64_t start;
+extern uint64_t length;
+extern uint8_t ascii_only;
+extern uint8_t hex_only;
+extern uint8_t clean_printing;
+extern uint8_t insert_f;
+extern uint8_t overwrite_f;
+extern unsigned char* payload;
+extern uint32_t payload_ln;
 
 #endif
