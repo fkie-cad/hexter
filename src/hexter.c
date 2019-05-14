@@ -245,20 +245,21 @@ unsigned char* parsePayload(const char* arg)
 	if ( strnlen(arg, MAX_PAYLOAD_LN) < 2 )
 		return NULL;
 
-	if ( arg[0] == 'b' )
-		p = payloadParseByte(arg);
-	else if ( arg[0] == 'w' )
-		p = payloadParseWord(arg);
-	else if ( arg[0] == 'd' && arg[1] == 'w' )
-		p = payloadParseDoubleWord(arg);
-	else if ( arg[0] == 'q' && arg[1] == 'w' )
-		p = payloadParseQuadWord(arg);
-	else if ( arg[0] == '"' )
-		p = payloadParseString(arg);
-	else if ( arg[0] == 'r' )
-		p = payloadParseReversedPlainBytes(arg);
-	else
-		p = payloadParsePlainBytes(arg);
+//	if ( arg[0] == 'b' )
+//		p = payloadParseByte(arg);
+//	else if ( arg[0] == 'w' )
+//		p = payloadParseWord(arg);
+//	else if ( arg[0] == 'd' && arg[1] == 'w' )
+//		p = payloadParseDoubleWord(arg);
+//	else if ( arg[0] == 'q' && arg[1] == 'w' )
+//		p = payloadParseQuadWord(arg);
+//	else if ( arg[0] == '"' )
+//		p = payloadParseString(arg);
+//	else if ( arg[0] == 'r' )
+//		p = payloadParseReversedPlainBytes(arg);
+//	else
+//		p = payloadParsePlainBytes(arg);
 
+	p = payloadParsePlainBytes(arg);
 	return p;
 }
