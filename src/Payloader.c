@@ -6,7 +6,56 @@
 #include "Payloader.h"
 #include "Globals.h"
 #include "utils/common_fileio.h"
+#include "utils/Converter.h"
 #include "utils/Helper.h"
+
+unsigned char* payloadParseReversedPlainBytes(const char* arg)
+{
+	uint32_t i, j;
+	unsigned char temp;
+	unsigned char* p = payloadParsePlainBytes(arg);
+
+	for ( i = 0, j = payload_ln-1; i < payload_ln; i++, j-- )
+	{
+		if ( j <= i )
+			break;
+
+		temp = p[i];
+		p[i] = p[j];
+		p[j] = temp;
+	}
+
+	return p;
+}
+
+unsigned char* payloadParsePlainBytes(const char* arg)
+{
+	uint32_t i, j;
+	int arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	unsigned char* p;
+	char byte[3] = {0};
+
+	if ( arg_ln % 2 != 0 || arg_ln == 0 )
+	{
+		printf("Error: Payload is not byte aligned!");
+		payload_ln = 0;
+		return NULL;
+	}
+
+	p = (unsigned char*) malloc(arg_ln/2);
+
+	for ( i = 0, j = 0; i < arg_ln; i += 2 )
+	{
+		byte[0] = arg[i];
+		byte[1] = arg[i + 1];
+
+		p[j++] = parseUint8(byte);
+	}
+
+	payload_ln = arg_ln / 2;
+
+	return p;
+}
 
 void insert()
 {

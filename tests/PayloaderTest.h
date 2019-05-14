@@ -387,4 +387,44 @@ TEST_F(PayloaderTest, testInsertOutOfFileBounds)
 	remove(src.c_str());
 }
 
+TEST_F(PayloaderTest, testParsePlainBytes)
+{
+	const char* arg = "dead0bea";
+	const char* arg0 = "";
+	const char* arg1 = "ead0bea";
+	unsigned char* parsed = payloadParsePlainBytes(arg);
+	unsigned char expected[] = { 222, 173, 11, 234 };
+
+	EXPECT_EQ(payload_ln, 4);
+
+	for ( int i = 0; i < 4; i++ )
+		EXPECT_EQ(parsed[i], expected[i]);
+
+	unsigned char* parsed0 = payloadParsePlainBytes(arg0);
+	unsigned char* parsed1 = payloadParsePlainBytes(arg1);
+
+	EXPECT_EQ(parsed0, nullptr);
+	EXPECT_EQ(parsed1, nullptr);
+}
+
+TEST_F(PayloaderTest, testParseReversedPlainBytes)
+{
+	const char* arg = "dead0bea";
+	const char* arg0 = "";
+	const char* arg1 = "ead0bea";
+	unsigned char* parsed = payloadParseReversedPlainBytes(arg);
+	unsigned char expected[] = { 234, 11, 173, 222 };
+
+	EXPECT_EQ(payload_ln, 4);
+
+	for ( int i = 0; i < 4; i++ )
+		EXPECT_EQ(parsed[i], expected[i]);
+
+	unsigned char* parsed0 = payloadParseReversedPlainBytes(arg0);
+	unsigned char* parsed1 = payloadParseReversedPlainBytes(arg1);
+
+	EXPECT_EQ(parsed0, nullptr);
+	EXPECT_EQ(parsed1, nullptr);
+}
+
 #endif

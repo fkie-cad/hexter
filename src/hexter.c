@@ -212,18 +212,6 @@ uint8_t hasValue(char* type, int i, int end_i)
 	return 1;
 }
 
-uint8_t isStandaloneArg(char* arg, char* expected)
-{
-	int expected_ln = strlen(expected);
-	return strnlen(arg, 10) == expected_ln && strncmp(arg, expected, 2) == 0;
-}
-
-uint8_t isValueArg(char* arg, char* expected, int i, int argc)
-{
-	int expected_ln = strlen(expected);
-	return strnlen(arg, 10) == expected_ln && strncmp(arg, expected, 2) == 0 && i < argc - 1 ;
-}
-
 void sanitizeOffsets()
 {
 	uint8_t info_line_break = 0;
@@ -252,26 +240,25 @@ void sanitizeOffsets()
 
 unsigned char* parsePayload(const char* arg)
 {
-	payload_ln = strnlen(arg, MAX_PAYLOAD_LN);
-	uint32_t i, j;
-	unsigned char* p = (unsigned char*) malloc(payload_ln/2);
-	char byte[3] = {0};
+	unsigned char* p;
 
-	if ( payload_ln % 2 != 0 )
-	{
-		printf("Error: Payload is not byte aligned!");
+	if ( strnlen(arg, MAX_PAYLOAD_LN) < 2 )
 		return NULL;
-	}
 
-	for ( i = 0, j=0; i < payload_ln; i += 2 )
-	{
-		byte[0] = arg[i];
-		byte[1] = arg[i+1];
-
-		p[j++] = parseUint8(byte);
-	}
-
-	payload_ln = payload_ln / 2;
+	if ( arg[0] == 'b' )
+		p = payloadParseByte(arg);
+	else if ( arg[0] == 'w' )
+		p = payloadParseWord(arg);
+	else if ( arg[0] == 'd' && arg[1] == 'w' )
+		p = payloadParseDoubleWord(arg);
+	else if ( arg[0] == 'q' && arg[1] == 'w' )
+		p = payloadParseQuadWord(arg);
+	else if ( arg[0] == '"' )
+		p = payloadParseString(arg);
+	else if ( arg[0] == 'r' )
+		p = payloadParseReversedPlainBytes(arg);
+	else
+		p = payloadParsePlainBytes(arg);
 
 	return p;
 }
