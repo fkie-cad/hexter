@@ -32,10 +32,48 @@ class ConverterTest : public testing::Test
 		}
 };
 
+TEST_F(ConverterTest, testParseUint64)
+{
+	const vector<const char*> bytes = {
+			"0x01",
+			"23",
+			"45",
+			"67",
+			"89",
+			"ab",
+			"cd",
+			"ef",
+			"AB",
+			"CD",
+			"EF",
+	};
+	uint64_t expteced[] = {
+			1,
+			35,
+			69,
+			103,
+			137,
+			171,
+			205,
+			239,
+			171,
+			205,
+			239,
+	};
+
+	for ( uint32_t i = 0; i < bytes.size(); i++)
+	{
+		uint64_t r;
+		int s = parseUint64(bytes[i], &r, 16);
+		EXPECT_EQ(s, 0);
+		EXPECT_EQ(r, expteced[i]);
+	}
+}
+
 TEST_F(ConverterTest, testParseUint8)
 {
 	const vector<const char*> bytes = {
-		"01",
+		"1",
 		"23",
 		"45",
 		"67",
@@ -64,7 +102,32 @@ TEST_F(ConverterTest, testParseUint8)
 	for ( uint32_t i = 0; i < bytes.size(); i++)
 	{
 		uint8_t r;
-		int s = parseUint8(bytes[i], &r);
+		int s = parseUint8(bytes[i], &r, 16);
+		EXPECT_EQ(s, 0);
+		EXPECT_EQ(r, expteced[i]);
+	}
+}
+
+TEST_F(ConverterTest, testParseUint8Auto)
+{
+	const vector<const char*> bytes = {
+		"1",
+		"23",
+		"0x45",
+		"0x67",
+	};
+	uint8_t expteced[] = {
+		1,
+		23,
+		69,
+		103,
+	};
+
+	for ( uint32_t i = 0; i < bytes.size(); i++)
+	{
+		uint8_t r;
+		int s = parseUint8Auto(bytes[i], &r);
+		EXPECT_EQ(s, 0);
 		EXPECT_EQ(r, expteced[i]);
 	}
 }
@@ -83,17 +146,17 @@ TEST_F(ConverterTest, testParseUint8Exceptions)
 		"",
 	};
 
-	for ( uint32_t i = 0; i < not_hex.size(); i++)
+	for (auto i : not_hex)
 	{
 		uint8_t r;
-		int s = parseUint8(not_hex[i], &r);
+		int s = parseUint8(i, &r, 16);
 		EXPECT_NE(s, 0);
 	}
 
-	for ( uint32_t i = 0; i < wrong_ln.size(); i++)
+	for (auto i : wrong_ln)
 	{
 		uint8_t r;
-		int s = parseUint8(wrong_ln[i], &r);
+		int s = parseUint8(i, &r, 16);
 		EXPECT_NE(s, 0);
 	}
 }

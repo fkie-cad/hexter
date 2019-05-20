@@ -3,8 +3,10 @@
 
 #include <stdint.h>
 
-int parseUint64(const char* arg, uint64_t* value);
-int parseUint8(const char* arg, uint8_t* value);
+int parseUint64Auto(const char* arg, uint64_t* value);
+int parseUint64(const char* arg, uint64_t* value, uint8_t base);
+int parseUint8Auto(const char* arg, uint8_t* value);
+int parseUint8(const char* arg, uint8_t* value, uint8_t base);
 uint8_t isHexChar(char c);
 
 #endif

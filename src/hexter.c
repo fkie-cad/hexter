@@ -194,7 +194,7 @@ void parseArgs(int argc, char **argv)
 			arg_found = 1;
 			if ( hasValue("-s", i, end_i) )
 			{
-				s = parseUint64(argv[i + 1], &start);
+				s = parseUint64Auto(argv[i + 1], &start);
 				if ( s != 0 )
 				{
 					printf("INFO: Could not parse start, setting to %u!\n", 0);
@@ -208,7 +208,7 @@ void parseArgs(int argc, char **argv)
 			arg_found = 1;
 			if ( hasValue("-l", i, end_i) )
 			{
-				s = parseUint64(argv[i + 1], &length);
+				s = parseUint64Auto(argv[i + 1], &length);
 				if ( s != 0 )
 				{
 					printf("INFO: Could not parse length, setting to %u!\n", DEFAULT_LENGTH);
@@ -256,7 +256,7 @@ void parseArgs(int argc, char **argv)
 
 	if ( (find_f + overwrite_f + insert_f) > 1 )
 	{
-		printf("ERROR: overwrite, insert and find have to be use exclusively!\n");
+		printf("ERROR: overwrite, insert and find have to be used exclusively!\n");
 		exit(0);
 	}
 

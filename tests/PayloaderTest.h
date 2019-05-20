@@ -407,25 +407,83 @@ TEST_F(PayloaderTest, testParsePlainBytes)
 
 TEST_F(PayloaderTest, testParseReversedPlainBytes)
 {
-	const char* arg = "dead0bea";
-	const char* arg0 = "";
-	const char* arg1 = "ead0bea";
-	unsigned char* parsed;
-	uint32_t payload_ln = payloadParseReversedPlainBytes(arg, &parsed);
-	unsigned char expected[] = { 234, 11, 173, 222 };
-
-	EXPECT_EQ(payload_ln, 4);
-
-	for ( int i = 0; i < 4; i++ )
-		EXPECT_EQ(parsed[i], expected[i]);
-
+	const char* arg0 = "dead0bea";
+	const char* arg1 = "";
+	const char* arg2 = "ead0bea";
 	unsigned char* parsed0 = nullptr;
 	unsigned char* parsed1 = nullptr;
-	uint32_t payload0_ln = payloadParseReversedPlainBytes(arg0, &parsed0);
-	uint32_t payload1_ln = payloadParseReversedPlainBytes(arg1, &parsed1);
+	unsigned char* parsed2 = nullptr;
 
-	EXPECT_EQ(parsed0, nullptr);
+	uint32_t payload0_ln = payloadParseReversedPlainBytes(arg0, &parsed0);
+	unsigned char expected[] = { 234, 11, 173, 222 };
+
+	EXPECT_EQ(payload0_ln, 4);
+
+	for ( int i = 0; i < 4; i++ )
+		EXPECT_EQ(parsed0[i], expected[i]);
+
+	uint32_t payload1_ln = payloadParseReversedPlainBytes(arg1, &parsed1);
+	uint32_t payload2_ln = payloadParseReversedPlainBytes(arg2, &parsed2);
+
+	EXPECT_EQ(payload1_ln, 0);
+	EXPECT_EQ(payload2_ln, 0);
+
 	EXPECT_EQ(parsed1, nullptr);
+	EXPECT_EQ(parsed2, nullptr);
+}
+
+TEST_F(PayloaderTest, testParseString)
+{
+	const char* arg0 = "\"dead bea\"";
+	const char* arg1 = "\"";
+	const char* arg2 = "\"a";
+	unsigned char* parsed = nullptr;
+	unsigned char* parsed1 = nullptr;
+	unsigned char* parsed2 = nullptr;
+
+	uint32_t payload0_ln = payloadParseString(arg0, &parsed);
+	unsigned char expected[] = { 100, 101, 97, 100, 32, 98, 101, 97 };
+	uint32_t expexted_ln = 8;
+
+	EXPECT_EQ(payload0_ln, expexted_ln);
+
+	for ( int i = 0; i < expexted_ln; i++ )
+		EXPECT_EQ(parsed[i], expected[i]);
+
+	uint32_t payload1_ln = payloadParseString(arg1, &parsed1);
+	uint32_t payload2_ln = payloadParseString(arg2, &parsed1);
+
+	EXPECT_EQ(payload1_ln, 0);
+	EXPECT_EQ(payload2_ln, 0);
+
+	EXPECT_EQ(parsed1, nullptr);
+	EXPECT_EQ(parsed2, nullptr);
+}
+
+TEST_F(PayloaderTest, testParseByte)
+{
+	const char* arg0 = "bDE";
+	const char* arg1 = "b0E";
+	const char* arg2 = "b";
+	unsigned char* parsed0 = nullptr;
+	unsigned char* parsed1 = nullptr;
+	unsigned char* parsed2 = nullptr;
+	uint32_t payload0_ln = payloadParseByte(arg0, &parsed0);
+	uint32_t payload1_ln = payloadParseByte(arg1, &parsed1);
+	uint32_t payload2_ln = payloadParseByte(arg2, &parsed1);
+
+	unsigned char expected0[] = { 222 };
+	unsigned char expected1[] = { 14 };
+
+	uint32_t expexted_ln = 1;
+
+	EXPECT_EQ(payload0_ln, expexted_ln);
+	EXPECT_EQ(payload1_ln, expexted_ln);
+	EXPECT_EQ(payload2_ln, 0);
+
+	EXPECT_EQ(parsed0[0], expected0[0]);
+	EXPECT_EQ(parsed1[0], expected1[0]);
+	EXPECT_EQ(parsed2, nullptr);
 }
 
 #endif

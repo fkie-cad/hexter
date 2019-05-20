@@ -9,6 +9,54 @@
 #include "utils/Converter.h"
 #include "utils/Helper.h"
 
+uint32_t payloadParseByte(const char* arg, unsigned char** payload)
+{
+	int s;
+	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	if ( arg_ln < 2 )
+	{
+		printf("Error: Payload byte has no value!\n");
+		return 0;
+	}
+	if ( arg_ln > 4 )
+	{
+		printf("Error: Payload byte is too big!\n");
+		return 0;
+	}
+	arg_ln = 1;  // 1 byte
+	unsigned char* p = (unsigned char*) malloc(arg_ln);
+
+	s = parseUint8(&arg[1], p, 16); // bytes starts after 'b' identifier
+	if ( s != 0 )
+	{
+		return 0;
+	}
+
+	*payload = p;
+	return arg_ln;
+}
+
+uint32_t payloadParseString(const char* arg, unsigned char** payload)
+{
+	uint32_t i;
+	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	if ( arg_ln < 2 || arg[arg_ln-1] != '"')
+	{
+		printf("Error: Payload string has no closing quotation mark!\n"); // Is this even possible??
+		return 0;
+	}
+	arg_ln -= 2;  // subtract quotation marks
+	unsigned char* p = (unsigned char*) malloc(arg_ln);
+
+	for ( i = 0; i < arg_ln; i++ )
+	{
+		p[i] = (unsigned char) arg[i+1]; // string starts after first quotation mark
+	}
+
+	*payload = p;
+	return arg_ln;
+}
+
 uint32_t payloadParseReversedPlainBytes(const char* arg, unsigned char** payload)
 {
 	uint32_t i, j;
@@ -50,7 +98,7 @@ uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
 		byte[0] = arg[i];
 		byte[1] = arg[i + 1];
 
-		 s = parseUint8(byte, &p[j++]);
+		 s = parseUint8(byte, &p[j++], 16);
 		 if ( s != 0 )
 		 {
 		 	free(p);
