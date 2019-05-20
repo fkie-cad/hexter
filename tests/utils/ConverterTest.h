@@ -63,7 +63,8 @@ TEST_F(ConverterTest, testParseUint8)
 
 	for ( uint32_t i = 0; i < bytes.size(); i++)
 	{
-		uint8_t r = parseUint8(bytes[i]);
+		uint8_t r;
+		int s = parseUint8(bytes[i], &r);
 		EXPECT_EQ(r, expteced[i]);
 	}
 }
@@ -84,14 +85,16 @@ TEST_F(ConverterTest, testParseUint8Exceptions)
 
 	for ( uint32_t i = 0; i < not_hex.size(); i++)
 	{
-		string ex_err_msg = "Error: "+string(not_hex[i])+" is not in hex format!";
-		EXPECT_EXIT({parseUint8(not_hex[i]);}, ::testing::ExitedWithCode(0), &ex_err_msg[0]);
+		uint8_t r;
+		int s = parseUint8(not_hex[i], &r);
+		EXPECT_NE(s, 0);
 	}
 
 	for ( uint32_t i = 0; i < wrong_ln.size(); i++)
 	{
-		string ex_err_msg = "Error: "+string(wrong_ln[i])+" is not a byte!";
-		EXPECT_EXIT({parseUint8(wrong_ln[i]);}, ::testing::ExitedWithCode(0), &ex_err_msg[0]);
+		uint8_t r;
+		int s = parseUint8(wrong_ln[i], &r);
+		EXPECT_NE(s, 0);
 	}
 }
 

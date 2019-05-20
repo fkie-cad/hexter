@@ -37,9 +37,9 @@ extern uint64_t length;
 extern uint8_t ascii_only;
 extern uint8_t hex_only;
 extern uint8_t clean_printing;
+
 extern uint8_t insert_f;
 extern uint8_t overwrite_f;
-extern unsigned char* payload;
-extern uint32_t payload_ln;
+extern uint8_t find_f;
 
 #endif

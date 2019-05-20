@@ -36,11 +36,12 @@ void expandFilePath(char* src, char* dest)
  */
 int getTempFile(char* buf, char* prefix)
 {
-//	buf = (char*) malloc(128);
+	int s = 1;
+#if defined(__linux__) || defined(__linux) || defined(linux)
 	snprintf(buf, 128, "/tmp/%sXXXXXX.tmp", prefix);
 	buf[127] = 0;
 
-	int s = mkstemps(buf, 4);
-
+	s = mkstemps(buf, 4);
+#endif
 	return s;
 }

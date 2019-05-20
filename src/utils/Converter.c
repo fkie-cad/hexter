@@ -5,7 +5,7 @@
 
 #include "Converter.h"
 
-uint64_t parseUint64(const char* arg)
+int parseUint64(const char* arg, uint64_t* value)
 {
 	char* endptr;
 	int err_no = 0;
@@ -16,7 +16,7 @@ uint64_t parseUint64(const char* arg)
 	if ( arg[0] ==  '-' )
 	{
 		fprintf(stderr, "Error: %s could not be converted to a number: is negative!\n", arg);
-		exit(0);
+		return 1;
 	}
 	if ( arg[0] ==  '0' && arg[1] ==  'x')
 		base = 16;
@@ -27,18 +27,19 @@ uint64_t parseUint64(const char* arg)
 	if ( endptr == arg )
 	{
 		fprintf(stderr, "Error: %s could not be converted to a number: Not a number!\n", arg);
-		exit(0);
+		return 2;
 	}
 	if ( result == UINT64_MAX && err_no == ERANGE)
 	{
 		fprintf(stderr, "Error: %s could not be converted to a number: Out of range!\n", arg);
-		exit(0);
+		return 3;
 	}
 
-	return result;
+	*value = result;
+	return 0;
 }
 
-uint8_t parseUint8(const char* arg)
+int parseUint8(const char* arg, uint8_t* value)
 {
 	char* endptr;
 	int err_no = 0;
@@ -49,12 +50,12 @@ uint8_t parseUint8(const char* arg)
 	if ( strlen(arg) != 2 )
 	{
 		fprintf(stderr, "Error: %s is not a byte!\n", arg);
-		exit(0);
+		return 1;
 	}
 	if ( !isHexChar(arg[0]) || !isHexChar(arg[1]) )
 	{
 		fprintf(stderr, "Error: %s is not in hex format!\n", arg);
-		exit(0);
+		return 2;
 	}
 
 	result = strtoul(arg, &endptr, base);
@@ -63,15 +64,16 @@ uint8_t parseUint8(const char* arg)
 	if ( endptr == arg )
 	{
 		fprintf(stderr, "Error: %s could not be converted to a number: Not a number!\n", arg);
-		exit(0);
+		return 3;
 	}
 	if ( result == UINT64_MAX && err_no == ERANGE)
 	{
 		fprintf(stderr, "Error: %s could not be converted to a number: Out of range!\n", arg);
-		exit(0);
+		return 4;
 	}
 
-	return result;
+	*value = result;
+	return 0;
 }
 
 uint8_t isHexChar(const char c)

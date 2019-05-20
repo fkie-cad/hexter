@@ -9,37 +9,38 @@
 #include "utils/Converter.h"
 #include "utils/Helper.h"
 
-unsigned char* payloadParseReversedPlainBytes(const char* arg)
+uint32_t payloadParseReversedPlainBytes(const char* arg, unsigned char** payload)
 {
 	uint32_t i, j;
 	unsigned char temp;
-	unsigned char* p = payloadParsePlainBytes(arg);
+	uint32_t payload_ln = payloadParsePlainBytes(arg, payload);
 
 	for ( i = 0, j = payload_ln-1; i < payload_ln; i++, j-- )
 	{
 		if ( j <= i )
 			break;
 
-		temp = p[i];
-		p[i] = p[j];
-		p[j] = temp;
+		temp = (*payload)[i];
+		(*payload)[i] = (*payload)[j];
+		(*payload)[j] = temp;
 	}
 
-	return p;
+	return payload_ln;
 }
 
-unsigned char* payloadParsePlainBytes(const char* arg)
+uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
 {
 	uint32_t i, j;
 	int arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
 	unsigned char* p;
 	char byte[3] = {0};
+	uint32_t payload_ln;
+	int s = 0;
 
 	if ( arg_ln % 2 != 0 || arg_ln == 0 )
 	{
-		printf("Error: Payload is not byte aligned!");
-		payload_ln = 0;
-		return NULL;
+		printf("Error: Payload is not byte aligned!\n");
+		return 0;
 	}
 
 	p = (unsigned char*) malloc(arg_ln/2);
@@ -49,15 +50,21 @@ unsigned char* payloadParsePlainBytes(const char* arg)
 		byte[0] = arg[i];
 		byte[1] = arg[i + 1];
 
-		p[j++] = parseUint8(byte);
+		 s = parseUint8(byte, &p[j++]);
+		 if ( s != 0 )
+		 {
+		 	free(p);
+		 	return 0;
+		 }
 	}
 
 	payload_ln = arg_ln / 2;
 
-	return p;
+	*payload = p;
+	return payload_ln;
 }
 
-void insert()
+void insert(unsigned char* payload, uint32_t payload_ln)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
@@ -67,7 +74,7 @@ void insert()
 
 	if ( start > file_size )
 	{
-		overwrite();
+		overwrite(payload, payload_ln);
 		return;
 	}
 
@@ -113,7 +120,7 @@ void insert()
 	fclose(fi);
 }
 
-void overwrite()
+void overwrite(unsigned char* payload, uint32_t payload_ln)
 {
 	FILE* src;
 	// backup

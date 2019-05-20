@@ -26,6 +26,7 @@ class HexterTest : public testing::Test
 		const string prog_dir = "./";
 		const string prog = "hexter";
 		static string temp_dir;
+		const string vs = "1.3.0";
 
 		std::random_device rd;
 		static mt19937_64* gen;
@@ -33,18 +34,29 @@ class HexterTest : public testing::Test
 
 		const vector<string> missing_args_lines = {
 				"Usage: ./"+prog+" filename [options]",
-				"Version: 1.2.0",
+				"Usage: ./"+prog+" [options] filename",
+				"Version: "+vs,
+				"",
+		};
+
+		const vector<string> help_lines = {
+				"Usage: ./"+prog+" filename [options]",
+				"Usage: ./"+prog+" [options] filename",
+				"Version: "+vs,
 				" * -s:uint64_t Startoffset. Default = 0.",
 				" * -l:uint64_t Length of the part to display. Default = 50.",
 				" * -a ASCII only print.",
 				" * -x HEX only print.",
-				" * -c clean output (no text formatin in the console).",
-				" * -i insert hex byte sequence (destructive!)",
-				" * -o overwrite hex byte sequence (destructive!)",
+				" * -c Clean output (no text formatin in the console).",
+				" * -i Insert hex byte sequence (destructive!).",
+				" * -o Overwrite hex byte sequence (destructive!).",
+				" * -f Find hex byte sequence.",
+				" * -h Print this.",
 				"",
 				"Example: "+prog_dir+prog+" path/to/a.file -s 100 -l 128 -x",
 				"Example: "+prog_dir+prog+" path/to/a.file -i dead -s 0x100",
 				"Example: "+prog_dir+prog+" path/to/a.file -o 0bea -s 0x100",
+				"Example: "+prog_dir+prog+" path/to/a.file -f f001 -s 0x100",
 				""
 		};
 
@@ -190,6 +202,13 @@ TEST_F(HexterTest, testMainWithFalseFormatedArgs)
 	callApp(argv_x0, unknown_args_lines);
 	callApp(argv_x1, unknown_args_lines);
 	callApp(argv_s, not_passed_value_args_lines);
+}
+
+TEST_F(HexterTest, testMainWithHelpArg)
+{
+	const vector<string> argv = {"-h a"};
+
+	callApp(argv, help_lines);
 }
 
 TEST_F(HexterTest, testMainWithNotExistingFile)
@@ -435,7 +454,7 @@ TEST_F(HexterTest, testInsert)
 	unsigned char pl[] = {
 			0,0,222,173,11,234,0,0
 	};
-	payload_ln = 8;
+	uint32_t payload_ln = 8;
 	vector<uint8_t> payloaded_bytes(bytes.begin(), bytes.end());
 	stringstream pl_ss;
 	for ( int i = 0; i < payload_ln; i++ )

@@ -19,9 +19,8 @@
 #include "../src/utils/common_fileio.c"
 #include "../src/utils/Helper.c"
 #include "../src/Globals.h"
-#include "../src/Payloader.c"
-
 #define BLOCKSIZE_LARGE 0x10
+#include "../src/Payloader.c"
 
 using namespace std;
 
@@ -107,8 +106,8 @@ TEST_F(PayloaderTest, testOverwriteInFile)
 	unsigned char pl[] = {
 		0,0,222,173,190,239,0,0
 	};
-	payload = pl;
-	payload_ln = sizeof(pl);
+	unsigned char* payload = pl;
+	uint32_t payload_ln = sizeof(pl);
 	snprintf(file_name, PATH_MAX, "%s", &src[0]);
 	start = 10;
 	file_size = getSize(file_name);
@@ -118,7 +117,7 @@ TEST_F(PayloaderTest, testOverwriteInFile)
 	cout << "file_name: "<<file_name<<endl;
 	cout << "file_size: "<<file_size<<endl;
 
-	overwrite();
+	overwrite(payload, payload_ln);
 
 	ifstream check_fs(src);
 	check_fs.seekg(0);
@@ -149,18 +148,13 @@ TEST_F(PayloaderTest, testOverwriteOverEndOfFile)
 	unsigned char pl[] = {
 		0,0,222,173,190,239,0,0
 	};
-	payload = pl;
-	payload_ln = sizeof(pl);
+	unsigned char* payload = pl;
+	uint32_t payload_ln = sizeof(pl);
 	snprintf(file_name, PATH_MAX, "%s", &src[0]);
 	start = binary_size - payload_ln / 2;
 	file_size = getSize(file_name);
 
-//	cout << "start: "<<start<<endl;
-//	cout << "payload_ln: "<<payload_ln<<endl;
-//	cout << "file_name: "<<file_name<<endl;
-//	cout << "file_size: "<<file_size<<endl;
-
-	overwrite();
+	overwrite(payload, payload_ln);
 
 	ifstream check_fs(src);
 	check_fs.seekg(0);
@@ -200,8 +194,8 @@ TEST_F(PayloaderTest, testOverwriteOutOfFile)
 	unsigned char pl[] = {
 		255,255,222,173,190,239,0,0
 	};
-	payload = pl;
-	payload_ln = sizeof(pl);
+	unsigned char* payload = pl;
+	uint32_t payload_ln = sizeof(pl);
 	snprintf(file_name, PATH_MAX, "%s", &src[0]);
 	start = binary_size + 2;
 	file_size = getSize(file_name);
@@ -211,7 +205,7 @@ TEST_F(PayloaderTest, testOverwriteOutOfFile)
 	cout << "file_name: "<<file_name<<endl;
 	cout << "file_size: "<<file_size<<endl;
 
-	overwrite();
+	overwrite(payload, payload_ln);
 
 	ifstream check_fs(src);
 	check_fs.seekg(0);
@@ -249,8 +243,8 @@ TEST_F(PayloaderTest, testInsertInFile)
 	unsigned char pl[] = {
 			222,173,11,234
 	};
-	payload = pl;
-	payload_ln = sizeof(pl);
+	unsigned char* payload = pl;
+	uint32_t payload_ln = sizeof(pl);
 	snprintf(file_name, PATH_MAX, "%s", &src[0]);
 	start = 2;
 	file_size = getSize(file_name);
@@ -259,7 +253,7 @@ TEST_F(PayloaderTest, testInsertInFile)
 	for ( int i = 0; i < payload_ln; i++ )
 		payloaded_bytes.insert(payloaded_bytes.begin() + (start + i), pl[i]);
 
-	insert();
+	insert(payload, payload_ln);
 
 	ifstream check_fs(src);
 	uint64_t size = getSize(file_name);
@@ -291,8 +285,8 @@ TEST_F(PayloaderTest, testInsertOverFileBounds)
 	unsigned char pl[] = {
 			222,173,11,234
 	};
-	payload = pl;
-	payload_ln = sizeof(pl);
+	unsigned char* payload = pl;
+	uint32_t payload_ln = sizeof(pl);
 	snprintf(file_name, PATH_MAX, "%s", &src[0]);
 	start = binary_size - 2;
 	file_size = getSize(file_name);
@@ -315,7 +309,7 @@ TEST_F(PayloaderTest, testInsertOverFileBounds)
 		cout << hex << +p << "|";
 	cout << endl;
 
-	insert();
+	insert(payload, payload_ln);
 
 	ifstream check_fs(src);
 	uint64_t size = getSize(file_name);
@@ -346,8 +340,8 @@ TEST_F(PayloaderTest, testInsertOutOfFileBounds)
 	unsigned char pl[] = {
 			222,173,11,234
 	};
-	payload = pl;
-	payload_ln = sizeof(pl);
+	unsigned char* payload = pl;
+	uint32_t payload_ln = sizeof(pl);
 	snprintf(file_name, PATH_MAX, "%s", &src[0]);
 	start = binary_size + 2;
 	file_size = getSize(file_name);
@@ -366,7 +360,7 @@ TEST_F(PayloaderTest, testInsertOutOfFileBounds)
 		cout << hex << +p << "|";
 	cout << endl;
 
-	insert();
+	insert(payload, payload_ln);
 
 	ifstream check_fs(src);
 	uint64_t size = getSize(file_name);
@@ -392,7 +386,9 @@ TEST_F(PayloaderTest, testParsePlainBytes)
 	const char* arg = "dead0bea";
 	const char* arg0 = "";
 	const char* arg1 = "ead0bea";
-	unsigned char* parsed = payloadParsePlainBytes(arg);
+
+	unsigned char* parsed;
+	uint32_t payload_ln = payloadParsePlainBytes(arg, &parsed);
 	unsigned char expected[] = { 222, 173, 11, 234 };
 
 	EXPECT_EQ(payload_ln, 4);
@@ -400,8 +396,10 @@ TEST_F(PayloaderTest, testParsePlainBytes)
 	for ( int i = 0; i < 4; i++ )
 		EXPECT_EQ(parsed[i], expected[i]);
 
-	unsigned char* parsed0 = payloadParsePlainBytes(arg0);
-	unsigned char* parsed1 = payloadParsePlainBytes(arg1);
+	unsigned char* parsed0 = nullptr;
+	unsigned char* parsed1 = nullptr;
+	uint32_t payload0_ln = payloadParsePlainBytes(arg0, &parsed0);
+	uint32_t payload1_ln = payloadParsePlainBytes(arg1, &parsed1);
 
 	EXPECT_EQ(parsed0, nullptr);
 	EXPECT_EQ(parsed1, nullptr);
@@ -412,7 +410,8 @@ TEST_F(PayloaderTest, testParseReversedPlainBytes)
 	const char* arg = "dead0bea";
 	const char* arg0 = "";
 	const char* arg1 = "ead0bea";
-	unsigned char* parsed = payloadParseReversedPlainBytes(arg);
+	unsigned char* parsed;
+	uint32_t payload_ln = payloadParseReversedPlainBytes(arg, &parsed);
 	unsigned char expected[] = { 234, 11, 173, 222 };
 
 	EXPECT_EQ(payload_ln, 4);
@@ -420,8 +419,10 @@ TEST_F(PayloaderTest, testParseReversedPlainBytes)
 	for ( int i = 0; i < 4; i++ )
 		EXPECT_EQ(parsed[i], expected[i]);
 
-	unsigned char* parsed0 = payloadParseReversedPlainBytes(arg0);
-	unsigned char* parsed1 = payloadParseReversedPlainBytes(arg1);
+	unsigned char* parsed0 = nullptr;
+	unsigned char* parsed1 = nullptr;
+	uint32_t payload0_ln = payloadParseReversedPlainBytes(arg0, &parsed0);
+	uint32_t payload1_ln = payloadParseReversedPlainBytes(arg1, &parsed1);
 
 	EXPECT_EQ(parsed0, nullptr);
 	EXPECT_EQ(parsed1, nullptr);
