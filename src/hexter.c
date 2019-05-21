@@ -29,7 +29,7 @@ uint8_t overwrite_f;
 uint8_t find_f;
 
 int payload_arg_id;
-const char* vs = "1.3.3";
+const char* vs = "1.3.4";
 
 const char FORMAT_ASCII = 'a';
 const char FORMAT_BYTE = 'b';
@@ -52,11 +52,11 @@ uint32_t parsePayload(const char* arg, const char* value, unsigned char** payloa
 
 // TODO:
 // + search option
+// + string, byte, (d/q)word,
 // - column to show file offset
-// - string, byte, (d/q)word, reversed payload
 // - delete option
+// - reversed payload, endianess option for hex and word payload
 // - interactive more/scroll
-// - endianess option for byte and word payload
 
 int main(int argc, char **argv)
 {
@@ -233,7 +233,7 @@ void parseArgs(int argc, char **argv)
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-i"))
+		if ( arg_found == 0 && isFormatArgOfType(argv[i], "-i"))
 		{
 			arg_found = 1;
 			if ( hasValue("-i", i, end_i) )
@@ -243,7 +243,7 @@ void parseArgs(int argc, char **argv)
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-o"))
+		if ( arg_found == 0 && isFormatArgOfType(argv[i], "-o"))
 		{
 			arg_found = 1;
 			if ( hasValue("-o", i, end_i) )
