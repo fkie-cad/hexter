@@ -13,12 +13,12 @@ uint32_t payloadParseByte(const char* arg, unsigned char** payload)
 {
 	int s;
 	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
-	if ( arg_ln < 2 )
+	if ( arg_ln < 1 )
 	{
 		printf("Error: Payload byte has no value!\n");
 		return 0;
 	}
-	if ( arg_ln > 4 )
+	if ( arg_ln > 2 )
 	{
 		printf("Error: Payload byte is too big!\n");
 		return 0;
@@ -26,7 +26,7 @@ uint32_t payloadParseByte(const char* arg, unsigned char** payload)
 	arg_ln = 1;  // 1 byte
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
 
-	s = parseUint8(&arg[1], p, 16); // bytes starts after 'b' identifier
+	s = parseUint8(&arg[0], p, 16);
 	if ( s != 0 )
 	{
 		return 0;
@@ -36,21 +36,107 @@ uint32_t payloadParseByte(const char* arg, unsigned char** payload)
 	return arg_ln;
 }
 
+uint32_t payloadParseWord(const char* arg, unsigned char** payload)
+{
+	int s;
+	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	if ( arg_ln < 1 )
+	{
+		printf("Error: Payload byte has no value!\n");
+		return 0;
+	}
+	if ( arg_ln > 4 )
+	{
+		printf("Error: Payload word is too big!\n");
+		return 0;
+	}
+	arg_ln = 2;  // 2 bytes
+	unsigned char* p = (unsigned char*) malloc(arg_ln);
+
+	uint16_t temp;
+	s = parseUint16(&arg[0], &temp, 16);
+	if ( s != 0 )
+		return 0;
+
+	// bytes are reversed using memcpy
+	memcpy(p, &temp, arg_ln);
+
+	*payload = p;
+	return arg_ln;
+}
+
+uint32_t payloadParseDWord(const char* arg, unsigned char** payload)
+{
+	int s;
+	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	if ( arg_ln < 1 )
+	{
+		printf("Error: Payload byte has no value!\n");
+		return 0;
+	}
+	if ( arg_ln > 8 )
+	{
+		printf("Error: Payload double word is too big!\n");
+		return 0;
+	}
+	arg_ln = 4;  // 4 bytes
+	unsigned char* p = (unsigned char*) malloc(arg_ln);
+
+	uint32_t temp;
+	s = parseUint32(&arg[0], &temp, 16);
+	if ( s != 0 )
+		return 0;
+
+	// bytes are reversed using memcpy
+	memcpy(p, &temp, arg_ln);
+
+	*payload = p;
+	return arg_ln;
+}
+
+uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
+{
+	int s;
+	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	if ( arg_ln < 1 )
+	{
+		printf("Error: Payload byte has no value!\n");
+		return 0;
+	}
+	if ( arg_ln > 16 )
+	{
+		printf("Error: Payload quad word is too big!\n");
+		return 0;
+	}
+	arg_ln = 8;  // 8 bytes
+	unsigned char* p = (unsigned char*) malloc(arg_ln);
+
+	uint64_t temp;
+	s = parseUint64(&arg[0], &temp, 16);
+	if ( s != 0 )
+		return 0;
+
+	// bytes are reversed using memcpy
+	memcpy(p, &temp, arg_ln);
+
+	*payload = p;
+	return arg_ln;
+}
+
 uint32_t payloadParseString(const char* arg, unsigned char** payload)
 {
 	uint32_t i;
 	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
-	if ( arg_ln < 2 || arg[arg_ln-1] != '"')
+	if ( arg_ln < 1 ) // is that even possible?
 	{
-		printf("Error: Payload string has no closing quotation mark!\n"); // Is this even possible??
+		printf("Error: Payload string has no value!\n");
 		return 0;
 	}
-	arg_ln -= 2;  // subtract quotation marks
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
 
 	for ( i = 0; i < arg_ln; i++ )
 	{
-		p[i] = (unsigned char) arg[i+1]; // string starts after first quotation mark
+		p[i] = (unsigned char) arg[i];
 	}
 
 	*payload = p;

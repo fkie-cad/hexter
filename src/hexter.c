@@ -19,6 +19,7 @@ uint64_t file_size;
 char file_name[PATH_MAX];
 uint64_t start;
 uint64_t length;
+uint8_t offset_col_f;
 uint8_t ascii_only;
 uint8_t hex_only;
 uint8_t clean_printing;
@@ -28,21 +29,33 @@ uint8_t overwrite_f;
 uint8_t find_f;
 
 int payload_arg_id;
-const char* vs = "1.3.0";
+const char* vs = "1.3.3";
+
+const char FORMAT_ASCII = 'a';
+const char FORMAT_BYTE = 'b';
+const char FORMAT_WORD = 'w';
+const char FORMAT_D_WORD = 'd';
+const char FORMAT_Q_WORD = 'q';
+const char FORMAT_PLAIN_HEX = 'h';
+
+const char format_types[] = { FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
+int format_types_ln = 6;
 
 void printUsage();
 void initParameters();
 void parseArgs(int argc, char **argv);
 uint8_t isArgOfType(char* arg, char* type);
+uint8_t isFormatArgOfType(char* arg, char* type);
 uint8_t hasValue(char* type, int i, int end_i);
 void sanitizeOffsets();
-uint32_t parsePayload(const char* arg, unsigned char** payload);
+uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload);
 
 // TODO:
-// - search option
+// + search option
+// - column to show file offset
+// - string, byte, (d/q)word, reversed payload
 // - delete option
 // - interactive more/scroll
-// - string, byte, (d/q)word, reversed payload
 // - endianess option for byte and word payload
 
 int main(int argc, char **argv)
@@ -73,9 +86,9 @@ int main(int argc, char **argv)
 	unsigned char* payload = NULL;
 	uint32_t payload_ln = 0;
 
-	if ( (insert_f || overwrite_f || find_f) && payload_arg_id > -1 )
+	if ( (insert_f || overwrite_f || find_f) && payload_arg_id >= 0 )
 	{
-		payload_ln = parsePayload(argv[payload_arg_id], &payload);
+		payload_ln = parsePayload(argv[payload_arg_id], argv[payload_arg_id+1], &payload);
 		if ( payload == NULL ) exit(0);
 	}
 
@@ -134,17 +147,20 @@ void printHelp()
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n"
 		   " * -c Clean output (no text formatin in the console).\n"
-		   " * -i Insert hex byte sequence (destructive!).\n"
-		   " * -o Overwrite hex byte sequence (destructive!).\n"
-		   " * -f Find hex byte sequence.\n"
-		   " * -h Print this.\n"
-//		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
+		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option.\n"
+		   " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
+		   " * -fx Find hex byte sequence. Where x is an format option.\n"
+		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte in hex, %c: word in hex, %c: double word, %c: quad word).\n"
+		   "     Expect for the ascii string, all values have to be passed as hex values.\n"
+		   //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
+		   " * -h Print this.\n",
+		   FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
 		   );
 	printf("\n");
 	printf("Example: ./%s path/to/a.file -s 100 -l 128 -x\n",BINARYNAME);
 	printf("Example: ./%s path/to/a.file -i dead -s 0x100\n",BINARYNAME);
 	printf("Example: ./%s path/to/a.file -o 0bea -s 0x100\n",BINARYNAME);
-	printf("Example: ./%s path/to/a.file -f f001 -s 0x100\n",BINARYNAME);
+	printf("Example: ./%s path/to/a.file -fp f001 -s 0x100\n",BINARYNAME);
 }
 
 void parseArgs(int argc, char **argv)
@@ -154,7 +170,7 @@ void parseArgs(int argc, char **argv)
 	int i, s;
 	uint8_t arg_found = 0;
 
-	if ( isArgOfType(argv[1], "-h") )
+	if ( isArgOfType(argv[1], "-h"))
 	{
 		printHelp();
 		exit(0);
@@ -174,22 +190,22 @@ void parseArgs(int argc, char **argv)
 
 		arg_found = 0;
 
-		if ( isArgOfType(argv[i], "-x") )
+		if ( isArgOfType(argv[i], "-x"))
 		{
 			hex_only = 1;
 			arg_found = 1;
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-a") )
+		if ( arg_found == 0 && isArgOfType(argv[i], "-a"))
 		{
 			ascii_only = 1;
 			arg_found = 1;
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-c") )
+		if ( arg_found == 0 && isArgOfType(argv[i], "-c"))
 		{
 			clean_printing = 1;
 			arg_found = 1;
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-s") )
+		if ( arg_found == 0 && isArgOfType(argv[i], "-s"))
 		{
 			arg_found = 1;
 			if ( hasValue("-s", i, end_i) )
@@ -203,7 +219,7 @@ void parseArgs(int argc, char **argv)
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-l") )
+		if ( arg_found == 0 && isArgOfType(argv[i], "-l"))
 		{
 			arg_found = 1;
 			if ( hasValue("-l", i, end_i) )
@@ -217,33 +233,33 @@ void parseArgs(int argc, char **argv)
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-i") )
+		if ( arg_found == 0 && isArgOfType(argv[i], "-i"))
 		{
 			arg_found = 1;
 			if ( hasValue("-i", i, end_i) )
 			{
 				insert_f = 1;
-				payload_arg_id = i+1;
+				payload_arg_id = i;
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-o") )
+		if ( arg_found == 0 && isArgOfType(argv[i], "-o"))
 		{
 			arg_found = 1;
 			if ( hasValue("-o", i, end_i) )
 			{
 				overwrite_f = 1;
-				payload_arg_id = i+1;
+				payload_arg_id = i;
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-f") )
+		if ( arg_found == 0 && isFormatArgOfType(argv[i], "-f"))
 		{
 			arg_found = 1;
 			if ( hasValue("-f", i, end_i) )
 			{
 				find_f = 1;
-				payload_arg_id = i+1;
+				payload_arg_id = i;
 				i++;
 			}
 		}
@@ -266,11 +282,29 @@ void parseArgs(int argc, char **argv)
 
 uint8_t isArgOfType(char* arg, char* type)
 {
-	int type_ln;
-
-	type_ln = strlen(type);
-
+	int type_ln = strnlen(type, 10);
 	return strnlen(arg, 10) == type_ln && strncmp(arg, type, type_ln) == 0;
+}
+
+uint8_t isFormatArgOfType(char* arg, char* type)
+{
+	int i, j;
+	int arg_ln = strnlen(arg, 10);
+	int type_ln = strnlen(type, 10);
+
+	if ( arg_ln <= type_ln )
+		return 0;
+
+	for ( i = 0; i < type_ln; i++ )
+		if ( arg[i] != type[i] )
+			return 0;
+
+	j = i;
+	for ( i = 0; i < format_types_ln; i++ )
+		if ( format_types[i] == arg[j] )
+			return 1;
+
+	return 0;
 }
 
 uint8_t hasValue(char* type, int i, int end_i)
@@ -311,29 +345,35 @@ void sanitizeOffsets()
 		printf("\n");
 }
 
-uint32_t parsePayload(const char* arg, unsigned char** payload)
+uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload)
 {
-	uint32_t ln;
+	uint32_t ln = 0;
+	char format = arg[2];
 
-	if ( strnlen(arg, MAX_PAYLOAD_LN) < 2 )
+	if ( strnlen(value, MAX_PAYLOAD_LN) < 1 )
 		return 0;
 
-//	if ( arg[0] == 'b' )
-//		ln = payloadParseByte(arg, payload);
-//	else if ( arg[0] == 'w' )
-//		ln = payloadParseWord(arg, payload);
-//	else if ( arg[0] == 'd' && arg[1] == 'w' )
-//		ln = payloadParseDoubleWord(arg, payload);
-//	else if ( arg[0] == 'q' && arg[1] == 'w' )
-//		ln = payloadParseQuadWord(arg, payload);
-//	else if ( arg[0] == '"' )
-//		ln = payloadParseString(arg, payload);
-//	else if ( arg[0] == 'r' )
+	if ( format == FORMAT_BYTE )
+		ln = payloadParseByte(value, payload);
+	else if ( format == FORMAT_WORD )
+		ln = payloadParseWord(value, payload);
+	else if ( format == FORMAT_D_WORD )
+		ln = payloadParseDWord(value, payload);
+	else if ( format == FORMAT_Q_WORD )
+		ln = payloadParseQWord(value, payload);
+	else if ( format == FORMAT_ASCII )
+		ln = payloadParseString(value, payload);
+//	else if ( format == 'r' )
 //		ln = payloadParseReversedPlainBytes(arg, payload);
-//	else
-//		ln = payloadParsePlainBytes(arg, payload);
+	else if ( format == FORMAT_PLAIN_HEX )
+		ln = payloadParsePlainBytes(value, payload);
+	else
+	{
+		printf("ERROR: No format specifier found in %s!\n", arg);
+		ln = 0;
+	}
 
-	ln = payloadParsePlainBytes(arg, payload);
+//	ln = payloadParsePlainBytes(arg, payload);
 
 	return ln;
 }

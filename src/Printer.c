@@ -104,6 +104,12 @@ void print()
 			printAsciiCols(block, size);
 		else if ( hex_only == 1 )
 			printHexCols(block, size);
+//		else if ( offset_ascii_hex_print )
+//			printTripleCol(block, size);
+//		else if ( offset_hex_print )
+//			printOffsetHexCol(block, size);
+//		else if ( offset_ascii_print )
+//			printOffsetAsciiCol(block, size);
 
 		block_start += block_size;
 	}

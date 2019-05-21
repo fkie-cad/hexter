@@ -16,7 +16,7 @@
  */
 uint64_t find(const unsigned char* needle, uint32_t needle_ln)
 {
-	printf("BLOCKSIZE_LARGE: %u\n",BLOCKSIZE_LARGE);
+//	printf("BLOCKSIZE_LARGE: %u\n",BLOCKSIZE_LARGE);
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
 	int n = buf_ln;

@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <deque>
+#include <functional>
 
 #include "../src/utils/common_fileio.c"
 #include "../src/utils/Helper.c"
@@ -32,6 +33,33 @@ class PayloaderTest : public testing::Test
 		std::random_device rd;
 		static mt19937_64* gen;
 		static uniform_int_distribution<uint8_t>* dis;
+
+		using PayloadParser = function<uint32_t(const char*, unsigned char**)>;
+		using TV = tuple<const char*, uint32_t, vector<uint8_t>>;
+
+		void assertPayloadParser(vector<TV>& tv, PayloadParser p)
+		{
+			for ( TV e : tv )
+			{
+				unsigned char* parsed = nullptr;
+				uint32_t payload_ln = p(get<0>(e), &parsed);
+
+				EXPECT_EQ(payload_ln, get<1>(e));
+
+				vector<uint8_t> expected = get<2>(e);
+				if ( expected.empty() )
+				{
+					EXPECT_EQ(parsed, nullptr);
+				}
+				else
+				{
+					for ( int i = 0; i < expected.size(); i++ )
+					{
+						EXPECT_EQ(parsed[i], expected[i]);
+					}
+				}
+			}
+		}
 
 		static string getTempDir(const std::string& prefix)
 		{
@@ -383,26 +411,30 @@ TEST_F(PayloaderTest, testInsertOutOfFileBounds)
 
 TEST_F(PayloaderTest, testParsePlainBytes)
 {
-	const char* arg = "dead0bea";
-	const char* arg0 = "";
-	const char* arg1 = "ead0bea";
+	const char* arg0 = "dead0bea";
+	const char* arg1 = "";
+	const char* arg2 = "ead0bea";
 
-	unsigned char* parsed;
-	uint32_t payload_ln = payloadParsePlainBytes(arg, &parsed);
-	unsigned char expected[] = { 222, 173, 11, 234 };
+	unsigned char* parsed0;
+	unsigned char* parsed1 = nullptr;
+	unsigned char* parsed2 = nullptr;
 
-	EXPECT_EQ(payload_ln, 4);
+	uint32_t payload0_ln = payloadParsePlainBytes(arg0, &parsed0);
+	unsigned char expected0[] = { 222, 173, 11, 234 };
+
+	EXPECT_EQ(payload0_ln, 4);
 
 	for ( int i = 0; i < 4; i++ )
-		EXPECT_EQ(parsed[i], expected[i]);
+		EXPECT_EQ(parsed0[i], expected0[i]);
 
-	unsigned char* parsed0 = nullptr;
-	unsigned char* parsed1 = nullptr;
-	uint32_t payload0_ln = payloadParsePlainBytes(arg0, &parsed0);
 	uint32_t payload1_ln = payloadParsePlainBytes(arg1, &parsed1);
+	uint32_t payload2_ln = payloadParsePlainBytes(arg2, &parsed2);
 
-	EXPECT_EQ(parsed0, nullptr);
+	EXPECT_EQ(payload1_ln, 4);
+	EXPECT_EQ(payload2_ln, 4);
+
 	EXPECT_EQ(parsed1, nullptr);
+	EXPECT_EQ(parsed2, nullptr);
 }
 
 TEST_F(PayloaderTest, testParseReversedPlainBytes)
@@ -434,56 +466,85 @@ TEST_F(PayloaderTest, testParseReversedPlainBytes)
 
 TEST_F(PayloaderTest, testParseString)
 {
-	const char* arg0 = "\"dead bea\"";
-	const char* arg1 = "\"";
-	const char* arg2 = "\"a";
-	unsigned char* parsed = nullptr;
+	const char* arg0 = "dead bea";
+	const char* arg1 = "";
+	const char* arg2 = "a";
+	unsigned char* parsed0 = nullptr;
 	unsigned char* parsed1 = nullptr;
 	unsigned char* parsed2 = nullptr;
 
-	uint32_t payload0_ln = payloadParseString(arg0, &parsed);
-	unsigned char expected[] = { 100, 101, 97, 100, 32, 98, 101, 97 };
-	uint32_t expexted_ln = 8;
-
-	EXPECT_EQ(payload0_ln, expexted_ln);
-
-	for ( int i = 0; i < expexted_ln; i++ )
-		EXPECT_EQ(parsed[i], expected[i]);
-
+	uint32_t payload0_ln = payloadParseString(arg0, &parsed0);
 	uint32_t payload1_ln = payloadParseString(arg1, &parsed1);
-	uint32_t payload2_ln = payloadParseString(arg2, &parsed1);
+	uint32_t payload2_ln = payloadParseString(arg2, &parsed2);
+
+	unsigned char expected0[] = { 100, 101, 97, 100, 32, 98, 101, 97 };
+	uint32_t expexted0_ln = 8;
+	unsigned char expected2[] = { 97 };
+	uint32_t expexted2_ln = 1;
+
+	EXPECT_EQ(payload0_ln, expexted0_ln);
+
+	for ( int i = 0; i < expexted0_ln; i++ )
+		EXPECT_EQ(parsed0[i], expected0[i]);
+
+	for ( int i = 0; i < expexted2_ln; i++ )
+		EXPECT_EQ(parsed2[i], expected2[i]);
 
 	EXPECT_EQ(payload1_ln, 0);
-	EXPECT_EQ(payload2_ln, 0);
+	EXPECT_EQ(payload2_ln, 1);
 
 	EXPECT_EQ(parsed1, nullptr);
-	EXPECT_EQ(parsed2, nullptr);
 }
 
 TEST_F(PayloaderTest, testParseByte)
 {
-	const char* arg0 = "bDE";
-	const char* arg1 = "b0E";
-	const char* arg2 = "b";
-	unsigned char* parsed0 = nullptr;
-	unsigned char* parsed1 = nullptr;
-	unsigned char* parsed2 = nullptr;
-	uint32_t payload0_ln = payloadParseByte(arg0, &parsed0);
-	uint32_t payload1_ln = payloadParseByte(arg1, &parsed1);
-	uint32_t payload2_ln = payloadParseByte(arg2, &parsed1);
+	using TV = tuple<const char*, uint32_t, vector<uint8_t>>;
+	vector<TV> tv = {
+			TV("DE", 1, {0xDE}),
+			TV("E", 1, {0x0E}),
+			TV("", 0, {}),
+			TV("aaa", 0, {}),
+	};
 
-	unsigned char expected0[] = { 222 };
-	unsigned char expected1[] = { 14 };
+	assertPayloadParser(tv, payloadParseByte);
+}
 
-	uint32_t expexted_ln = 1;
+TEST_F(PayloaderTest, testParseWord)
+{
+	vector<TV> tv = {
+			TV("DEEE", 2, {0xEE, 0xDE}),
+			TV("E", 2, {0x0E, 0x00}),
+			TV("", 0, {}),
+			TV("aaeea", 0, {}),
+	};
 
-	EXPECT_EQ(payload0_ln, expexted_ln);
-	EXPECT_EQ(payload1_ln, expexted_ln);
-	EXPECT_EQ(payload2_ln, 0);
+	assertPayloadParser(tv, payloadParseWord);
+}
 
-	EXPECT_EQ(parsed0[0], expected0[0]);
-	EXPECT_EQ(parsed1[0], expected1[0]);
-	EXPECT_EQ(parsed2, nullptr);
+TEST_F(PayloaderTest, testParseDWord)
+{
+	using TV = tuple<const char*, uint32_t, vector<uint8_t>>;
+	vector<TV> tv = {
+			TV("DEADBEAF", 4, {0xAF, 0xBE, 0xAD, 0xDE}),
+			TV("E", 4, {0x0E, 0x00, 0x00, 0x00}),
+			TV("", 0, {}),
+			TV("aaeeaaeea", 0, {}),
+	};
+
+	assertPayloadParser(tv, payloadParseDWord);
+}
+
+TEST_F(PayloaderTest, testParseQWord)
+{
+	using TV = tuple<const char*, uint32_t, vector<uint8_t>>;
+	vector<TV> tv = {
+			TV("fedcba9876543210", 8, {0x10, 0x32, 0x54, 0x76, 0x98, 0xba, 0xdc, 0xfe}),
+			TV("E", 8, {0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}),
+			TV("", 0, {}),
+			TV("aaeeaaeeaaeeaaeea", 0, {}),
+	};
+
+	assertPayloadParser(tv, payloadParseQWord);
 }
 
 #endif
