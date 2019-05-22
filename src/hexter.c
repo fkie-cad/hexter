@@ -19,17 +19,19 @@ uint64_t file_size;
 char file_name[PATH_MAX];
 uint64_t start;
 uint64_t length;
-uint8_t offset_col_f;
-uint8_t ascii_only;
-uint8_t hex_only;
 uint8_t clean_printing;
+
+uint8_t print_col_mask;
+uint8_t print_offset_mask;
+uint8_t print_hex_mask;
+uint8_t print_ascii_mask;
 
 uint8_t insert_f;
 uint8_t overwrite_f;
 uint8_t find_f;
 
 int payload_arg_id;
-const char* vs = "1.3.4";
+const char* vs = "1.3.5";
 
 const char FORMAT_ASCII = 'a';
 const char FORMAT_BYTE = 'b';
@@ -47,7 +49,7 @@ void parseArgs(int argc, char **argv);
 uint8_t isArgOfType(char* arg, char* type);
 uint8_t isFormatArgOfType(char* arg, char* type);
 uint8_t hasValue(char* type, int i, int end_i);
-void sanitizeOffsets();
+void sanitizeParams();
 uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload);
 
 // TODO:
@@ -76,8 +78,7 @@ int main(int argc, char **argv)
 	debug_info("file_size: %lu\n", file_size);
 	debug_info("start: %lu\n", start);
 	debug_info("length: %lu\n", length);
-	debug_info("ascii only: %d\n", ascii_only);
-	debug_info("hex only: %d\n", hex_only);
+	debug_info("print_col_mask only: %d\n", print_col_mask);
 	debug_info("insert: %d\n", insert_f);
 	debug_info("overwrite: %d\n", overwrite_f);
 	debug_info("find: %d\n", find_f);
@@ -98,7 +99,7 @@ int main(int argc, char **argv)
 		overwrite(payload, payload_ln);
 
 	file_size = getSize(file_name);
-	sanitizeOffsets();
+	sanitizeParams();
 
 	if ( find_f )
 	{
@@ -121,13 +122,18 @@ void initParameters()
 	file_size = 0;
 	start = 0;
 	length = DEFAULT_LENGTH;
-	ascii_only = 0;
-	hex_only = 0;
-	clean_printing = 0;
+
 	insert_f = 0;
 	overwrite_f = 0;
 	find_f = 0;
 	payload_arg_id = -1;
+
+	clean_printing = 0;
+
+	print_col_mask = 0;
+	print_offset_mask = 4;
+	print_hex_mask = 2;
+	print_ascii_mask = 1;
 }
 
 void printUsage()
@@ -146,7 +152,7 @@ void printHelp()
 		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n"
-		   " * -c Clean output (no text formatin in the console).\n"
+		   " * -c Clean output (no text formating in the console).\n"
 		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -fx Find hex byte sequence. Where x is an format option.\n"
@@ -192,12 +198,12 @@ void parseArgs(int argc, char **argv)
 
 		if ( isArgOfType(argv[i], "-x"))
 		{
-			hex_only = 1;
+			print_col_mask = print_col_mask | print_hex_mask;
 			arg_found = 1;
 		}
 		if ( arg_found == 0 && isArgOfType(argv[i], "-a"))
 		{
-			ascii_only = 1;
+			print_col_mask = print_col_mask | print_ascii_mask;
 			arg_found = 1;
 		}
 		if ( arg_found == 0 && isArgOfType(argv[i], "-c"))
@@ -318,7 +324,7 @@ uint8_t hasValue(char* type, int i, int end_i)
 	return 1;
 }
 
-void sanitizeOffsets()
+void sanitizeParams()
 {
 	uint8_t info_line_break = 0;
 	if ( start > file_size )
@@ -343,6 +349,8 @@ void sanitizeOffsets()
 
 	if ( info_line_break )
 		printf("\n");
+
+
 }
 
 uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload)

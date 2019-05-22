@@ -16,7 +16,9 @@
 #define BLOCKSIZE_LARGE 0x400
 
 #define DEFAULT_LENGTH 0x50
+//#define DEFAULT_ASCII_LENGTH 0x80
 
+#define TRIPLE_COL_SIZE 0x10
 #define DOUBLE_COL_SIZE 0x10
 #define ASCII_COL_SIZE 0x40
 #define HEX_COL_SIZE 0x10
@@ -34,8 +36,12 @@ extern char file_name[PATH_MAX];
 
 extern uint64_t start;
 extern uint64_t length;
-extern uint8_t ascii_only;
-extern uint8_t hex_only;
+
+extern uint8_t print_col_mask;
+extern uint8_t print_offset_mask;
+extern uint8_t print_hex_mask;
+extern uint8_t print_ascii_mask;
+
 extern uint8_t clean_printing;
 
 extern uint8_t insert_f;

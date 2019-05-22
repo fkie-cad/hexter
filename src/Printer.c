@@ -12,6 +12,7 @@
 #include "Printer.h"
 #include "Globals.h"
 #include "utils/common_fileio.h"
+#include "utils/Helper.h"
 
 void (*printHexValue)(uint8_t);
 
@@ -28,7 +29,6 @@ void (*printHexValue)(uint8_t);
  */
 void print()
 {
-	uint8_t ascii_hex_print = (ascii_only == 0 && hex_only == 0) || (ascii_only == 1 && hex_only == 1);
 	uint64_t p;
 	FILE* fi;
 	unsigned char* block = NULL;
@@ -39,6 +39,7 @@ void print()
 	uint64_t size;
 	uint64_t parts = length / block_size;
 	if ( length % block_size != 0 ) parts++;
+	uint8_t offset_width = 0;
 
 	debug_info("start: %lu\n", start);
 	debug_info("end: %lu\n", end);
@@ -83,6 +84,10 @@ void print()
 	printHexValue = &printCleanHexValue;
 #endif
 
+	offset_width = countHexWidth64(end);
+
+	debug_info("offset_width %u\n", offset_width);
+
 	for ( p = 0; p < parts; p++ )
 	{
 		debug_info("%lu / %lu\n", (p+1), parts);
@@ -98,11 +103,22 @@ void print()
 			break;
 		}
 
-		if ( ascii_hex_print )
+//		printf("print_col_mask: %u\n", print_col_mask);
+//		printf("print_ascii_mask: %u\n", print_ascii_mask);
+//		printf("print_hex_mask: %u\n", print_hex_mask);
+//		printf("print_ascii_mask | print_hex_mask: %u\n", print_ascii_mask | print_hex_mask);
+//		printf("print_col_mask & (print_ascii_mask | print_hex_mask): %u\n", print_col_mask & (print_ascii_mask | print_hex_mask));
+
+		if ( print_col_mask == 0 )
+			print_col_mask = (print_offset_mask | print_ascii_mask | print_hex_mask);
+
+		if ( print_col_mask == (print_offset_mask | print_ascii_mask | print_hex_mask) )
+			printTripleCols(block, size, block_start, offset_width);
+		else if ( print_col_mask == (print_ascii_mask | print_hex_mask) )
 			printDoubleCols(block, size);
-		else if ( ascii_only == 1 )
+		else if ( print_col_mask == print_ascii_mask )
 			printAsciiCols(block, size);
-		else if ( hex_only == 1 )
+		else if ( print_col_mask == print_hex_mask )
 			printHexCols(block, size);
 //		else if ( offset_ascii_hex_print )
 //			printTripleCol(block, size);
@@ -135,6 +151,34 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 
 		printf("\n");
 	}
+}
+
+void printTripleCols(unsigned char* block, uint64_t size, uint64_t start, uint8_t width)
+{
+	uint64_t i;
+	uint64_t offset = start;
+	uint8_t k = 0;
+
+	for ( i = 0; i < size; i += TRIPLE_COL_SIZE )
+	{
+		printOffsetCol(offset, width);
+		k = printHexCol(block, i, size, TRIPLE_COL_SIZE);
+
+		fillGap(k);
+
+		printf("%c ", COL_SEPARATOR);
+
+		printAsciiCol(block, i, size, TRIPLE_COL_SIZE);
+
+		printf("\n");
+
+		offset += TRIPLE_COL_SIZE;
+	}
+}
+
+void printOffsetCol(uint64_t offset, uint8_t width)
+{
+	printf("%0*lx: ", width, offset);
 }
 
 void fillGap(uint8_t k)

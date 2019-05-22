@@ -50,7 +50,7 @@ class HexterTest : public testing::Test
 				" * -l:uint64_t Length of the part to display. Default = 50.",
 				" * -a ASCII only print.",
 				" * -x HEX only print.",
-				" * -c Clean output (no text formatin in the console).",
+				" * -c Clean output (no text formating in the console).",
 				" * -i Insert hex byte sequence (destructive!).",
 				" * -o Overwrite hex byte sequence (destructive!).",
 				" * -f Find hex byte sequence.",
