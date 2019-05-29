@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include "Payloader.h"
 #include "Globals.h"
@@ -220,7 +222,7 @@ void insert(unsigned char* payload, uint32_t payload_ln)
 	}
 
 	offset = start;
-	fseek(fi, start, SEEK_SET);
+	fseek(fi, offset, SEEK_SET);
 	while ( n == buf_ln )
 	{
 		n = fread(buf, 1, buf_ln, fi);
@@ -292,4 +294,49 @@ void overwrite(unsigned char* payload, uint32_t payload_ln)
 	fwrite(payload, 1, payload_ln, src);
 
 	fclose(src);
+}
+void deleteBytes(uint64_t start, uint64_t length)
+{
+	unsigned char buf[BLOCKSIZE_LARGE];
+	const int buf_ln = BLOCKSIZE_LARGE;
+	int n = buf_ln;
+	FILE* fi;
+	uint64_t offset;
+
+	if ( start > file_size )
+	{
+		return;
+	}
+
+	fi = fopen(file_name, "rb+");
+	if ( !fi )
+	{
+		printf("File %s does not exist.\n", file_name);
+		return;
+	}
+
+	offset = start;
+	fseek(fi, offset, SEEK_SET);
+	while ( n == buf_ln )
+	{
+		fseek(fi, offset, SEEK_SET);
+		n = fread(buf, 1, buf_ln, fi);
+
+		if ( offset == start )
+		{
+			fseek(fi, offset, SEEK_SET);	   	   // f: ....0123456789ABCDEF, buf = 0123456789ABCDEF, length = 4
+			fwrite(&buf[length], 1, n-length, fi); // f: ....456789ABCDEF...., buf = 0123[456789ABCDEF]
+		}
+		else
+		{
+			fseek(fi, offset-length, SEEK_SET);	 // f: ....0123456789ABCDEF, buf = 01234567, length =
+			fwrite(buf, 1, n, fi);               // f: 01234567896789ABCDEF...., buf = 01234567
+		}
+
+		offset += n;
+	}
+
+	ftruncate(fileno(fi), file_size-length);
+
+	fclose(fi);
 }

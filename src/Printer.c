@@ -109,9 +109,6 @@ void print()
 //		printf("print_ascii_mask | print_hex_mask: %u\n", print_ascii_mask | print_hex_mask);
 //		printf("print_col_mask & (print_ascii_mask | print_hex_mask): %u\n", print_col_mask & (print_ascii_mask | print_hex_mask));
 
-		if ( print_col_mask == 0 )
-			print_col_mask = (print_offset_mask | print_ascii_mask | print_hex_mask);
-
 		if ( print_col_mask == (print_offset_mask | print_ascii_mask | print_hex_mask) )
 			printTripleCols(block, size, block_start, offset_width);
 		else if ( print_col_mask == (print_ascii_mask | print_hex_mask) )

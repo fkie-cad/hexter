@@ -409,6 +409,52 @@ TEST_F(PayloaderTest, testInsertOutOfFileBounds)
 	remove(src.c_str());
 }
 
+TEST_F(PayloaderTest, testDelete)
+{
+	uint64_t binary_size = 64;
+//	string src = temp_dir+"/testDelete.hex";
+	string src = "/tmp/testDelete.tmp";
+	vector<uint8_t> bytes = createBinary(src, binary_size);
+
+	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	start = 2;
+	length = 8;
+	file_size = getSize(file_name);
+
+//	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
+	vector<uint8_t> deleted_bytes = bytes;
+	deleted_bytes.erase(deleted_bytes.begin()+start, deleted_bytes.begin()+start+length);
+
+	cout << "bytes:"<<endl;
+	for ( uint8_t p : bytes )
+		cout << hex <<setw(2)<<setfill('0')<< +p << "|";
+	cout << endl;
+	cout << "deleted bytes:"<<endl;
+	for ( uint8_t p : deleted_bytes )
+		cout << hex <<setw(2)<<setfill('0')<< +p << "|";
+	cout << endl;
+
+	deleteBytes(start, length);
+
+	ifstream check_fs(src);
+	uint64_t size = getSize(file_name);
+	cout << " new size: "<<dec<<size<<endl;
+	EXPECT_EQ(size, binary_size-length);
+	check_fs.seekg(0);
+
+	for ( int i = 0; i < size; i++ )
+	{
+		unsigned char cs;
+		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		cout<<setw(2)<<setfill('0') << i <<hex<<" g: "<<setw(2)<<setfill('0')<<+cs<<  " = "<<setw(2)<<setfill('0')<<+deleted_bytes[i]<<dec<<" :e"<<endl;
+
+		EXPECT_EQ(cs, deleted_bytes[i]);
+	}
+
+	check_fs.close();
+	remove(src.c_str());
+}
+
 TEST_F(PayloaderTest, testParsePlainBytes)
 {
 	const char* arg0 = "dead0bea";

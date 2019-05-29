@@ -15,7 +15,7 @@
 #define BLOCKSIZE 0x200
 #define BLOCKSIZE_LARGE 0x400
 
-#define DEFAULT_LENGTH 0x50
+#define DEFAULT_LENGTH 0x100
 //#define DEFAULT_ASCII_LENGTH 0x80
 
 #define TRIPLE_COL_SIZE 0x10
@@ -47,5 +47,6 @@ extern uint8_t clean_printing;
 extern uint8_t insert_f;
 extern uint8_t overwrite_f;
 extern uint8_t find_f;
+extern uint8_t delete_f;
 
 #endif

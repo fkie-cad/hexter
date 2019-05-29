@@ -27,57 +27,57 @@ class HexterTest : public testing::Test
 		const string prog_dir = "./";
 		const string prog = "hexter";
 		static string temp_dir;
-		const string vs = "1.3.0";
+		const string vs = "1.3.6";
 
 		std::random_device rd;
 		static mt19937_64* gen;
 		static uniform_int_distribution<uint8_t>* dis;
 
-		enum PrintType { HEX, ASCII, DOUBLE };
+		enum PrintType { HEX, ASCII, DOUBLE, TRIPLE };
 
 		const vector<string> missing_args_lines = {
 				"Usage: ./"+prog+" filename [options]",
 				"Usage: ./"+prog+" [options] filename",
 				"Version: "+vs,
-				"",
 		};
 
 		const vector<string> help_lines = {
 				"Usage: ./"+prog+" filename [options]",
 				"Usage: ./"+prog+" [options] filename",
 				"Version: "+vs,
-				" * -s:uint64_t Startoffset. Default = 0.",
-				" * -l:uint64_t Length of the part to display. Default = 50.",
-				" * -a ASCII only print.",
-				" * -x HEX only print.",
-				" * -c Clean output (no text formating in the console).",
-				" * -i Insert hex byte sequence (destructive!).",
-				" * -o Overwrite hex byte sequence (destructive!).",
-				" * -f Find hex byte sequence.",
-				" * -h Print this.",
-				"",
-				"Example: "+prog_dir+prog+" path/to/a.file -s 100 -l 128 -x",
-				"Example: "+prog_dir+prog+" path/to/a.file -i dead -s 0x100",
-				"Example: "+prog_dir+prog+" path/to/a.file -o 0bea -s 0x100",
-				"Example: "+prog_dir+prog+" path/to/a.file -f f001 -s 0x100",
-				""
+//				" * -s:uint64_t Startoffset. Default = 0.",
+//				" * -l:uint64_t Length of the part to display. Default = 50.",
+//				" * -a ASCII only print.",
+//				" * -x HEX only print.",
+//				" * -c Clean output (no text formating in the console).",
+//				" * -ix Insert hex byte sequence (destructive!). Where x is an format option.",
+//				" * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.",
+//				" * -fx Find hex byte sequence. Where x is an format option.",
+//				" * * Format options: h: plain bytes, a: ascii text, b: byte, w: word, d: double word, q: quad word).",
+//				"     Expect for the ascii string, all values have to be passed as hex values.",
+//				" * -d Delete -l bytes from -s.",
+//				" * -h Print this.",
+//				"",
+//				"Example: "+prog_dir+prog+" path/to/a.file -s 100 -l 128 -x",
+//				"Example: "+prog_dir+prog+" path/to/a.file -ih dead -s 0x100",
+//				"Example: "+prog_dir+prog+" path/to/a.file -oh 0bea -s 0x100",
+//				"Example: "+prog_dir+prog+" path/to/a.file -fh f001 -s 0x100",
+//				"Example: "+prog_dir+prog+" path/to/a.file -d -s 0x100 -l 0x8",
+//				"",
 		};
 
 		const vector<string> unknown_args_lines = {
 				"INFO: Unknown arg type \"-x0\"",
 				"File a does not exist.",
-				""
 		};
 
 		const vector<string> not_passed_value_args_lines = {
 				"INFO: Arg \"-s\" has no value! Skipped!",
 				"File a does not exist.",
-				""
 		};
 
 		const vector<string> incompatible_args_lines = {
-				"ERROR: overwrite, insert and find have to be used exclusively!",
-				""
+				"ERROR: overwrite, insert, delete and find have to be used exclusively!",
 		};
 
 		static string getTempDir(const std::string& prefix)
@@ -145,7 +145,7 @@ class HexterTest : public testing::Test
 			return lines;
 		}
 
-		void callApp(const vector<string>& argv, const vector<string>& expected_lines)
+		void callApp(const vector<string>& argv, const vector<string>& expected_lines, bool resize=false)
 		{
 			string args = "";
 			for ( string a : argv ) args = args.append(a + " ");
@@ -154,11 +154,12 @@ class HexterTest : public testing::Test
 			openFile(command, fi);
 			vector<string> lines = getResult(fi);
 
-			lines.resize(expected_lines.size());
+			if ( resize )
+				lines.resize(expected_lines.size());
 
-			cout << "lines"<<endl;
-			for ( string s : lines )
-				cout << s << endl;
+//			cout << "lines"<<endl;
+//			for ( string s : lines )
+//				cout << s << endl;
 
 			fclose(fi);
 			EXPECT_EQ(lines, expected_lines);
@@ -166,8 +167,10 @@ class HexterTest : public testing::Test
 
 		vector<string> getExpectedLines(vector<uint8_t> bytes, PrintType type, uint64_t start, uint64_t length);
 		void getDoubleCols(vector<uint8_t>& block, vector<string>& lines);
+		void getTripleCols(vector<uint8_t>& block, vector<string>& lines, uint64_t start);
 		void getHexCols(vector<uint8_t>& block, vector<string>& lines);
 		void getAsciiCols(vector<uint8_t>& block, vector<string>& lines, uint8_t col_size);
+		void fillOffsetCol(uint64_t offset, uint8_t width, stringstream& ss);
 		uint64_t fillHexCol(uint64_t i, vector<uint8_t>& block, stringstream& ss);
 		void fillAsciiCol(uint64_t i, vector<uint8_t>& block, stringstream& ss, uint8_t col_size) const;
 
@@ -214,9 +217,9 @@ TEST_F(HexterTest, testMainWithFalseFormatedArgs)
 
 TEST_F(HexterTest, testMainWithIncompatibleArgs)
 {
-	const vector<string> argv_fo = {"a -f 10 -o 10"};
-	const vector<string> argv_fi = {"a -f 10 -i 10"};
-	const vector<string> argv_io = {"a -i 10 -o 10"};
+	const vector<string> argv_fo = {"a -fh 10 -oh 10"};
+	const vector<string> argv_fi = {"a -fh 10 -ih 10"};
+	const vector<string> argv_io = {"a -ih 10 -d"};
 
 	callApp(argv_fo, incompatible_args_lines);
 	callApp(argv_fi, incompatible_args_lines);
@@ -227,7 +230,7 @@ TEST_F(HexterTest, testMainWithHelpArg)
 {
 	const vector<string> argv = {"-h a"};
 
-	callApp(argv, help_lines);
+	callApp(argv, help_lines, true);
 }
 
 TEST_F(HexterTest, testMainWithNotExistingFile)
@@ -240,12 +243,12 @@ TEST_F(HexterTest, testMainWithNotExistingFile)
 
 TEST_F(HexterTest, testMainWithRandomFile)
 {
-	uint64_t binary_size = 128;
+	uint64_t binary_size = DEFAULT_LENGTH;
 	string src = temp_dir+"/testMainWithRandomFile.bind";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 	const vector<string> argv = {src};
 
-	vector<string> expected_lines = getExpectedLines(bytes, DOUBLE, 0, 0x50);
+	vector<string> expected_lines = getExpectedLines(bytes, TRIPLE, 0, DEFAULT_LENGTH);
 
 	callApp(argv, expected_lines);
 
@@ -259,20 +262,20 @@ TEST_F(HexterTest, testMainWithRandomFileNegativeArgs)
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 	const vector<string> argv = {src, "-s -10", "-l -100"};
 
-	vector<string> expected_lines = {"Error: -10 could not be converted to a number: is negative!"};
-	callApp(argv, expected_lines);
+	vector<string> expected_lines = {"Error: -10 could not be converted to a number: is negative!", "Error: -100 could not be converted to a number: is negative!", "INFO: Could not parse start, setting to 0!", "INFO: Could not parse length, setting to 256!", "Info: Start offset 0 plus length 256 is greater the the file size 128", "Printing only to file size."};
+	callApp(argv, expected_lines, true);
 
 	const vector<string> argv2 = {src, "-s 10", "-l -100"};
-	vector<string> expected_lines2 = {"Error: -100 could not be converted to a number: is negative!"};
-	callApp(argv2, expected_lines2);
+	vector<string> expected_lines2 = {"Error: -100 could not be converted to a number: is negative!", "INFO: Could not parse length, setting to 256!", "Info: Start offset 10 plus length 256 is greater the the file size 128", "Printing only to file size."};
+	callApp(argv2, expected_lines2, true);
 
 	const vector<string> argv3 = {src, "-s dd", "-l -100"};
-	vector<string> expected_lines3 = {"Error: dd could not be converted to a number: Not a number!"};
-	callApp(argv3, expected_lines3);
+	vector<string> expected_lines3 = {"Error: dd could not be converted to a number: Not a number!", "Error: -100 could not be converted to a number: is negative!", "INFO: Could not parse start, setting to 0!", "INFO: Could not parse length, setting to 256!", "Info: Start offset 0 plus length 256 is greater the the file size 128", "Printing only to file size."};
+	callApp(argv3, expected_lines3, true);
 
 	const vector<string> argv4 = {src, "-s 10", "-l ff"};
-	vector<string> expected_lines4 = {"Error: ff could not be converted to a number: Not a number!"};
-	callApp(argv4, expected_lines4);
+	vector<string> expected_lines4 = {"Error: ff could not be converted to a number: Not a number!", "INFO: Could not parse length, setting to 256!", "Info: Start offset 10 plus length 256 is greater the the file size 128", "Printing only to file size."};
+	callApp(argv4, expected_lines4, true);
 
 	remove(src.c_str());
 }
@@ -284,7 +287,7 @@ TEST_F(HexterTest, testMainWithRandomFileCustomParams)
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 	const vector<string> argv = {src, "-s 0x10", "-l 0x100"};
 
-	vector<string> expected_lines = getExpectedLines(bytes, DOUBLE, 0x10, 0x100);
+	vector<string> expected_lines = getExpectedLines(bytes, TRIPLE, 0x10, 0x100);
 
 	callApp(argv, expected_lines);
 
@@ -298,7 +301,7 @@ TEST_F(HexterTest, testMainWithRandomFileHexOnlyPrint)
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 	const vector<string> argv = {src, "-x"};
 
-	vector<string> expected_lines = getExpectedLines(bytes, HEX, 0x0, 0x50);
+	vector<string> expected_lines = getExpectedLines(bytes, HEX, 0x0, DEFAULT_LENGTH);
 
 	callApp(argv, expected_lines);
 
@@ -312,7 +315,7 @@ TEST_F(HexterTest, testMainWithRandomFileAsciiOnlyPrint)
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 	const vector<string> argv = {src, "-a"};
 
-	vector<string> expected_lines = getExpectedLines(bytes, ASCII, 0x0, 0x50);
+	vector<string> expected_lines = getExpectedLines(bytes, ASCII, 0x0, DEFAULT_LENGTH);
 
 	callApp(argv, expected_lines);
 
@@ -321,6 +324,10 @@ TEST_F(HexterTest, testMainWithRandomFileAsciiOnlyPrint)
 
 vector<string> HexterTest::getExpectedLines(vector<uint8_t> bytes, PrintType type, uint64_t start, uint64_t length)
 {
+	if ( start + length > bytes.size() )
+	{
+		length = bytes.size() - start;
+	}
 	uint64_t end = start + length;
 	uint16_t block_size = BLOCKSIZE_LARGE;
 	uint64_t block_start = start;
@@ -343,6 +350,8 @@ vector<string> HexterTest::getExpectedLines(vector<uint8_t> bytes, PrintType typ
 			getAsciiCols(block, lines, ASCII_COL_SIZE);
 		else if ( type == DOUBLE )
 			getDoubleCols(block, lines);
+		else if ( type == TRIPLE )
+			getTripleCols(block, lines, start);
 
 		block_start += block_size;
 	}
@@ -374,6 +383,39 @@ void HexterTest::getDoubleCols(vector<uint8_t>& block, vector<string>& lines)
 
 		lines.emplace_back(ss.str());
 	}
+}
+
+void HexterTest::getTripleCols(vector<uint8_t>& block, vector<string>& lines, uint64_t start)
+{
+	uint64_t k = 0;
+	uint8_t width = 4;
+
+	for ( uint64_t i = 0; i < block.size(); i += DOUBLE_COL_SIZE )
+	{
+		stringstream ss;
+		fillOffsetCol(start+i, width, ss);
+		k = fillHexCol(i, block, ss);
+
+		uint8_t gap = DOUBLE_COL_SIZE - k;
+		if ( gap > 0 )
+		{
+			for ( k = 0; k < gap; k++ )
+			{
+				ss << "   ";
+			}
+		}
+
+		ss << COL_SEPARATOR << " ";
+
+		fillAsciiCol(i, block, ss, DOUBLE_COL_SIZE);
+
+		lines.emplace_back(ss.str());
+	}
+}
+
+void HexterTest::fillOffsetCol(uint64_t offset, uint8_t width, stringstream& ss)
+{
+	ss << hex << setw(width)<<setfill('0')<<offset<<": ";
 }
 
 void HexterTest::getAsciiCols(vector<uint8_t>& block, vector<string>& lines, uint8_t col_size)
@@ -439,7 +481,7 @@ TEST_F(HexterTest, testOverwrite)
 	uint64_t binary_size = 0x50;
 	string src = temp_dir+"/testOverwrite.bla";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
-	const vector<string> argv = {src, "-o 0000dead0bea0000", "-x"};
+	const vector<string> argv = {src, "-oh 0000dead0bea0000", "-x", "-l 0x50"};
 	uint32_t start = 0x0;
 	uint32_t length = 0x50;
 
@@ -481,7 +523,7 @@ TEST_F(HexterTest, testInsert)
 		payloaded_bytes.insert(payloaded_bytes.begin() + (start + i), pl[i]);
 		pl_ss << hex << setw(2) << setfill('0') << +pl[i];
 	}
-	const vector<string> argv = {src, "-i "+pl_ss.str(), "-s "+to_string(start), "-x"};
+	const vector<string> argv = {src, "-ih "+pl_ss.str(), "-s "+to_string(start), "-l "+to_string(length), "-x"};
 	for ( string arg : argv ) cout << arg << endl;
 
 	vector<string> expected_lines = getExpectedLines(payloaded_bytes, HEX, start, length);
@@ -498,29 +540,54 @@ TEST_F(HexterTest, testInsert)
 TEST_F(HexterTest, testFind)
 {
 	uint64_t binary_size = 0x60;
-	string src = temp_dir+"/testInsert.bla";
+	string src = temp_dir+"/testDelete.bla";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
-	uint32_t start = 0x0;
-	uint32_t length = 0x50;
-	unsigned char pl[] = {
-			0,0,222,173,11,234,0,0
-	};
+	uint32_t start = 0x10;
+	uint32_t length = 0x10;
 	uint32_t payload_ln = 8;
-	vector<uint8_t> payloaded_bytes(bytes.begin(), bytes.end());
+	vector<uint8_t> pl(bytes.begin()+start, bytes.end()+start+payload_ln);
 	stringstream pl_ss;
 	for ( int i = 0; i < payload_ln; i++ )
 	{
-		payloaded_bytes.insert(payloaded_bytes.begin() + (start + i), pl[i]);
 		pl_ss << hex << setw(2) << setfill('0') << +pl[i];
 	}
-	const vector<string> argv = {src, "-i "+pl_ss.str(), "-s "+to_string(start), "-x"};
+	const vector<string> argv = {src, "-fh "+pl_ss.str(), "-l "+to_string(length), "-x"};
 	for ( string arg : argv ) cout << arg << endl;
 
-	vector<string> expected_lines = getExpectedLines(payloaded_bytes, HEX, start, length);
+	vector<string> expected_lines = getExpectedLines(bytes, HEX, start, length);
 
-	cout << "expected_lines"<<endl;
-	for ( string s : expected_lines )
-		cout << s << endl;
+//	cout << "expected_lines"<<endl;
+//	for ( string s : expected_lines )
+//		cout << s << endl;
+
+	callApp(argv, expected_lines);
+
+	remove(src.c_str());
+}
+
+TEST_F(HexterTest, testDelete)
+{
+	uint64_t binary_size = 0x60;
+	uint32_t start = 0x10;
+	uint32_t length = 0x10;
+
+	string src = temp_dir+"/testFind.bla";
+	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> deleted_bytes = bytes;
+	deleted_bytes.erase(deleted_bytes.begin()+start, deleted_bytes.begin()+start+length);
+
+	const vector<string> argv = {src, "-d ", "-s "+to_string(start), "-l "+to_string(length), "-x"};
+	for ( string arg : argv ) cout << arg << endl;
+
+	vector<string> expected_lines = getExpectedLines(deleted_bytes, HEX, start, DEFAULT_LENGTH);
+
+//	cout << "bytes"<<endl;
+//	for ( uint8_t b : bytes )
+//		cout << hex<<+b << " ";
+//	cout << endl;
+//	cout << "expected_lines"<<endl;
+//	for ( string s : expected_lines )
+//		cout << s << endl;
 
 	callApp(argv, expected_lines);
 

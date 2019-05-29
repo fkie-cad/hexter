@@ -29,9 +29,10 @@ uint8_t print_ascii_mask;
 uint8_t insert_f;
 uint8_t overwrite_f;
 uint8_t find_f;
+uint8_t delete_f;
 
 int payload_arg_id;
-const char* vs = "1.3.5";
+const char* vs = "1.3.6";
 
 const char FORMAT_ASCII = 'a';
 const char FORMAT_BYTE = 'b';
@@ -40,12 +41,12 @@ const char FORMAT_D_WORD = 'd';
 const char FORMAT_Q_WORD = 'q';
 const char FORMAT_PLAIN_HEX = 'h';
 
-const char format_types[] = { FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
+const char format_types[] = {FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX};
 int format_types_ln = 6;
 
 void printUsage();
 void initParameters();
-void parseArgs(int argc, char **argv);
+void parseArgs(int argc, char** argv);
 uint8_t isArgOfType(char* arg, char* type);
 uint8_t isFormatArgOfType(char* arg, char* type);
 uint8_t hasValue(char* type, int i, int end_i);
@@ -55,24 +56,24 @@ uint32_t parsePayload(const char* arg, const char* value, unsigned char** payloa
 // TODO:
 // + search option
 // + string, byte, (d/q)word,
-// - column to show file offset
-// - delete option
+// + column to show file offset
+// + delete option
 // - reversed payload, endianess option for hex and word payload
 // - interactive more/scroll
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    if ( argc < 2 )
-    {
-        printUsage();
-        return -1;
-    }
+	if ( argc < 2 )
+	{
+		printUsage();
+		return -1;
+	}
 
 	initParameters();
 	parseArgs(argc, argv);
 
 	file_size = getSize(file_name);
-    if ( file_size == 0 ) return 0;
+	if ( file_size == 0 ) return 0;
 
 	debug_info("file_name: %s\n", file_name);
 	debug_info("file_size: %lu\n", file_size);
@@ -82,15 +83,16 @@ int main(int argc, char **argv)
 	debug_info("insert: %d\n", insert_f);
 	debug_info("overwrite: %d\n", overwrite_f);
 	debug_info("find: %d\n", find_f);
+	debug_info("delete: %d\n", delete_f);
 	debug_info("\n");
 
 	unsigned char* payload = NULL;
 	uint32_t payload_ln = 0;
 
-	if ( (insert_f || overwrite_f || find_f) && payload_arg_id >= 0 )
+	if ((insert_f || overwrite_f || find_f) && payload_arg_id >= 0 )
 	{
-		payload_ln = parsePayload(argv[payload_arg_id], argv[payload_arg_id+1], &payload);
-		if ( payload == NULL ) exit(0);
+		payload_ln = parsePayload(argv[payload_arg_id], argv[payload_arg_id + 1], &payload);
+		if ( payload == NULL) exit(0);
 	}
 
 	if ( insert_f )
@@ -104,14 +106,19 @@ int main(int argc, char **argv)
 	if ( find_f )
 	{
 		start = find(payload, payload_ln);
-		if ( start == UINT64_MAX )
+		if ( start == UINT64_MAX)
 			printf("Pattern not found!\n");
 	}
+	else if ( delete_f )
+	{
+		deleteBytes(start, length);
+		length = DEFAULT_LENGTH;
+	}
 
-	if ( start < UINT64_MAX )
+	if ( start < UINT64_MAX)
 		print();
 
-	if ( payload != NULL )
+	if ( payload != NULL)
 		free(payload);
 
 	return 0;
@@ -126,6 +133,7 @@ void initParameters()
 	insert_f = 0;
 	overwrite_f = 0;
 	find_f = 0;
+	delete_f = 0;
 	payload_arg_id = -1;
 
 	clean_printing = 0;
@@ -156,25 +164,28 @@ void printHelp()
 		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -fx Find hex byte sequence. Where x is an format option.\n"
-		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte in hex, %c: word in hex, %c: double word, %c: quad word).\n"
+		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte, %c: word, %c: double word, %c: quad word).\n"
 		   "     Expect for the ascii string, all values have to be passed as hex values.\n"
 		   //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
+		   " * -d Delete -l bytes from offset -s.\n"
 		   " * -h Print this.\n",
 		   FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
-		   );
+	);
 	printf("\n");
-	printf("Example: ./%s path/to/a.file -s 100 -l 128 -x\n",BINARYNAME);
-	printf("Example: ./%s path/to/a.file -i dead -s 0x100\n",BINARYNAME);
-	printf("Example: ./%s path/to/a.file -o 0bea -s 0x100\n",BINARYNAME);
-	printf("Example: ./%s path/to/a.file -fp f001 -s 0x100\n",BINARYNAME);
+	printf("Example: ./%s path/to/a.file -s 100 -l 128 -x\n", BINARYNAME);
+	printf("Example: ./%s path/to/a.file -ih dead -s 0x100\n", BINARYNAME);
+	printf("Example: ./%s path/to/a.file -oh 0bea -s 0x100\n", BINARYNAME);
+	printf("Example: ./%s path/to/a.file -fh f001 -s 0x100\n", BINARYNAME);
+	printf("Example: ./%s path/to/a.file -d -s 0x100 -l 0x8\n", BINARYNAME);
 }
 
-void parseArgs(int argc, char **argv)
+void parseArgs(int argc, char** argv)
 {
 	int start_i = 1;
 	int end_i = argc - 1;
 	int i, s;
 	uint8_t arg_found = 0;
+	uint8_t length_found = 0;
 
 	if ( isArgOfType(argv[1], "-h"))
 	{
@@ -185,7 +196,7 @@ void parseArgs(int argc, char **argv)
 	if ( argv[1][0] != '-' )
 	{
 		expandFilePath(argv[1], file_name);
-		start_i  = 2;
+		start_i = 2;
 		end_i = argc;
 	}
 
@@ -211,15 +222,20 @@ void parseArgs(int argc, char **argv)
 			clean_printing = 1;
 			arg_found = 1;
 		}
+		if ( arg_found == 0 && isArgOfType(argv[i], "-d"))
+		{
+			delete_f = 1;
+			arg_found = 1;
+		}
 		if ( arg_found == 0 && isArgOfType(argv[i], "-s"))
 		{
 			arg_found = 1;
-			if ( hasValue("-s", i, end_i) )
+			if ( hasValue("-s", i, end_i))
 			{
 				s = parseUint64Auto(argv[i + 1], &start);
 				if ( s != 0 )
 				{
-					printf("INFO: Could not parse start, setting to %u!\n", 0);
+					printf("INFO: Could not parse start. Setting it to %u!\n", 0);
 					start = 0x00;
 				}
 				i++;
@@ -228,21 +244,23 @@ void parseArgs(int argc, char **argv)
 		if ( arg_found == 0 && isArgOfType(argv[i], "-l"))
 		{
 			arg_found = 1;
-			if ( hasValue("-l", i, end_i) )
+			if ( hasValue("-l", i, end_i))
 			{
 				s = parseUint64Auto(argv[i + 1], &length);
 				if ( s != 0 )
 				{
-					printf("INFO: Could not parse length, setting to %u!\n", DEFAULT_LENGTH);
+					printf("INFO: Could not parse length. Setting it to %u!\n", DEFAULT_LENGTH);
 					length = DEFAULT_LENGTH;
 				}
+				else
+					length_found = 1;
 				i++;
 			}
 		}
 		if ( arg_found == 0 && isFormatArgOfType(argv[i], "-i"))
 		{
 			arg_found = 1;
-			if ( hasValue("-i", i, end_i) )
+			if ( hasValue("-i", i, end_i))
 			{
 				insert_f = 1;
 				payload_arg_id = i;
@@ -252,7 +270,7 @@ void parseArgs(int argc, char **argv)
 		if ( arg_found == 0 && isFormatArgOfType(argv[i], "-o"))
 		{
 			arg_found = 1;
-			if ( hasValue("-o", i, end_i) )
+			if ( hasValue("-o", i, end_i))
 			{
 				overwrite_f = 1;
 				payload_arg_id = i;
@@ -262,7 +280,7 @@ void parseArgs(int argc, char **argv)
 		if ( arg_found == 0 && isFormatArgOfType(argv[i], "-f"))
 		{
 			arg_found = 1;
-			if ( hasValue("-f", i, end_i) )
+			if ( hasValue("-f", i, end_i))
 			{
 				find_f = 1;
 				payload_arg_id = i;
@@ -276,9 +294,15 @@ void parseArgs(int argc, char **argv)
 		}
 	}
 
-	if ( (find_f + overwrite_f + insert_f) > 1 )
+	if ((find_f + overwrite_f + insert_f + delete_f) > 1 )
 	{
-		printf("ERROR: overwrite, insert and find have to be used exclusively!\n");
+		printf("ERROR: overwrite, insert, delete and find have to be used exclusively!\n");
+		exit(0);
+	}
+
+	if ( delete_f && !length_found )
+	{
+		printf("ERROR: could not parse length of part to delete!\n");
 		exit(0);
 	}
 
@@ -315,7 +339,7 @@ uint8_t isFormatArgOfType(char* arg, char* type)
 
 uint8_t hasValue(char* type, int i, int end_i)
 {
-	if ( i >= end_i -1 )
+	if ( i >= end_i - 1 )
 	{
 		printf("INFO: Arg \"%s\" has no value! Skipped!\n", type);
 		return 0;
@@ -326,6 +350,9 @@ uint8_t hasValue(char* type, int i, int end_i)
 
 void sanitizeParams()
 {
+	if ( print_col_mask == 0 )
+		print_col_mask = (print_offset_mask | print_ascii_mask | print_hex_mask);
+
 	uint8_t info_line_break = 0;
 	if ( start > file_size )
 	{
@@ -335,7 +362,8 @@ void sanitizeParams()
 	}
 	if ( start + length > file_size )
 	{
-		fprintf(stdout, "Info: Start offset %lu plus length %lu is greater the the file size %lu\nPrinting only to file size.\n",
+		fprintf(stdout,
+				"Info: Start offset %lu plus length %lu is greater the the file size %lu\nPrinting only to file size.\n",
 				start, length, file_size);
 		length = file_size - start;
 		info_line_break = 1;

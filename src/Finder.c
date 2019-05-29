@@ -24,6 +24,7 @@ uint64_t find(const unsigned char* needle, uint32_t needle_ln)
 	uint64_t i, j, offset;
 	uint16_t* failure;
 	uint64_t found = -1;
+	uint8_t col_size = 0;
 
 	fi = fopen(file_name, "rb");
 	if ( !fi )
@@ -71,28 +72,19 @@ uint64_t find(const unsigned char* needle, uint32_t needle_ln)
 	free(failure);
 	fclose(fi);
 
+//	if ( print_col_mask == (print_offset_mask | print_ascii_mask | print_hex_mask) )
+//		col_size = TRIPLE_COL_SIZE;
+//	else if ( print_col_mask == (print_ascii_mask | print_hex_mask) )
+//		col_size = DOUBLE_COL_SIZE;
+//	else if ( print_col_mask == print_ascii_mask )
+//		col_size = ASCII_COL_SIZE;
+//	else if ( print_col_mask == print_hex_mask )
+//		col_size = HEX_COL_SIZE;
+//
+//	found -= (found % col_size);
+
 	return found;
 }
-
-//int indexOf(byte[] data, byte[] pattern)
-//{
-//	if (data.length == 0) return -1;
-//
-//	int[] failure = new int[pattern.length];
-//	computeFailure(pattern, failure);
-//	int j = 0;
-//
-//	for (int i = 0; i < data.length; i++) {
-//		while (j > 0 && pattern[j] != data[i]) {
-//			j = failure[j - 1];
-//		}
-//		if (pattern[j] == data[i]) { j++; }
-//		if (j == pattern.length) {
-//			return i - pattern.length + 1;
-//		}
-//	}
-//	return -1;
-//}
 
 /**
  * Computes the failure function using a boot-strapping process,
