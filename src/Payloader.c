@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#if defined(LINUX)
+	#include <unistd.h>
+#endif
 #include <sys/types.h>
 
 #include "Payloader.h"
@@ -336,7 +338,11 @@ void deleteBytes(uint64_t start, uint64_t length)
 		offset += n;
 	}
 
-	ftruncate(fileno(fi), file_size-length);
+#if defined(LINUX)
+	ftruncate(_fileno(fi), file_size-length);
+#elif defined(_WIN32)
+	_chsize(_fileno(fi), file_size-length);
+#endif
 
 	fclose(fi);
 }

@@ -41,7 +41,7 @@ const char FORMAT_D_WORD = 'd';
 const char FORMAT_Q_WORD = 'q';
 const char FORMAT_PLAIN_HEX = 'h';
 
-const char format_types[] = {FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX};
+const char format_types[6] = {'a', 'b', 'w', 'd', 'q', 'h'};
 int format_types_ln = 6;
 
 void printUsage();

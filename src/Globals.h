@@ -5,6 +5,14 @@
 #include <stddef.h>
 #include <limits.h>
 
+#if defined(__linux__) || defined(__linux) || defined(linux)
+	#define LINUX
+#endif
+
+#if defined(_WIN32)
+	#define _fseeki64(f, o, t) fseek(f, o, t)
+#endif
+
 #define DEBUG_PRINT_INFO 0
 #define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
 
