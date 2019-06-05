@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(LINUX)
+#if defined(__linux__) || defined(__linux) || defined(linux)
 	#include <unistd.h>
 #endif
 #include <sys/types.h>
@@ -338,8 +338,8 @@ void deleteBytes(uint64_t start, uint64_t length)
 		offset += n;
 	}
 
-#if defined(LINUX)
-	ftruncate(_fileno(fi), file_size-length);
+#if defined(__linux__) || defined(__linux) || defined(linux)
+	ftruncate(fileno(fi), file_size-length);
 #elif defined(_WIN32)
 	_chsize(_fileno(fi), file_size-length);
 #endif
