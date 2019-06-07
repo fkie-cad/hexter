@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting big files and offsets.
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.3.6  
-Last changed: 2019.05.29
+1.4.0  
+Last changed: 2019.06.07
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  
@@ -44,20 +44,51 @@ Optional Parameters:
  * -l:uint64_t Length of the part to display in hex or dec. Default = 0x50.
  * -a ASCII only print.
  * -x HEX only print.
- * -c for a clean, not ANSI formated output. 
- * -i insert hex byte sequence (hex only, no "0x" needed) [in progress]
- * -o overwrite hex byte sequence (hex only, no "0x" needed)
+ * -p For a plain, not styled text output. 
+ * -ix Insert hex byte sequence (destructive!). Where x is an format option.
+ * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.
+ * -fx Find hex byte sequence. Where x is an format option.
+ * Format options: 
+   * h: plain bytes, 
+   * a: ascii text, 
+   * b: byte, 
+   * w: word, 
+   * d: double word, 
+   * q: quad word.  
+   Expect for the ascii string, all values have to be passed as hex values.
+ * -d Delete -l bytes from offset -s.
+ * -b Force breaking, not continuous mode and print just one block.
+ * -h Print this.
+
+The program runs in continuous mode by default, expect for the -i, -o and -d option, or if the -b option is set.
+Step through the file by pressing ENTER.
+Quit with "q" or any other key.
 
 Examples:  
 Print 100 bytes from offset 20 in hex only style.
 ```bash
 $ ./hexter a/file/name -s 20 -l 100 -x
 ```
-Overwrite bytes at offset 0x20 with 0xdead0bea
+
+Insert bytes at offset 0x20 with 0xdead0bea
 ```bash
-$ ./hexter a/file/name -s 0x20 -o dead0bea
+$ ./hexter a/file/name -s 0x20 -ih dead0bea
 ```
 
+Overwrite dword at offset 0x20 with 0xdead0bea
+```bash
+$ ./hexter a/file/name -s 0x20 -od dead0bea
+```
+
+Find ascii string "PE"
+```bash
+$ ./hexter a/file/name -fa PE
+```
+
+Delete 16 bytes from offset 16
+```bash
+$ ./hexter a/file/name -d -s 16 -l 16
+```
 
 ## TESTS ##
 ### REQUIREMENTS ###

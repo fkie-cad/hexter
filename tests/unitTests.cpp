@@ -3,6 +3,7 @@
 #include "utils/ConverterTest.h"
 #include "utils/HelperTest.h"
 #include "FinderTest.h"
+#include "KeyStrokeTest.h"
 #include "PayloaderTest.h"
 #include "HexterTest.h"
 

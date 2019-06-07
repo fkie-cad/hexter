@@ -30,9 +30,10 @@ uint8_t insert_f;
 uint8_t overwrite_f;
 uint8_t find_f;
 uint8_t delete_f;
+uint8_t continuous_f;
 
 int payload_arg_id;
-const char* vs = "1.3.6";
+const char* vs = "1.4.0";
 
 const char FORMAT_ASCII = 'a';
 const char FORMAT_BYTE = 'b';
@@ -60,7 +61,8 @@ uint32_t parsePayload(const char* arg, const char* value, unsigned char** payloa
 // + delete option
 // - reversed payload, endianess option for hex and word payload
 // - interactive more/scroll
-
+// - align offset to 0x10
+// - highlight found part
 int main(int argc, char** argv)
 {
 	if ( argc < 2 )
@@ -116,7 +118,8 @@ int main(int argc, char** argv)
 	}
 
 	if ( start < UINT64_MAX)
-		print();
+		printC();
+//		print();
 
 	if ( payload != NULL)
 		free(payload);
@@ -130,6 +133,7 @@ void initParameters()
 	start = 0;
 	length = DEFAULT_LENGTH;
 
+	continuous_f = 1;
 	insert_f = 0;
 	overwrite_f = 0;
 	find_f = 0;
@@ -156,18 +160,20 @@ void printHelp()
 	printf("Usage: ./%s filename [options]\n", BINARYNAME);
 	printf("Usage: ./%s [options] filename\n", BINARYNAME);
 	printf("Version: %s\n", vs);
+	printf("Options:\n");
 	printf(" * -s:uint64_t Startoffset. Default = 0.\n"
 		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n"
-		   " * -c Clean output (no text formating in the console).\n"
+		   " * -p Plain, not styled text output.\n"
 		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -fx Find hex byte sequence. Where x is an format option.\n"
-		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte, %c: word, %c: double word, %c: quad word).\n"
+		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte, %c: word, %c: double word, %c: quad word.\n"
 		   "     Expect for the ascii string, all values have to be passed as hex values.\n"
 		   //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
 		   " * -d Delete -l bytes from offset -s.\n"
+		   " * -b Force breaking, not continuous mode.\n"
 		   " * -h Print this.\n",
 		   FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
 	);
@@ -184,7 +190,6 @@ void parseArgs(int argc, char** argv)
 	int start_i = 1;
 	int end_i = argc - 1;
 	int i, s;
-	uint8_t arg_found = 0;
 	uint8_t length_found = 0;
 
 	if ( isArgOfType(argv[1], "-h"))
@@ -205,32 +210,29 @@ void parseArgs(int argc, char** argv)
 		if ( argv[i][0] != '-' )
 			break;
 
-		arg_found = 0;
-
-		if ( isArgOfType(argv[i], "-x"))
+		if ( isArgOfType(argv[i], "-x") )
 		{
 			print_col_mask = print_col_mask | print_hex_mask;
-			arg_found = 1;
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-a"))
+		else if ( isArgOfType(argv[i], "-a") )
 		{
 			print_col_mask = print_col_mask | print_ascii_mask;
-			arg_found = 1;
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-c"))
+		else if ( isArgOfType(argv[i], "-p") )
 		{
 			clean_printing = 1;
-			arg_found = 1;
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-d"))
+		else if ( isArgOfType(argv[i], "-d") )
 		{
 			delete_f = 1;
-			arg_found = 1;
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-s"))
+		else if ( isArgOfType(argv[i], "-b") )
 		{
-			arg_found = 1;
-			if ( hasValue("-s", i, end_i))
+			continuous_f = 0;
+		}
+		else if ( isArgOfType(argv[i], "-s") )
+		{
+			if ( hasValue("-s", i, end_i) )
 			{
 				s = parseUint64Auto(argv[i + 1], &start);
 				if ( s != 0 )
@@ -241,10 +243,9 @@ void parseArgs(int argc, char** argv)
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isArgOfType(argv[i], "-l"))
+		else if ( isArgOfType(argv[i], "-l") )
 		{
-			arg_found = 1;
-			if ( hasValue("-l", i, end_i))
+			if ( hasValue("-l", i, end_i) )
 			{
 				s = parseUint64Auto(argv[i + 1], &length);
 				if ( s != 0 )
@@ -257,9 +258,8 @@ void parseArgs(int argc, char** argv)
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isFormatArgOfType(argv[i], "-i"))
+		else if ( isFormatArgOfType(argv[i], "-i") )
 		{
-			arg_found = 1;
 			if ( hasValue("-i", i, end_i))
 			{
 				insert_f = 1;
@@ -267,9 +267,8 @@ void parseArgs(int argc, char** argv)
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isFormatArgOfType(argv[i], "-o"))
+		else if ( isFormatArgOfType(argv[i], "-o") )
 		{
-			arg_found = 1;
 			if ( hasValue("-o", i, end_i))
 			{
 				overwrite_f = 1;
@@ -277,9 +276,8 @@ void parseArgs(int argc, char** argv)
 				i++;
 			}
 		}
-		if ( arg_found == 0 && isFormatArgOfType(argv[i], "-f"))
+		else if ( isFormatArgOfType(argv[i], "-f") )
 		{
-			arg_found = 1;
 			if ( hasValue("-f", i, end_i))
 			{
 				find_f = 1;
@@ -287,8 +285,7 @@ void parseArgs(int argc, char** argv)
 				i++;
 			}
 		}
-
-		if ( !arg_found )
+		else
 		{
 			printf("INFO: Unknown arg type \"%s\"\n", argv[i]);
 		}
@@ -350,8 +347,25 @@ uint8_t hasValue(char* type, int i, int end_i)
 
 void sanitizeParams()
 {
+	int col_size;
+
 	if ( print_col_mask == 0 )
 		print_col_mask = (print_offset_mask | print_ascii_mask | print_hex_mask);
+
+	if ( insert_f || overwrite_f || delete_f )
+		continuous_f = 0;
+
+	if ( continuous_f )
+	{
+		col_size = HEX_COL_SIZE;
+		if ( print_col_mask == print_ascii_mask )
+			col_size = ASCII_COL_SIZE;
+
+		if ( length % col_size != 0 )
+		{
+			length = length + col_size - (length % col_size);
+		}
+	}
 
 	uint8_t info_line_break = 0;
 	if ( start > file_size )
@@ -377,8 +391,6 @@ void sanitizeParams()
 
 	if ( info_line_break )
 		printf("\n");
-
-
 }
 
 uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload)

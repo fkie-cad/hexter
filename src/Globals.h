@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <limits.h>
 
-#if defined(_WIN32)
+#if defined(_WIN64)
 	#define _fseeki64(f, o, t) fseek(f, o, t)
 #endif
 
@@ -52,5 +52,6 @@ extern uint8_t insert_f;
 extern uint8_t overwrite_f;
 extern uint8_t find_f;
 extern uint8_t delete_f;
+extern uint8_t continuous_f;
 
 #endif

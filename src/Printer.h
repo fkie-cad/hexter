@@ -2,6 +2,9 @@
 #define HEXTER_SRC_PRINTER_H
 
 void print();
+void printC();
+void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start);
+uint64_t printBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start);
 void printDoubleCols(unsigned char* block, uint64_t size);
 void printTripleCols(unsigned char* block, uint64_t size, uint64_t start, uint8_t width);
 void fillGap(uint8_t k);

@@ -6,6 +6,7 @@ if ( ${GTEST_FOUND} )
 		${CMAKE_CURRENT_SOURCE_DIR}/${G_TESTS_DIR}/utils/ConverterTest.h
 		${CMAKE_CURRENT_SOURCE_DIR}/${G_TESTS_DIR}/utils/HelperTest.h
 		${CMAKE_CURRENT_SOURCE_DIR}/${G_TESTS_DIR}/FinderTest.h
+		${CMAKE_CURRENT_SOURCE_DIR}/${G_TESTS_DIR}/KeyStrokeTest.h
 		${CMAKE_CURRENT_SOURCE_DIR}/${G_TESTS_DIR}/PayloaderTest.h
 		${CMAKE_CURRENT_SOURCE_DIR}/${G_TESTS_DIR}/HexterTest.h
 		)

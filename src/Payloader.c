@@ -297,6 +297,7 @@ void overwrite(unsigned char* payload, uint32_t payload_ln)
 
 	fclose(src);
 }
+
 void deleteBytes(uint64_t start, uint64_t length)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];

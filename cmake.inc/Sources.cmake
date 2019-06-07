@@ -5,6 +5,8 @@ set(UTILS_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Helper.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Converter.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Converter.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/TerminalUtil.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/TerminalUtil.c
 	)
 set(HEXTER_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Globals.h

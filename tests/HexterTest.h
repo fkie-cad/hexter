@@ -45,6 +45,7 @@ class HexterTest : public testing::Test
 				"Usage: ./"+prog+" filename [options]",
 				"Usage: ./"+prog+" [options] filename",
 				"Version: "+vs,
+				"Options:",
 //				" * -s:uint64_t Startoffset. Default = 0.",
 //				" * -l:uint64_t Length of the part to display. Default = 50.",
 //				" * -a ASCII only print.",
