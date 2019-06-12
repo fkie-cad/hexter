@@ -23,115 +23,115 @@ void (*printHexValue)(uint8_t);
 	WORD wOldColorAttrs;
 #endif
 
-/**
- * Prints the values depending on the mode.
- *
- * If block_size % col_size != 0 some more adjustments have to be taken to the col printings.
- * I.e. the index has to be passed and return and the new line has to check for block and size.
- */
-void print()
-{
-	uint64_t p;
-	FILE* fi;
-	unsigned char* block = NULL;
-	uint64_t block_start = start;
-	uint64_t end = block_start + length;
-	uint16_t block_size = BLOCKSIZE_LARGE;
-	uint64_t read_size = 0;
-	uint64_t size;
-	uint64_t nr_of_parts = length / block_size;
-	if ( length % block_size != 0 ) nr_of_parts++;
-	uint8_t offset_width = 0;
-
-	debug_info("start: %lu\n", start);
-	debug_info("end: %lu\n", end);
-	debug_info("block_size: %d\n", block_size);
-	debug_info("block_start: %lu\n", block_start);
-	debug_info("nr_of_parts: %lu\n", nr_of_parts);
-	debug_info("\n");
-
-	fi = fopen(file_name, "rb");
-	if ( !fi )
-	{
-		printf("File %s does not exist.\n", file_name);
-		return;
-	}
-
-	block = (unsigned char*) malloc(block_size);
-	if ( !block )
-	{
-		printf("Malloc block failed.\n");
-		return;
-	}
-
-#ifdef CLEAN_PRINTING
-	printHexValue = &printCleanHexValue;
-#elif defined(__linux__) || defined(__linux) || defined(linux)
-	if ( clean_printing || !isatty(fileno(stdout)) )
-		printHexValue = &printCleanHexValue;
-	else
-		printHexValue = &printAnsiFormatedHexValue;
-#elif defined(_WIN32)
-	if ( clean_printing || !isatty(fileno(stdout)) )
-		printHexValue = &printCleanHexValue;
-	else
-	{
-		hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-		CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
-		GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
-		wOldColorAttrs = csbiInfo.wAttributes;
-		printHexValue = &printWinFormatedHexValue;
-	}
-#else
-	printHexValue = &printCleanHexValue;
-#endif
-
-	offset_width = countHexWidth64(end);
-
-	debug_info("offset_width %u\n", offset_width);
-
-	for ( p = 0; p < nr_of_parts; p++ )
-	{
-		debug_info("%lu / %lu\n", (p+1), nr_of_parts);
-		read_size = block_size;
-		if ( block_start + read_size > end ) read_size = end - block_start;
-		debug_info(" - read_size: %lu\n", read_size);
-
-		memset(block, 0, block_size);
-		size = readFile(fi, block_start, read_size, block);
-		if ( !size )
-		{
-			fprintf(stderr, "Reading block of bytes failed!\n");
-			break;
-		}
-
-//		printf("print_col_mask: %u\n", print_col_mask);
-//		printf("print_ascii_mask: %u\n", print_ascii_mask);
-//		printf("print_hex_mask: %u\n", print_hex_mask);
-//		printf("print_ascii_mask | print_hex_mask: %u\n", print_ascii_mask | print_hex_mask);
-//		printf("print_col_mask & (print_ascii_mask | print_hex_mask): %u\n", print_col_mask & (print_ascii_mask | print_hex_mask));
-
-		if ( print_col_mask == (print_offset_mask | print_ascii_mask | print_hex_mask) )
-			printTripleCols(block, size, block_start, offset_width);
-		else if ( print_col_mask == (print_ascii_mask | print_hex_mask) )
-			printDoubleCols(block, size);
-		else if ( print_col_mask == print_ascii_mask )
-			printAsciiCols(block, size);
-		else if ( print_col_mask == print_hex_mask )
-			printHexCols(block, size);
-//		else if ( offset_ascii_hex_print )
-//			printTripleCol(block, size);
-//		else if ( offset_hex_print )
-//			printOffsetHexCol(block, size);
-//		else if ( offset_ascii_print )
-//			printOffsetAsciiCol(block, size);
-
-		block_start += block_size;
-	}
-
-	free(block);
-	fclose(fi);
-}
+///**
+// * Prints the values depending on the mode.
+// *
+// * If block_size % col_size != 0 some more adjustments have to be taken to the col printings.
+// * I.e. the index has to be passed and return and the new line has to check for block and size.
+// */
+//void print()
+//{
+//	uint64_t p;
+//	FILE* fi;
+//	unsigned char* block = NULL;
+//	uint64_t block_start = start;
+//	uint64_t end = block_start + length;
+//	uint16_t block_size = BLOCKSIZE_LARGE;
+//	uint64_t read_size = 0;
+//	uint64_t size;
+//	uint64_t nr_of_parts = length / block_size;
+//	if ( length % block_size != 0 ) nr_of_parts++;
+//	uint8_t offset_width = 0;
+//
+//	debug_info("start: %lu\n", start);
+//	debug_info("end: %lu\n", end);
+//	debug_info("block_size: %d\n", block_size);
+//	debug_info("block_start: %lu\n", block_start);
+//	debug_info("nr_of_parts: %lu\n", nr_of_parts);
+//	debug_info("\n");
+//
+//	fi = fopen(file_name, "rb");
+//	if ( !fi )
+//	{
+//		printf("File %s does not exist.\n", file_name);
+//		return;
+//	}
+//
+//	block = (unsigned char*) malloc(block_size);
+//	if ( !block )
+//	{
+//		printf("Malloc block failed.\n");
+//		return;
+//	}
+//
+//#ifdef CLEAN_PRINTING
+//	printHexValue = &printCleanHexValue;
+//#elif defined(__linux__) || defined(__linux) || defined(linux)
+//	if ( clean_printing || !isatty(fileno(stdout)) )
+//		printHexValue = &printCleanHexValue;
+//	else
+//		printHexValue = &printAnsiFormatedHexValue;
+//#elif defined(_WIN32)
+//	if ( clean_printing || !isatty(fileno(stdout)) )
+//		printHexValue = &printCleanHexValue;
+//	else
+//	{
+//		hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+//		CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+//		GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
+//		wOldColorAttrs = csbiInfo.wAttributes;
+//		printHexValue = &printWinFormatedHexValue;
+//	}
+//#else
+//	printHexValue = &printCleanHexValue;
+//#endif
+//
+//	offset_width = countHexWidth64(end);
+//
+//	debug_info("offset_width %u\n", offset_width);
+//
+//	for ( p = 0; p < nr_of_parts; p++ )
+//	{
+//		debug_info("%lu / %lu\n", (p+1), nr_of_parts);
+//		read_size = block_size;
+//		if ( block_start + read_size > end ) read_size = end - block_start;
+//		debug_info(" - read_size: %lu\n", read_size);
+//
+//		memset(block, 0, block_size);
+//		size = readFile(fi, block_start, read_size, block);
+//		if ( !size )
+//		{
+//			fprintf(stderr, "Reading block of bytes failed!\n");
+//			break;
+//		}
+//
+////		printf("print_col_mask: %u\n", print_col_mask);
+////		printf("print_ascii_mask: %u\n", print_ascii_mask);
+////		printf("print_hex_mask: %u\n", print_hex_mask);
+////		printf("print_ascii_mask | print_hex_mask: %u\n", print_ascii_mask | print_hex_mask);
+////		printf("print_col_mask & (print_ascii_mask | print_hex_mask): %u\n", print_col_mask & (print_ascii_mask | print_hex_mask));
+//
+//		if ( print_col_mask == (print_offset_mask | print_ascii_mask | print_hex_mask) )
+//			printTripleCols(block, size, block_start, offset_width);
+//		else if ( print_col_mask == (print_ascii_mask | print_hex_mask) )
+//			printDoubleCols(block, size);
+//		else if ( print_col_mask == print_ascii_mask )
+//			printAsciiCols(block, size);
+//		else if ( print_col_mask == print_hex_mask )
+//			printHexCols(block, size);
+////		else if ( offset_ascii_hex_print )
+////			printTripleCol(block, size);
+////		else if ( offset_hex_print )
+////			printOffsetHexCol(block, size);
+////		else if ( offset_ascii_print )
+////			printOffsetAsciiCol(block, size);
+//
+//		block_start += block_size;
+//	}
+//
+//	free(block);
+//	fclose(fi);
+//}
 
 /**
  * Prints the values depending on the mode.
@@ -191,7 +191,7 @@ void printC()
 
 	block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
 
-	if ( continuous_f )
+	if ( continuous_f && block_start < file_size )
 		printBlockLoop(nr_of_parts, block, fi, block_size, block_start);
 
 	free(block);

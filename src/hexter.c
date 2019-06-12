@@ -60,9 +60,10 @@ uint32_t parsePayload(const char* arg, const char* value, unsigned char** payloa
 // + column to show file offset
 // + delete option
 // - reversed payload, endianess option for hex and word payload
-// - interactive more/scroll
-// - align offset to 0x10
+// + interactive more/scroll
+// - align offset to 0x10, print spaces to fill col up
 // - highlight found part
+// - continuouse find typing 'n'
 int main(int argc, char** argv)
 {
 	if ( argc < 2 )
@@ -355,12 +356,12 @@ void sanitizeParams()
 	if ( insert_f || overwrite_f || delete_f )
 		continuous_f = 0;
 
+	col_size = HEX_COL_SIZE;
+	if ( print_col_mask == print_ascii_mask )
+		col_size = ASCII_COL_SIZE;
+
 	if ( continuous_f )
 	{
-		col_size = HEX_COL_SIZE;
-		if ( print_col_mask == print_ascii_mask )
-			col_size = ASCII_COL_SIZE;
-
 		if ( length % col_size != 0 )
 		{
 			length = length + col_size - (length % col_size);
@@ -391,6 +392,13 @@ void sanitizeParams()
 
 	if ( info_line_break )
 		printf("\n");
+
+
+//	if ( start % col_size != 0 )
+//	{
+//		//skip_bytes = start % col_size
+//		start = start + col_size - (start % col_size);
+//	}
 }
 
 uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload)
