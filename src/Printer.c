@@ -5,10 +5,12 @@
 #if defined(__linux__) || defined(__linux) || defined(linux)
 	#include <unistd.h>
 	#include "utils/TerminalUtil.h"
+	#define ENTER 10 // aka \n
 #endif
 #if defined(_WIN32)
 	#include <conio.h>
 	#include <windows.h>
+	#define ENTER 13 // aka \r
 #endif
 
 #include "Printer.h"
@@ -206,7 +208,7 @@ void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 	{
 		input = getch();
 
-		if ( input != 10 )
+		if ( input != ENTER )
 			break;
 
 		block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
