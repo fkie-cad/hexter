@@ -34,7 +34,7 @@ uint8_t delete_f;
 uint8_t continuous_f;
 
 int payload_arg_id;
-const char* vs = "1.4.0";
+const char* vs = "1.4.1";
 
 const char FORMAT_ASCII = 'a';
 const char FORMAT_BYTE = 'b';

@@ -4,7 +4,7 @@ A minimal terminal hex viewer supporting big files and offsets.
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.4.0  
+1.4.1  
 Last changed: 2019.06.07
 
 ## REQUIREMENTS ##
