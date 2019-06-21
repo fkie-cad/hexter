@@ -1,5 +1,5 @@
-#ifndef G_TESTS_PAYLOADER_TEST_H
-#define G_TESTS_PAYLOADER_TEST_H
+#ifndef G_TESTS_WRITER_TEST_H
+#define G_TESTS_WRITER_TEST_H
 
 #include <cerrno>
 
@@ -21,11 +21,11 @@
 #include "../src/utils/Helper.c"
 #include "../src/Globals.h"
 #define BLOCKSIZE_LARGE 0x10
-#include "../src/Payloader.c"
+#include "../src/Writer.c"
 
 using namespace std;
 
-class PayloaderTest : public testing::Test
+class WriterTest : public testing::Test
 {
 	protected:
 		static string temp_dir;
@@ -108,7 +108,7 @@ class PayloaderTest : public testing::Test
 			gen = new mt19937_64(rd());
 			dis = new uniform_int_distribution<uint8_t>(0, UINT8_MAX);
 
-			temp_dir = getTempDir("PayloaderTest");
+			temp_dir = getTempDir("WriterTest");
 		}
 
 		static void TearDownTestCase()
@@ -119,16 +119,16 @@ class PayloaderTest : public testing::Test
 			rmdir(temp_dir.c_str());
 		}
 };
-mt19937_64* PayloaderTest::gen = nullptr;
-uniform_int_distribution<uint8_t>* PayloaderTest::dis = nullptr;
-string PayloaderTest::temp_dir;
+mt19937_64* WriterTest::gen = nullptr;
+uniform_int_distribution<uint8_t>* WriterTest::dis = nullptr;
+string WriterTest::temp_dir;
 
 
-TEST_F(PayloaderTest, testOverwriteInFile)
+TEST_F(WriterTest, testOverwriteInFile)
 {
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testOverwriteInFile.bind";
-//	string src = "/tmp/PayloaderTestSrc.tmp";
+//	string src = "/tmp/WriterTestSrc.tmp";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 
 	unsigned char pl[] = {
@@ -166,11 +166,11 @@ TEST_F(PayloaderTest, testOverwriteInFile)
 	remove(src.c_str());
 }
 
-TEST_F(PayloaderTest, testOverwriteOverEndOfFile)
+TEST_F(WriterTest, testOverwriteOverEndOfFile)
 {
 	uint64_t binary_size = 8;
 //	string src = temp_dir+"/testOverwriteOverEndOfFile.bind";
-	string src = "/tmp/PayloaderTestSrc.tmp";
+	string src = "/tmp/WriterTestSrc.tmp";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 
 	unsigned char pl[] = {
@@ -212,11 +212,11 @@ TEST_F(PayloaderTest, testOverwriteOverEndOfFile)
 	remove(src.c_str());
 }
 
-TEST_F(PayloaderTest, testOverwriteOutOfFile)
+TEST_F(WriterTest, testOverwriteOutOfFile)
 {
 	uint64_t binary_size = 64;
 //	string src = temp_dir+"/testOverwriteOutOfFile.bind";
-	string src = "/tmp/PayloaderTestSrc.tmp";
+	string src = "/tmp/WriterTestSrc.tmp";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 
 	unsigned char pl[] = {
@@ -261,7 +261,7 @@ TEST_F(PayloaderTest, testOverwriteOutOfFile)
 	remove(src.c_str());
 }
 
-TEST_F(PayloaderTest, testInsertInFile)
+TEST_F(WriterTest, testInsertInFile)
 {
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testInsertInFile.hex";
@@ -303,7 +303,7 @@ TEST_F(PayloaderTest, testInsertInFile)
 	remove(src.c_str());
 }
 
-TEST_F(PayloaderTest, testInsertOverFileBounds)
+TEST_F(WriterTest, testInsertOverFileBounds)
 {
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testInsertOverFileBounds.hex";
@@ -358,7 +358,7 @@ TEST_F(PayloaderTest, testInsertOverFileBounds)
 	remove(src.c_str());
 }
 
-TEST_F(PayloaderTest, testInsertOutOfFileBounds)
+TEST_F(WriterTest, testInsertOutOfFileBounds)
 {
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testInsertOutOfFileBounds.hex";
@@ -409,7 +409,7 @@ TEST_F(PayloaderTest, testInsertOutOfFileBounds)
 	remove(src.c_str());
 }
 
-TEST_F(PayloaderTest, testDelete)
+TEST_F(WriterTest, testDelete)
 {
 	uint64_t binary_size = 64;
 //	string src = temp_dir+"/testDelete.hex";
@@ -455,7 +455,7 @@ TEST_F(PayloaderTest, testDelete)
 	remove(src.c_str());
 }
 
-TEST_F(PayloaderTest, testParsePlainBytes)
+TEST_F(WriterTest, testParsePlainBytes)
 {
 	const char* arg0 = "dead0bea";
 	const char* arg1 = "";
@@ -483,7 +483,7 @@ TEST_F(PayloaderTest, testParsePlainBytes)
 	EXPECT_EQ(parsed2, nullptr);
 }
 
-TEST_F(PayloaderTest, testParseReversedPlainBytes)
+TEST_F(WriterTest, testParseReversedPlainBytes)
 {
 	const char* arg0 = "dead0bea";
 	const char* arg1 = "";
@@ -510,7 +510,7 @@ TEST_F(PayloaderTest, testParseReversedPlainBytes)
 	EXPECT_EQ(parsed2, nullptr);
 }
 
-TEST_F(PayloaderTest, testParseString)
+TEST_F(WriterTest, testParseString)
 {
 	const char* arg0 = "dead bea";
 	const char* arg1 = "";
@@ -542,7 +542,7 @@ TEST_F(PayloaderTest, testParseString)
 	EXPECT_EQ(parsed1, nullptr);
 }
 
-TEST_F(PayloaderTest, testParseByte)
+TEST_F(WriterTest, testParseByte)
 {
 	using TV = tuple<const char*, uint32_t, vector<uint8_t>>;
 	vector<TV> tv = {
@@ -555,7 +555,7 @@ TEST_F(PayloaderTest, testParseByte)
 	assertPayloadParser(tv, payloadParseByte);
 }
 
-TEST_F(PayloaderTest, testParseWord)
+TEST_F(WriterTest, testParseWord)
 {
 	vector<TV> tv = {
 			TV("DEEE", 2, {0xEE, 0xDE}),
@@ -567,7 +567,7 @@ TEST_F(PayloaderTest, testParseWord)
 	assertPayloadParser(tv, payloadParseWord);
 }
 
-TEST_F(PayloaderTest, testParseDWord)
+TEST_F(WriterTest, testParseDWord)
 {
 	using TV = tuple<const char*, uint32_t, vector<uint8_t>>;
 	vector<TV> tv = {
@@ -580,7 +580,7 @@ TEST_F(PayloaderTest, testParseDWord)
 	assertPayloadParser(tv, payloadParseDWord);
 }
 
-TEST_F(PayloaderTest, testParseQWord)
+TEST_F(WriterTest, testParseQWord)
 {
 	using TV = tuple<const char*, uint32_t, vector<uint8_t>>;
 	vector<TV> tv = {

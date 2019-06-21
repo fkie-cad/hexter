@@ -9,7 +9,7 @@
 #include "utils/common_fileio.h"
 #include "Finder.h"
 #include "Printer.h"
-#include "Payloader.h"
+#include "Writer.h"
 #include "utils/Converter.h"
 #include "utils/Helper.h"
 
@@ -20,6 +20,7 @@ char file_name[PATH_MAX];
 uint64_t start;
 uint64_t length;
 uint8_t clean_printing;
+uint8_t skip_bytes;
 
 uint8_t print_col_mask;
 uint8_t print_offset_mask;
@@ -108,7 +109,7 @@ int main(int argc, char** argv)
 
 	if ( find_f )
 	{
-		start = find(payload, payload_ln);
+		start = find(payload, payload_ln, start);
 		if ( start == UINT64_MAX)
 			printf("Pattern not found!\n");
 	}
@@ -119,8 +120,7 @@ int main(int argc, char** argv)
 	}
 
 	if ( start < UINT64_MAX)
-		printC();
-//		print();
+		print(start, skip_bytes);
 
 	if ( payload != NULL)
 		free(payload);
@@ -133,6 +133,7 @@ void initParameters()
 	file_size = 0;
 	start = 0;
 	length = DEFAULT_LENGTH;
+	skip_bytes = 0;
 
 	continuous_f = 1;
 	insert_f = 0;
@@ -348,7 +349,7 @@ uint8_t hasValue(char* type, int i, int end_i)
 
 void sanitizeParams()
 {
-	int col_size;
+	uint8_t col_size;
 
 	if ( print_col_mask == 0 )
 		print_col_mask = (print_offset_mask | print_ascii_mask | print_hex_mask);
@@ -356,9 +357,7 @@ void sanitizeParams()
 	if ( insert_f || overwrite_f || delete_f )
 		continuous_f = 0;
 
-	col_size = HEX_COL_SIZE;
-	if ( print_col_mask == print_ascii_mask )
-		col_size = ASCII_COL_SIZE;
+	col_size = getColSize();
 
 	if ( continuous_f )
 	{
@@ -394,11 +393,9 @@ void sanitizeParams()
 		printf("\n");
 
 
-//	if ( start % col_size != 0 )
-//	{
-//		//skip_bytes = start % col_size
-//		start = start + col_size - (start % col_size);
-//	}
+	start = normalizeOffset(start, &skip_bytes);
+	printf("start: %lu\n", start);
+	printf("skip_bytes: %u\n", skip_bytes);
 }
 
 uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload)

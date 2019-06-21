@@ -1,5 +1,5 @@
-#ifndef HEXTER_SRC_PAYLOADER_H
-#define HEXTER_SRC_PAYLOADER_H
+#ifndef HEXTER_SRC_WRITER_H
+#define HEXTER_SRC_WRITER_H
 
 uint32_t payloadParseByte(const char* arg, unsigned char** payload);
 uint32_t payloadParseWord(const char* arg, unsigned char** payload);

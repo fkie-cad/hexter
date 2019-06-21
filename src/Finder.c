@@ -5,6 +5,7 @@
 
 #include "Finder.h"
 #include "Globals.h"
+#include "utils/Helper.h"
 #include "utils/common_fileio.h"
 
 /**
@@ -14,17 +15,34 @@
  * @param needle_ln
  * @return
  */
-uint64_t find(const unsigned char* needle, uint32_t needle_ln)
+uint64_t find(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
+{
+	uint64_t found = findNeedle(needle, needle_ln, offset);
+	uint64_t n_found = findNeedle(needle, needle_ln, offset);
+	uint8_t remainder;
+
+	n_found = normalizeOffset(found, &remainder);
+
+	return found;
+}
+
+/**
+ * KMPMatch
+ *
+ * @param needle
+ * @param needle_ln
+ * @return
+ */
+uint64_t findNeedle(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
 {
 //	printf("BLOCKSIZE_LARGE: %u\n",BLOCKSIZE_LARGE);
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
 	int n = buf_ln;
 	FILE* fi;
-	uint64_t i, j, offset;
+	uint64_t i, j;
 	uint16_t* failure;
 	uint64_t found = -1;
-	uint8_t col_size = 0;
 
 	fi = fopen(file_name, "rb");
 	if ( !fi )
@@ -32,8 +50,6 @@ uint64_t find(const unsigned char* needle, uint32_t needle_ln)
 		printf("ERROR: File %s does not exist.\n", file_name);
 		return -1;
 	}
-
-	offset = start;
 
 	failure = (uint16_t*) malloc(needle_ln*sizeof(uint16_t));
 	computeFailure(needle, needle_ln, failure);
@@ -71,17 +87,6 @@ uint64_t find(const unsigned char* needle, uint32_t needle_ln)
 
 	free(failure);
 	fclose(fi);
-
-//	if ( print_col_mask == (print_offset_mask | print_ascii_mask | print_hex_mask) )
-//		col_size = TRIPLE_COL_SIZE;
-//	else if ( print_col_mask == (print_ascii_mask | print_hex_mask) )
-//		col_size = DOUBLE_COL_SIZE;
-//	else if ( print_col_mask == print_ascii_mask )
-//		col_size = ASCII_COL_SIZE;
-//	else if ( print_col_mask == print_hex_mask )
-//		col_size = HEX_COL_SIZE;
-//
-//	found -= (found % col_size);
 
 	return found;
 }

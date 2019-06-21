@@ -4,7 +4,7 @@
 #include "utils/HelperTest.h"
 #include "FinderTest.h"
 #include "KeyStrokeTest.h"
-#include "PayloaderTest.h"
+#include "WriterTest.h"
 #include "HexterTest.h"
 
 uint64_t file_size;
@@ -19,6 +19,7 @@ uint8_t clean_printing;
 uint8_t find_f;
 uint8_t insert_f;
 uint8_t overwrite_f;
+uint8_t continuous_f;
 
 int main(int argc, char **argv)
 {

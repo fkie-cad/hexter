@@ -14,6 +14,6 @@ set(HEXTER_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Finder.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Printer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Printer.c
-	${CMAKE_CURRENT_SOURCE_DIR}/src/Payloader.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/Payloader.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Writer.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Writer.c
 	)

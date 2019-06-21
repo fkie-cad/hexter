@@ -70,3 +70,27 @@ uint8_t countHexWidth64(uint64_t value)
 	}
 	return width;
 }
+
+uint64_t normalizeOffset(uint64_t offset, uint8_t* remainder)
+{
+	uint8_t col_size = getColSize();
+	*remainder = (offset % col_size);
+
+	offset -= *remainder;
+
+	return offset;
+}
+
+uint8_t getColSize()
+{
+	uint8_t col_size = 0;
+	if ( print_col_mask == (print_offset_mask | print_ascii_mask | print_hex_mask))
+		col_size = TRIPLE_COL_SIZE;
+	else if ( print_col_mask == (print_ascii_mask | print_hex_mask))
+		col_size = DOUBLE_COL_SIZE;
+	else if ( print_col_mask == print_ascii_mask )
+		col_size = ASCII_COL_SIZE;
+	else if ( print_col_mask == print_hex_mask )
+		col_size = HEX_COL_SIZE;
+	return col_size;
+}

@@ -40,6 +40,7 @@ extern char file_name[PATH_MAX];
 
 extern uint64_t start;
 extern uint64_t length;
+extern uint8_t skip_bytes;
 
 extern uint8_t print_col_mask;
 extern uint8_t print_offset_mask;

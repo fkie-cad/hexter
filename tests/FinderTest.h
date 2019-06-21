@@ -98,7 +98,7 @@ TEST_F(FinderTest, testFindInFile)
 {
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testOverwriteInFile.bind";
-//	string src = "/tmp/PayloaderTestSrc.tmp";
+//	string src = "/tmp/WriterTestSrc.tmp";
 	vector<uint8_t> bytes = createBinary(src, binary_size);
 
 	unsigned char* payload = &bytes.data()[10];
@@ -107,7 +107,7 @@ TEST_F(FinderTest, testFindInFile)
 	start = 0;
 	file_size = getSize(file_name);
 
-	uint64_t idx = find(payload, payload_ln);
+	uint64_t idx = find(payload, payload_ln, 0);
 
 	EXPECT_LT(idx, UINT64_MAX);
 
