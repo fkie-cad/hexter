@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <deque>
 
+#include "misc/Misc.h"
 #include "../src/Globals.h"
 #define BLOCKSIZE_LARGE 0x10
 #include "../src/Finder.c"
@@ -27,9 +28,7 @@ class FinderTest : public testing::Test
 	protected:
 		static string temp_dir;
 
-		std::random_device rd;
-		static mt19937_64* gen;
-		static uniform_int_distribution<uint8_t>* dis;
+		static Misc misc;
 
 		static string getTempDir(const std::string& prefix)
 		{
@@ -40,66 +39,27 @@ class FinderTest : public testing::Test
 			return string(dir);
 		}
 
-		vector<uint8_t> createBinary(const string& file_src, size_t f_size)
-		{
-			ofstream f;
-			vector<uint8_t> values;
-			values.resize(f_size);
-
-			f.open(file_src, ios::binary | std::ios::out);
-			f.clear();
-
-			for ( size_t i = 0; i < f_size; i++ )
-			{
-				uint8_t value = (*dis)(*gen);
-				uint8_t size = sizeof(value);
-				f.write(reinterpret_cast<char *>(&(value)), size);
-				values[i] = value;
-			}
-
-			f.close();
-
-			return values;
-		}
-
-		int openFile(const string& command, FILE *&fi) const
-		{
-			int errsv = errno;
-			errno = 0;
-			fi = popen(&command[0], "r");
-
-			return errsv;
-		}
-
 	public:
 		static void SetUpTestCase()
 		{
-			std::random_device rd;
-			gen = new mt19937_64(rd());
-			dis = new uniform_int_distribution<uint8_t>(0, UINT8_MAX);
-
 			temp_dir = getTempDir("FinderTest");
 		}
 
 		static void TearDownTestCase()
 		{
-			delete(gen);
-			delete(dis);
-
 			rmdir(temp_dir.c_str());
 		}
 };
-mt19937_64* FinderTest::gen = nullptr;
-uniform_int_distribution<uint8_t>* FinderTest::dis = nullptr;
+Misc FinderTest::misc;
 string FinderTest::temp_dir;
 
 
 TEST_F(FinderTest, testFindInFile)
 {
 	uint64_t binary_size = 64;
-	string src = temp_dir+"/testOverwriteInFile.bind";
+	string src = temp_dir+"/testFindInFile.rand";
 //	string src = "/tmp/WriterTestSrc.tmp";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char* payload = &bytes.data()[10];
 	uint32_t payload_ln = 8;

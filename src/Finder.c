@@ -7,9 +7,9 @@
 #include "Globals.h"
 #include "utils/Helper.h"
 #include "utils/common_fileio.h"
+#include "Printer.h"
 
 /**
- * KMPMatch
  *
  * @param needle
  * @param needle_ln
@@ -17,11 +17,15 @@
  */
 uint64_t find(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
 {
+	uint64_t n_found;
 	uint64_t found = findNeedle(needle, needle_ln, offset);
-	uint64_t n_found = findNeedle(needle, needle_ln, offset);
-	uint8_t remainder;
+	uint8_t remainder = 0;
 
 	n_found = normalizeOffset(found, &remainder);
+	if ( found == UINT64_MAX )
+		printf("Pattern not found!\n");
+	else
+		print(n_found, remainder);
 
 	return found;
 }

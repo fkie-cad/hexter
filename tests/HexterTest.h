@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include "misc/Misc.h"
 #include "../src/Globals.h"
 //#include "../src/hexter.c"
 #define BLOCKSIZE_LARGE 0x400
@@ -29,9 +30,11 @@ class HexterTest : public testing::Test
 		static string temp_dir;
 		const string vs = "1.3.6";
 
-		std::random_device rd;
-		static mt19937_64* gen;
-		static uniform_int_distribution<uint8_t>* dis;
+		static Misc misc;
+
+//		std::random_device rd;
+//		static mt19937_64* gen;
+//		static uniform_int_distribution<uint8_t>* dis;
 
 		enum PrintType { HEX, ASCII, DOUBLE, TRIPLE };
 
@@ -90,26 +93,26 @@ class HexterTest : public testing::Test
 			return string(dir);
 		}
 
-		vector<uint8_t> createBinary(const string& file_src, size_t f_size)
-		{
-			ofstream f;
-			vector<uint8_t> values;
-			values.resize(f_size);
-
-			f.open(file_src, ios::binary | std::ios::out);
-
-			for ( size_t i = 0; i < f_size; i++ )
-			{
-				uint8_t value = (*dis)(*gen);
-				uint8_t size = sizeof(value);
-				f.write(reinterpret_cast<char *>(&(value)), size);
-				values[i] = value;
-			}
-
-			f.close();
-
-			return values;
-		}
+//		vector<uint8_t> createBinary(const string& file_src, size_t f_size)
+//		{
+//			ofstream f;
+//			vector<uint8_t> values;
+//			values.resize(f_size);
+//
+//			f.open(file_src, ios::binary | std::ios::out);
+//
+//			for ( size_t i = 0; i < f_size; i++ )
+//			{
+//				uint8_t value = (*dis)(*gen);
+//				uint8_t size = sizeof(value);
+//				f.write(reinterpret_cast<char *>(&(value)), size);
+//				values[i] = value;
+//			}
+//
+//			f.close();
+//
+//			return values;
+//		}
 
 		string createCommand(const string& args) const
 		{
@@ -148,8 +151,8 @@ class HexterTest : public testing::Test
 
 		void callApp(const vector<string>& argv, const vector<string>& expected_lines, bool resize=false)
 		{
-			string args = "";
-			for ( string a : argv ) args = args.append(a + " ");
+			string args;
+			for ( const string& a : argv ) args = args.append(a).append(" ");
 			string command = createCommand(args);
 			FILE* fi = nullptr;
 			openFile(command, fi);
@@ -159,7 +162,7 @@ class HexterTest : public testing::Test
 				lines.resize(expected_lines.size());
 
 //			cout << "lines"<<endl;
-//			for ( string s : lines )
+//			for ( const string& s : lines )
 //				cout << s << endl;
 
 			fclose(fi);
@@ -180,23 +183,24 @@ class HexterTest : public testing::Test
 		static void SetUpTestCase()
 		{
 			std::random_device rd;
-			gen = new mt19937_64(rd());
-			dis = new uniform_int_distribution<uint8_t>(0, UINT8_MAX);
+//			gen = new mt19937_64(rd());
+//			dis = new uniform_int_distribution<uint8_t>(0, UINT8_MAX);
 
 			temp_dir = getTempDir("HexterTest");
 		}
 
 		static void TearDownTestCase()
 		{
-			delete(gen);
-			delete(dis);
+//			delete(gen);
+//			delete(dis);
 
 			rmdir(temp_dir.c_str());
 		}
 };
-mt19937_64* HexterTest::gen = nullptr;
-uniform_int_distribution<uint8_t>* HexterTest::dis = nullptr;
+//mt19937_64* HexterTest::gen = nullptr;
+//uniform_int_distribution<uint8_t>* HexterTest::dis = nullptr;
 string HexterTest::temp_dir;
+Misc HexterTest::misc;
 
 TEST_F(HexterTest, testMainWithoutArgs)
 {
@@ -246,7 +250,7 @@ TEST_F(HexterTest, testMainWithRandomFile)
 {
 	uint64_t binary_size = DEFAULT_LENGTH;
 	string src = temp_dir+"/testMainWithRandomFile.bind";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src};
 
 	vector<string> expected_lines = getExpectedLines(bytes, TRIPLE, 0, DEFAULT_LENGTH);
@@ -260,7 +264,7 @@ TEST_F(HexterTest, testMainWithRandomFileNegativeArgs)
 {
 	uint64_t binary_size = 128;
 	string src = temp_dir+"/testMainWithRandomFile.bind";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src, "-s -10", "-l -100"};
 
 	vector<string> expected_lines = {"Error: -10 could not be converted to a number: is negative!", "Error: -100 could not be converted to a number: is negative!", "INFO: Could not parse start, setting to 0!", "INFO: Could not parse length, setting to 256!", "Info: Start offset 0 plus length 256 is greater the the file size 128", "Printing only to file size."};
@@ -285,7 +289,7 @@ TEST_F(HexterTest, testMainWithRandomFileCustomParams)
 {
 	uint64_t binary_size = 0x200;
 	string src = temp_dir+"/testMainWithRandomFileCustomParams.bind";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src, "-s 0x10", "-l 0x100"};
 
 	vector<string> expected_lines = getExpectedLines(bytes, TRIPLE, 0x10, 0x100);
@@ -299,7 +303,7 @@ TEST_F(HexterTest, testMainWithRandomFileHexOnlyPrint)
 {
 	uint64_t binary_size = 0x100;
 	string src = temp_dir+"/testMainWithRandomFileHex.bind";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src, "-x"};
 
 	vector<string> expected_lines = getExpectedLines(bytes, HEX, 0x0, DEFAULT_LENGTH);
@@ -313,7 +317,7 @@ TEST_F(HexterTest, testMainWithRandomFileAsciiOnlyPrint)
 {
 	uint64_t binary_size = 0x100;
 	string src = temp_dir+"/testMainWithRandomFileAscii.bind";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src, "-a"};
 
 	vector<string> expected_lines = getExpectedLines(bytes, ASCII, 0x0, DEFAULT_LENGTH);
@@ -481,7 +485,7 @@ TEST_F(HexterTest, testOverwrite)
 {
 	uint64_t binary_size = 0x50;
 	string src = temp_dir+"/testOverwrite.bla";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src, "-oh 0000dead0bea0000", "-x", "-l 0x50"};
 	uint32_t start = 0x0;
 	uint32_t length = 0x50;
@@ -498,7 +502,7 @@ TEST_F(HexterTest, testOverwrite)
 	vector<string> expected_lines = getExpectedLines(bytes, HEX, start, length);
 
 	cout << "expected_lines"<<endl;
-	for ( string s : expected_lines )
+	for ( const string& s : expected_lines )
 		cout << s << endl;
 
 	callApp(argv, expected_lines);
@@ -510,7 +514,7 @@ TEST_F(HexterTest, testInsert)
 {
 	uint64_t binary_size = 0x60;
 	string src = temp_dir+"/testInsert.bla";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	uint32_t start = 0x0;
 	uint32_t length = 0x50;
 	unsigned char pl[] = {
@@ -525,12 +529,12 @@ TEST_F(HexterTest, testInsert)
 		pl_ss << hex << setw(2) << setfill('0') << +pl[i];
 	}
 	const vector<string> argv = {src, "-ih "+pl_ss.str(), "-s "+to_string(start), "-l "+to_string(length), "-x"};
-	for ( string arg : argv ) cout << arg << endl;
+	for ( const string& arg : argv ) cout << arg << endl;
 
 	vector<string> expected_lines = getExpectedLines(payloaded_bytes, HEX, start, length);
 
 	cout << "expected_lines"<<endl;
-	for ( string s : expected_lines )
+	for ( const string& s : expected_lines )
 		cout << s << endl;
 
 	callApp(argv, expected_lines);
@@ -542,7 +546,7 @@ TEST_F(HexterTest, testFind)
 {
 	uint64_t binary_size = 0x60;
 	string src = temp_dir+"/testDelete.bla";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	uint32_t start = 0x10;
 	uint32_t length = 0x10;
 	uint32_t payload_ln = 8;
@@ -553,12 +557,12 @@ TEST_F(HexterTest, testFind)
 		pl_ss << hex << setw(2) << setfill('0') << +pl[i];
 	}
 	const vector<string> argv = {src, "-fh "+pl_ss.str(), "-l "+to_string(length), "-x"};
-	for ( string arg : argv ) cout << arg << endl;
+	for ( const string& arg : argv ) cout << arg << endl;
 
 	vector<string> expected_lines = getExpectedLines(bytes, HEX, start, length);
 
 //	cout << "expected_lines"<<endl;
-//	for ( string s : expected_lines )
+//	for ( const string& s : expected_lines )
 //		cout << s << endl;
 
 	callApp(argv, expected_lines);
@@ -573,12 +577,12 @@ TEST_F(HexterTest, testDelete)
 	uint32_t length = 0x10;
 
 	string src = temp_dir+"/testFind.bla";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	vector<uint8_t> deleted_bytes = bytes;
 	deleted_bytes.erase(deleted_bytes.begin()+start, deleted_bytes.begin()+start+length);
 
 	const vector<string> argv = {src, "-d ", "-s "+to_string(start), "-l "+to_string(length), "-x"};
-	for ( string arg : argv ) cout << arg << endl;
+	for ( const string& arg : argv ) cout << arg << endl;
 
 	vector<string> expected_lines = getExpectedLines(deleted_bytes, HEX, start, DEFAULT_LENGTH);
 
@@ -587,7 +591,7 @@ TEST_F(HexterTest, testDelete)
 //		cout << hex<<+b << " ";
 //	cout << endl;
 //	cout << "expected_lines"<<endl;
-//	for ( string s : expected_lines )
+//	for ( const string& s : expected_lines )
 //		cout << s << endl;
 
 	callApp(argv, expected_lines);

@@ -18,12 +18,21 @@
 #include "utils/common_fileio.h"
 #include "utils/Helper.h"
 
+#define HEX_GAP "   "
+#define ASCII_GAP " "
+
 void (*printHexValue)(uint8_t);
+
+uint64_t
+printSkipBytes(uint64_t start, FILE* fi, unsigned char* block, uint64_t block_start, uint16_t block_size);
 
 #if defined(_WIN32)
 	HANDLE hStdout;
 	WORD wOldColorAttrs;
 #endif
+
+uint8_t skip_hex_bytes = 0;
+uint8_t skip_ascii_bytes = 0;
 
 /**
  * Prints the values depending on the mode.
@@ -81,31 +90,8 @@ void print(uint64_t start, uint8_t skip_bytes)
 	printHexValue = &printCleanHexValue;
 #endif
 
-//	if ( skip_bytes > 0 )
-//	{
-//		debug_info("skip_bytes\n");
-//		uint8_t col_size = getColSize();
-//		uint8_t read_size = col_size;
-//		uint8_t offset_width = 4;
-//		uint64_t end = start+length;
-//
-//		if ( block_start + read_size > end ) read_size = end - block_start;
-//		debug_info(" - read_size: %lu\n", read_size);
-//
-//		memset(block, 0, block_size);
-//		uint32_t size = readFile(fi, block_start, read_size, block);
-//		if ( !size )
-//		{
-//			fprintf(stderr, "Reading block of bytes failed!\n");
-//			free(block);
-//			fclose(fi);
-//			return;
-//		}
-//
-//		memset(block, 0, skip_bytes);
-//		printLine(block, block_start, size, offset_width);
-//		block_start += read_size;
-//	}
+	if ( skip_bytes > 0 )
+		skip_hex_bytes = skip_ascii_bytes = skip_bytes;
 
 	block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
 
@@ -124,10 +110,10 @@ void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 	{
 		input = getch();
 
-		if ( input != ENTER )
+		if ( input == ENTER )
+			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
+		else
 			break;
-
-		block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
 
 		if ( block_start == UINT64_MAX )
 			break;
@@ -183,7 +169,7 @@ void printLine(const unsigned char* block, uint64_t block_start, uint64_t size, 
 		printHexCols(block, size);
 }
 
-void printDoubleCols(unsigned char* block, uint64_t size)
+void printDoubleCols(const unsigned char* block, uint64_t size)
 {
 	uint64_t i;
 	uint8_t k = 0;
@@ -202,7 +188,7 @@ void printDoubleCols(unsigned char* block, uint64_t size)
 	}
 }
 
-void printTripleCols(unsigned char* block, uint64_t size, uint64_t start, uint8_t width)
+void printTripleCols(const unsigned char* block, uint64_t size, uint64_t start, uint8_t width)
 {
 	uint64_t i;
 	uint64_t offset = start;
@@ -211,6 +197,7 @@ void printTripleCols(unsigned char* block, uint64_t size, uint64_t start, uint8_
 	for ( i = 0; i < size; i += TRIPLE_COL_SIZE )
 	{
 		printOffsetCol(offset, width);
+
 		k = printHexCol(block, i, size, TRIPLE_COL_SIZE);
 
 		fillGap(k);
@@ -237,12 +224,12 @@ void fillGap(uint8_t k)
 	{
 		for ( k = 0; k < gap; k++ )
 		{
-			printf("   ");
+			printf(HEX_GAP);
 		}
 	}
 }
 
-void printAsciiCols(unsigned char* block, uint64_t size)
+void printAsciiCols(const unsigned char* block, uint64_t size)
 {
 	uint64_t i;
 
@@ -253,7 +240,7 @@ void printAsciiCols(unsigned char* block, uint64_t size)
 	}
 }
 
-void printAsciiCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size)
+void printAsciiCol(const unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size)
 {
 	uint64_t k = 0;
 	uint64_t temp_i;
@@ -265,6 +252,13 @@ void printAsciiCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_
 		if ( temp_i >= size )
 			break;
 
+		if ( skip_ascii_bytes > 0 )
+		{
+			printf(ASCII_GAP);
+			skip_ascii_bytes--;
+			continue;
+		}
+
 		c = block[temp_i];
 //		printf("[%d] %d|", temp_i, +c);
 		if ( MIN_PRINTABLE_ASCII_RANGE <= c && c <= MAX_PRINTABLE_ASCII_RANGE )
@@ -274,7 +268,7 @@ void printAsciiCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_
 	}
 }
 
-void printHexCols(unsigned char* block, uint64_t size)
+void printHexCols(const unsigned char* block, uint64_t size)
 {
 	uint64_t i;
 
@@ -286,7 +280,7 @@ void printHexCols(unsigned char* block, uint64_t size)
 	}
 }
 
-uint8_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size)
+uint8_t printHexCol(const unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size)
 {
 	uint8_t k = 0;
 	uint64_t temp_i;
@@ -296,6 +290,13 @@ uint8_t printHexCol(unsigned char* block, uint64_t i, uint64_t size, uint8_t col
 		temp_i = i + k;
 		if ( temp_i >= size )
 			break;
+
+		if ( skip_hex_bytes > 0 )
+		{
+			printf(HEX_GAP);
+			skip_hex_bytes--;
+			continue;
+		}
 
 		(*printHexValue)(block[temp_i]);
 	}
@@ -308,26 +309,34 @@ void printCleanHexValue(uint8_t b)
 	printf("%02X ", b);
 }
 
-void printAnsiFormatedHexValue(unsigned char b)
+void printAnsiFormatedHexValue(const unsigned char b)
 {
 	if ( b == 0 )
 	{
-//			printf("\033[0;30m"); //Set the color
 		printf("%02X ", b);
-//			printf("\033[0m"); // reset
 	}
 	else
 	{
-		printf("\033[1m"); //Set bold
-//			printf("\033[1;30m"); //Set color
+		setAnsiFormat("\033[1m"); //Set bold
+//		printf("\033[1;30m"); //Set color
 		printf("%02X ", b);
-		printf("\033[0m"); // reset
+		resetAnsiFormat();
 	}
 }
 
-void printWinFormatedHexValue(unsigned char b)
+void setAnsiFormat(char* format)
 {
+	printf(format);
+}
+
+void resetAnsiFormat()
+{
+	printf("\033[0m");
+}
+
 #ifdef _WIN32
+void printWinFormatedHexValue(const unsigned char b)
+{
 	if ( b == 0 )
 	{
 		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
@@ -338,5 +347,5 @@ void printWinFormatedHexValue(unsigned char b)
 	{
 		printf("%02X ", b);
 	}
-#endif
 }
+#endif

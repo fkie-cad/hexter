@@ -34,7 +34,7 @@ uint8_t delete_f;
 uint8_t continuous_f;
 
 int payload_arg_id;
-const char* vs = "1.4.1";
+const char* vs = "1.4.2";
 
 const char FORMAT_ASCII = 'a';
 const char FORMAT_BYTE = 'b';
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 
 	if ( insert_f )
 		insert(payload, payload_ln);
-	if ( overwrite_f )
+	else if ( overwrite_f )
 		overwrite(payload, payload_ln);
 
 	file_size = getSize(file_name);
@@ -110,8 +110,6 @@ int main(int argc, char** argv)
 	if ( find_f )
 	{
 		start = find(payload, payload_ln, start);
-		if ( start == UINT64_MAX)
-			printf("Pattern not found!\n");
 	}
 	else if ( delete_f )
 	{
@@ -119,10 +117,10 @@ int main(int argc, char** argv)
 		length = DEFAULT_LENGTH;
 	}
 
-	if ( start < UINT64_MAX)
+	if ( start < UINT64_MAX && !find_f )
 		print(start, skip_bytes);
 
-	if ( payload != NULL)
+	if ( payload != NULL )
 		free(payload);
 
 	return 0;
@@ -384,7 +382,7 @@ void sanitizeParams()
 	}
 	else if ( length == 0 )
 	{
-		fprintf(stdout, "Info: Length is 0. Setting to 0x50!\n");
+		fprintf(stdout, "Info: Length is 0. Setting to %u!\n", DEFAULT_LENGTH);
 		length = DEFAULT_LENGTH;
 		info_line_break = 1;
 	}
@@ -394,8 +392,8 @@ void sanitizeParams()
 
 
 	start = normalizeOffset(start, &skip_bytes);
-	printf("start: %lu\n", start);
-	printf("skip_bytes: %u\n", skip_bytes);
+	if ( !continuous_f )
+		length += skip_bytes;
 }
 
 uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload)

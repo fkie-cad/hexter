@@ -17,6 +17,7 @@
 #include <deque>
 #include <functional>
 
+#include "misc/Misc.h"
 #include "../src/utils/common_fileio.c"
 #include "../src/utils/Helper.c"
 #include "../src/Globals.h"
@@ -30,9 +31,11 @@ class WriterTest : public testing::Test
 	protected:
 		static string temp_dir;
 
-		std::random_device rd;
-		static mt19937_64* gen;
-		static uniform_int_distribution<uint8_t>* dis;
+		static Misc misc;
+
+//		std::random_device rd;
+//		static mt19937_64* gen;
+//		static uniform_int_distribution<uint8_t>* dis;
 
 		using PayloadParser = function<uint32_t(const char*, unsigned char**)>;
 		using TV = tuple<const char*, uint32_t, vector<uint8_t>>;
@@ -70,58 +73,50 @@ class WriterTest : public testing::Test
 			return string(dir);
 		}
 
-		vector<uint8_t> createBinary(const string& file_src, size_t f_size)
-		{
-			ofstream f;
-			vector<uint8_t> values;
-			values.resize(f_size);
-
-			f.open(file_src, ios::binary | std::ios::out);
-			f.clear();
-
-			for ( size_t i = 0; i < f_size; i++ )
-			{
-				uint8_t value = (*dis)(*gen);
-				uint8_t size = sizeof(value);
-				f.write(reinterpret_cast<char *>(&(value)), size);
-				values[i] = value;
-			}
-
-			f.close();
-
-			return values;
-		}
-
-		int openFile(const string& command, FILE *&fi) const
-		{
-			int errsv = errno;
-			errno = 0;
-			fi = popen(&command[0], "r");
-
-			return errsv;
-		}
+//		vector<uint8_t> createBinary(const string& file_src, size_t f_size)
+//		{
+//			ofstream f;
+//			vector<uint8_t> values;
+//			values.resize(f_size);
+//
+//			f.open(file_src, ios::binary | std::ios::out);
+//			f.clear();
+//
+//			for ( size_t i = 0; i < f_size; i++ )
+//			{
+//				uint8_t value = (*dis)(*gen);
+//				uint8_t size = sizeof(value);
+//				f.write(reinterpret_cast<char *>(&(value)), size);
+//				values[i] = value;
+//			}
+//
+//			f.close();
+//
+//			return values;
+//		}
 
 	public:
 		static void SetUpTestCase()
 		{
-			std::random_device rd;
-			gen = new mt19937_64(rd());
-			dis = new uniform_int_distribution<uint8_t>(0, UINT8_MAX);
+//			std::random_device rd;
+//			gen = new mt19937_64(rd());
+//			dis = new uniform_int_distribution<uint8_t>(0, UINT8_MAX);
 
 			temp_dir = getTempDir("WriterTest");
 		}
 
 		static void TearDownTestCase()
 		{
-			delete(gen);
-			delete(dis);
+//			delete(gen);
+//			delete(dis);
 
 			rmdir(temp_dir.c_str());
 		}
 };
-mt19937_64* WriterTest::gen = nullptr;
-uniform_int_distribution<uint8_t>* WriterTest::dis = nullptr;
+//mt19937_64* WriterTest::gen = nullptr;
+//uniform_int_distribution<uint8_t>* WriterTest::dis = nullptr;
 string WriterTest::temp_dir;
+Misc WriterTest::misc;
 
 
 TEST_F(WriterTest, testOverwriteInFile)
@@ -129,7 +124,7 @@ TEST_F(WriterTest, testOverwriteInFile)
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testOverwriteInFile.bind";
 //	string src = "/tmp/WriterTestSrc.tmp";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
 		0,0,222,173,190,239,0,0
@@ -171,7 +166,7 @@ TEST_F(WriterTest, testOverwriteOverEndOfFile)
 	uint64_t binary_size = 8;
 //	string src = temp_dir+"/testOverwriteOverEndOfFile.bind";
 	string src = "/tmp/WriterTestSrc.tmp";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
 		0,0,222,173,190,239,0,0
@@ -217,7 +212,7 @@ TEST_F(WriterTest, testOverwriteOutOfFile)
 	uint64_t binary_size = 64;
 //	string src = temp_dir+"/testOverwriteOutOfFile.bind";
 	string src = "/tmp/WriterTestSrc.tmp";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
 		255,255,222,173,190,239,0,0
@@ -266,7 +261,7 @@ TEST_F(WriterTest, testInsertInFile)
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testInsertInFile.hex";
 //	string src = "/tmp/testInsertInFile.tmp";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
 			222,173,11,234
@@ -308,7 +303,7 @@ TEST_F(WriterTest, testInsertOverFileBounds)
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testInsertOverFileBounds.hex";
 //	string src = "/tmp/testInsertOverFileBounds.tmp";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
 			222,173,11,234
@@ -363,7 +358,7 @@ TEST_F(WriterTest, testInsertOutOfFileBounds)
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testInsertOutOfFileBounds.hex";
 //	string src = "/tmp/testInsertOutOfFileBounds.tmp";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
 			222,173,11,234
@@ -414,7 +409,7 @@ TEST_F(WriterTest, testDelete)
 	uint64_t binary_size = 64;
 //	string src = temp_dir+"/testDelete.hex";
 	string src = "/tmp/testDelete.tmp";
-	vector<uint8_t> bytes = createBinary(src, binary_size);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	snprintf(file_name, PATH_MAX, "%s", &src[0]);
 	start = 2;
