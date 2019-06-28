@@ -16,7 +16,7 @@
 #define BINARYNAME ("hexter")
 
 uint64_t file_size;
-char file_name[PATH_MAX];
+char file_path[PATH_MAX];
 uint64_t start;
 uint64_t length;
 uint8_t clean_printing;
@@ -36,14 +36,14 @@ uint8_t continuous_f;
 int payload_arg_id;
 const char* vs = "1.4.2";
 
-const char FORMAT_ASCII = 'a';
-const char FORMAT_BYTE = 'b';
-const char FORMAT_WORD = 'w';
-const char FORMAT_D_WORD = 'd';
-const char FORMAT_Q_WORD = 'q';
-const char FORMAT_PLAIN_HEX = 'h';
+#define FORMAT_ASCII 'a'
+#define FORMAT_BYTE 'b'
+#define FORMAT_WORD 'w'
+#define FORMAT_D_WORD 'd'
+#define FORMAT_Q_WORD 'q'
+#define FORMAT_PLAIN_HEX 'h'
 
-const char format_types[6] = {'a', 'b', 'w', 'd', 'q', 'h'};
+const char format_types[6] = { FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
 int format_types_ln = 6;
 
 void printUsage();
@@ -56,17 +56,19 @@ void sanitizeParams();
 uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload);
 
 // TODO:
+// - highlight found part
+// - continuouse find typing 'n'
+// - reversed payload, endianess option for hex and word payload
 // + search option
 // + string, byte, (d/q)word,
 // + column to show file offset
 // + delete option
-// - reversed payload, endianess option for hex and word payload
 // + interactive more/scroll
-// - align offset to 0x10, print spaces to fill col up
-// - highlight found part
-// - continuouse find typing 'n'
+// + align offset to 0x10, print spaces to fill col up
 int main(int argc, char** argv)
 {
+	char* file_name = NULL;
+
 	if ( argc < 2 )
 	{
 		printUsage();
@@ -76,10 +78,10 @@ int main(int argc, char** argv)
 	initParameters();
 	parseArgs(argc, argv);
 
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 	if ( file_size == 0 ) return 0;
 
-	debug_info("file_name: %s\n", file_name);
+	debug_info("file_path: %s\n", file_path);
 	debug_info("file_size: %lu\n", file_size);
 	debug_info("start: %lu\n", start);
 	debug_info("length: %lu\n", length);
@@ -104,7 +106,7 @@ int main(int argc, char** argv)
 	else if ( overwrite_f )
 		overwrite(payload, payload_ln);
 
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 	sanitizeParams();
 
 	if ( find_f )
@@ -117,7 +119,10 @@ int main(int argc, char** argv)
 		length = DEFAULT_LENGTH;
 	}
 
-	if ( start < UINT64_MAX && !find_f )
+	getFileNameL(file_path, &file_name);
+	printf("file: %s\n", file_name);
+
+	if ( start < UINT64_MAX )
 		print(start, skip_bytes);
 
 	if ( payload != NULL )
@@ -200,7 +205,7 @@ void parseArgs(int argc, char** argv)
 
 	if ( argv[1][0] != '-' )
 	{
-		expandFilePath(argv[1], file_name);
+		expandFilePath(argv[1], file_path);
 		start_i = 2;
 		end_i = argc;
 	}
@@ -304,7 +309,7 @@ void parseArgs(int argc, char** argv)
 	}
 
 	if ( start_i == 1 )
-		expandFilePath(argv[i], file_name);
+		expandFilePath(argv[i], file_path);
 }
 
 uint8_t isArgOfType(char* arg, char* type)

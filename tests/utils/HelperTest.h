@@ -21,6 +21,11 @@ using namespace std;
 class HelperTest : public testing::Test
 {
 	protected:
+		using PNP = pair<char*, const char*>;
+
+		void testGetFileNameP(vector<PNP> pathes);
+		void testGetFileNameL(vector<PNP> pathes);
+		void testGetFileNameA(vector<PNP> pathes);
 
 	public:
 
@@ -58,6 +63,60 @@ TEST_F(HelperTest, testCountHexWidth64)
 	{
 		uint8_t width = countHexWidth64(p.first);
 		EXPECT_EQ(width, p.second);
+	}
+}
+
+TEST_F(HelperTest, testGetFileName)
+{
+	vector<PNP> pathes = {
+		{"a/file/path", "path"},
+		{"an/other/file/path.type", "path.type"},
+		{"path.type", "path.type"},
+		{"/path.type", "path.type"},
+		{"", NULL},
+	};
+
+//	testGetFileNameP(pathes);
+//	testGetFileNameL(pathes);
+	testGetFileNameA(pathes);
+}
+
+void HelperTest::testGetFileNameP(vector<PNP> pathes)
+{
+	for ( PNP& p : pathes )
+	{
+		cout << p.first << " : "<<p.second << endl;
+		char* file_name = getFileNameP(p.first);
+		cout << " = "<<file_name<<endl;
+		EXPECT_STREQ(file_name, p.second);
+		free(file_name);
+	}
+}
+
+void HelperTest::testGetFileNameL(vector<PNP> pathes)
+{
+	for ( PNP& p : pathes )
+	{
+		cout << p.first << " : "<<p.second << endl;
+		char* file_name = NULL;
+		getFileNameL(p.first, &file_name);
+		cout << " = "<<file_name<<endl;
+		EXPECT_STREQ(file_name, p.second);
+	}
+}
+
+void HelperTest::testGetFileNameA(vector<PNP> pathes)
+{
+	for ( PNP& p : pathes )
+	{
+		cout << p.first << " : "<<p.second << endl;
+		char file_name[PATH_MAX] = {0};
+		getFileName(p.first, file_name);
+		cout << " = "<<file_name<<endl;
+		if ( p.second == NULL )
+			EXPECT_STREQ(file_name, "");
+		else
+			EXPECT_STREQ(file_name, p.second);
 	}
 }
 

@@ -18,13 +18,18 @@ void initTermios(int echo)
 	tcsetattr(0, TCSANOW, &new_t); /* use these new terminal i/o settings now */
 }
 
-/* Restore old terminal i/o settings */
+/**
+ * Restore old terminal i/o settings
+ */
 void resetTermios()
 {
 	tcsetattr(0, TCSANOW, &old);
 }
 
-/* Read 1 character - echo defines echo mode */
+/**
+ * Read 1 character
+ * - echo defines echo mode
+ */
 char getch_(int echo)
 {
 	char ch;
@@ -34,13 +39,17 @@ char getch_(int echo)
 	return ch;
 }
 
-/* Read 1 character without echo */
+/**
+ * Read 1 character without echo.
+ */
 char getch()
 {
 	return getch_(0);
 }
 
-/* Read 1 character with echo */
+/**
+ * Read 1 character with echo.
+ */
 char getche()
 {
 	return getch_(1);

@@ -10,22 +10,24 @@
 #include "Printer.h"
 
 /**
+ * Find the needle in the file starting from an offset.
  *
- * @param needle
- * @param needle_ln
- * @return
+ * @param	needle unsigned char*
+ * @param	needle_ln uint32_t
+ * @param	offset uint64_t
+ * @return	uint64_t the offset of the found needle or UINT64_MAX, if not found
  */
 uint64_t find(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
 {
-	uint64_t n_found;
+//	uint64_t n_found;
 	uint64_t found = findNeedle(needle, needle_ln, offset);
-	uint8_t remainder = 0;
+//	uint8_t remainder = 0;
 
-	n_found = normalizeOffset(found, &remainder);
-	if ( found == UINT64_MAX )
-		printf("Pattern not found!\n");
-	else
-		print(n_found, remainder);
+//	n_found = normalizeOffset(found, &remainder);
+//	if ( found == UINT64_MAX )
+//		printf("Pattern not found!\n");
+//	else
+//		print(n_found, remainder);
 
 	return found;
 }
@@ -33,8 +35,9 @@ uint64_t find(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
 /**
  * KMPMatch
  *
- * @param needle
- * @param needle_ln
+ * @param needle unsigned char*
+ * @param needle_ln uint32_t
+ * @param offset uint64_t
  * @return
  */
 uint64_t findNeedle(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
@@ -48,10 +51,10 @@ uint64_t findNeedle(const unsigned char* needle, uint32_t needle_ln, uint64_t of
 	uint16_t* failure;
 	uint64_t found = -1;
 
-	fi = fopen(file_name, "rb");
+	fi = fopen(file_path, "rb");
 	if ( !fi )
 	{
-		printf("ERROR: File %s does not exist.\n", file_name);
+		printf("ERROR: File %s does not exist.\n", file_path);
 		return -1;
 	}
 
@@ -98,6 +101,10 @@ uint64_t findNeedle(const unsigned char* needle, uint32_t needle_ln, uint64_t of
 /**
  * Computes the failure function using a boot-strapping process,
  * where the pattern is matched against itself.
+ *
+ * @param pattern unsigned char*
+ * @param pattern_ln uint64_t
+ * @param failure uint16_t
  */
 void computeFailure(const unsigned char* pattern, uint64_t pattern_ln, uint16_t* failure)
 {

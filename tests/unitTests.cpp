@@ -8,7 +8,7 @@
 #include "HexterTest.h"
 
 uint64_t file_size;
-char file_name[PATH_MAX];
+char file_path[PATH_MAX];
 uint64_t start;
 uint64_t length;
 uint8_t print_col_mask;

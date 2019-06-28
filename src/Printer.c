@@ -23,8 +23,7 @@
 
 void (*printHexValue)(uint8_t);
 
-uint64_t
-printSkipBytes(uint64_t start, FILE* fi, unsigned char* block, uint64_t block_start, uint16_t block_size);
+uint64_t printSkipBytes(uint64_t start, FILE* fi, unsigned char* block, uint64_t block_start, uint16_t block_size);
 
 #if defined(_WIN32)
 	HANDLE hStdout;
@@ -54,10 +53,10 @@ void print(uint64_t start, uint8_t skip_bytes)
 	debug_info("nr_of_parts: %lu\n", nr_of_parts);
 	debug_info("\n");
 
-	fi = fopen(file_name, "rb");
+	fi = fopen(file_path, "rb");
 	if ( !fi )
 	{
-		printf("File %s does not exist.\n", file_name);
+		printf("File %s does not exist.\n", file_path);
 		return;
 	}
 

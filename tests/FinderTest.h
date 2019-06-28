@@ -63,9 +63,9 @@ TEST_F(FinderTest, testFindInFile)
 
 	unsigned char* payload = &bytes.data()[10];
 	uint32_t payload_ln = 8;
-	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
 	start = 0;
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 
 	uint64_t idx = find(payload, payload_ln, 0);
 

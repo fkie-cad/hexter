@@ -131,13 +131,13 @@ TEST_F(WriterTest, testOverwriteInFile)
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
-	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
 	start = 10;
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 
 	cout << "start: "<<start<<endl;
 	cout << "payload_ln: "<<payload_ln<<endl;
-	cout << "file_name: "<<file_name<<endl;
+	cout << "file_path: "<<file_path<<endl;
 	cout << "file_size: "<<file_size<<endl;
 
 	overwrite(payload, payload_ln);
@@ -173,9 +173,9 @@ TEST_F(WriterTest, testOverwriteOverEndOfFile)
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
-	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
 	start = binary_size - payload_ln / 2;
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 
 	overwrite(payload, payload_ln);
 
@@ -219,13 +219,13 @@ TEST_F(WriterTest, testOverwriteOutOfFile)
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
-	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
 	start = binary_size + 2;
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 
 	cout << "start: "<<start<<endl;
 	cout << "payload_ln: "<<payload_ln<<endl;
-	cout << "file_name: "<<file_name<<endl;
+	cout << "file_path: "<<file_path<<endl;
 	cout << "file_size: "<<file_size<<endl;
 
 	overwrite(payload, payload_ln);
@@ -268,9 +268,9 @@ TEST_F(WriterTest, testInsertInFile)
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
-	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
 	start = 2;
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 
 	vector<uint8_t> payloaded_bytes(bytes.begin(), bytes.end());
 	for ( int i = 0; i < payload_ln; i++ )
@@ -279,7 +279,7 @@ TEST_F(WriterTest, testInsertInFile)
 	insert(payload, payload_ln);
 
 	ifstream check_fs(src);
-	uint64_t size = getSize(file_name);
+	uint64_t size = getSize(file_path);
 //	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
 //	cout << " new size: "<<size<<endl;
 	EXPECT_EQ(size, binary_size + payload_ln);
@@ -310,14 +310,14 @@ TEST_F(WriterTest, testInsertOverFileBounds)
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
-	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
 	start = binary_size - 2;
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 
 //	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
 //	cout << "start: "<<start<<endl;
 //	cout << "payload_ln: "<<payload_ln<<endl;
-//	cout << "file_name: "<<file_name<<endl;
+//	cout << "file_path: "<<file_path<<endl;
 //	cout << "file_size: "<<file_size<<endl;
 
 	vector<uint8_t> payloaded_bytes(bytes.begin(), bytes.end());
@@ -335,7 +335,7 @@ TEST_F(WriterTest, testInsertOverFileBounds)
 	insert(payload, payload_ln);
 
 	ifstream check_fs(src);
-	uint64_t size = getSize(file_name);
+	uint64_t size = getSize(file_path);
 	cout << " new size: "<<size<<endl;
 	EXPECT_EQ(size, binary_size + payload_ln);
 	check_fs.seekg(0);
@@ -365,9 +365,9 @@ TEST_F(WriterTest, testInsertOutOfFileBounds)
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
-	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
 	start = binary_size + 2;
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 
 //	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
 	vector<uint8_t> payloaded_bytes(bytes.begin(), bytes.end());
@@ -386,7 +386,7 @@ TEST_F(WriterTest, testInsertOutOfFileBounds)
 	insert(payload, payload_ln);
 
 	ifstream check_fs(src);
-	uint64_t size = getSize(file_name);
+	uint64_t size = getSize(file_path);
 	cout << " new size: "<<size<<endl;
 	EXPECT_EQ(size, start + payload_ln);
 	check_fs.seekg(0);
@@ -411,10 +411,10 @@ TEST_F(WriterTest, testDelete)
 	string src = "/tmp/testDelete.tmp";
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
-	snprintf(file_name, PATH_MAX, "%s", &src[0]);
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
 	start = 2;
 	length = 8;
-	file_size = getSize(file_name);
+	file_size = getSize(file_path);
 
 //	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
 	vector<uint8_t> deleted_bytes = bytes;
@@ -432,7 +432,7 @@ TEST_F(WriterTest, testDelete)
 	deleteBytes(start, length);
 
 	ifstream check_fs(src);
-	uint64_t size = getSize(file_name);
+	uint64_t size = getSize(file_path);
 	cout << " new size: "<<dec<<size<<endl;
 	EXPECT_EQ(size, binary_size-length);
 	check_fs.seekg(0);

@@ -36,7 +36,7 @@
 #define MAX_PAYLOAD_LN 512
 
 extern uint64_t file_size;
-extern char file_name[PATH_MAX];
+extern char file_path[PATH_MAX];
 
 extern uint64_t start;
 extern uint64_t length;

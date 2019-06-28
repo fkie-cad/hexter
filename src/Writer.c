@@ -216,10 +216,10 @@ void insert(unsigned char* payload, uint32_t payload_ln)
 		return;
 	}
 
-	fi = fopen(file_name, "rb+");
+	fi = fopen(file_path, "rb+");
 	if ( !fi )
 	{
-		printf("File %s does not exist.\n", file_name);
+		printf("File %s does not exist.\n", file_path);
 		return;
 	}
 
@@ -270,10 +270,10 @@ void overwrite(unsigned char* payload, uint32_t payload_ln)
 //	int n = buf_ln;
 	// end backup
 
-	src = fopen(file_name, "rb+");
+	src = fopen(file_path, "rb+");
 	if ( !src )
 	{
-		printf("File %s does not exist.\n", file_name);
+		printf("File %s does not exist.\n", file_path);
 		return;
 	}
 	// backup
@@ -311,10 +311,10 @@ void deleteBytes(uint64_t start, uint64_t length)
 		return;
 	}
 
-	fi = fopen(file_name, "rb+");
+	fi = fopen(file_path, "rb+");
 	if ( !fi )
 	{
-		printf("File %s does not exist.\n", file_name);
+		printf("File %s does not exist.\n", file_path);
 		return;
 	}
 
