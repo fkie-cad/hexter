@@ -197,7 +197,7 @@ void parseArgs(int argc, char** argv)
 	int i, s;
 	uint8_t length_found = 0;
 
-	if ( isArgOfType(argv[1], "-h"))
+	if ( isArgOfType(argv[1], "-h") )
 	{
 		printHelp();
 		exit(0);
@@ -377,13 +377,19 @@ void sanitizeParams()
 		start = 0;
 		info_line_break = 1;
 	}
+
+	start = normalizeOffset(start, &skip_bytes);
+	if ( !continuous_f )
+		length += skip_bytes;
+
 	if ( start + length > file_size )
 	{
 		fprintf(stdout,
-				"Info: Start offset %lu plus length %lu is greater the the file size %lu\nPrinting only to file size.\n",
+				"Info: Start offset %lu plus length %lu is greater then the file size %lu\nPrinting only to file size.\n",
 				start, length, file_size);
 		length = file_size - start;
 		info_line_break = 1;
+		continuous_f = 0;
 	}
 	else if ( length == 0 )
 	{
@@ -394,11 +400,6 @@ void sanitizeParams()
 
 	if ( info_line_break )
 		printf("\n");
-
-
-	start = normalizeOffset(start, &skip_bytes);
-	if ( !continuous_f )
-		length += skip_bytes;
 }
 
 uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload)
