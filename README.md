@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting big files and offsets.
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.4.2  
-Last changed: 2019.06.24
+1.4.4  
+Last changed: 2019.07.03
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  
@@ -60,9 +60,10 @@ Optional Parameters:
  * -b Force breaking, not continuous mode and print just one block.
  * -h Print this.
 
-The program runs in continuous mode by default, expect for the -i, -o and -d option, or if the -b option is set.
-Step through the file by pressing ENTER.
-Quit with "q" or any other key.
+The program runs in continuous mode by default, expect for the -i, -o and -d option, or if the -b option is set.  
+Step through the file by pressing ENTER.  
+Quit with "q".  
+If searching something in continuous mode, type "n" to find next occurrence.
 
 Examples:  
 Print 100 bytes from offset 20 in hex only style.

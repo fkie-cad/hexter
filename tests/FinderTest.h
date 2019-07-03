@@ -39,6 +39,8 @@ class FinderTest : public testing::Test
 			return string(dir);
 		}
 
+		void findNeedle(unsigned char* needle, uint32_t needle_ln, uint64_t expected_idx, vector<uint8_t>& bytes, const string& src);
+
 	public:
 		static void SetUpTestCase()
 		{
@@ -53,40 +55,94 @@ class FinderTest : public testing::Test
 Misc FinderTest::misc;
 string FinderTest::temp_dir;
 
-
 TEST_F(FinderTest, testFindInFile)
 {
 	uint64_t binary_size = 64;
 	string src = temp_dir+"/testFindInFile.rand";
-//	string src = "/tmp/WriterTestSrc.tmp";
-	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
-	unsigned char* payload = &bytes.data()[10];
-	uint32_t payload_ln = 8;
 	snprintf(file_path, PATH_MAX, "%s", &src[0]);
 	start = 0;
 	file_size = getSize(file_path);
 
-	uint64_t idx = find(payload, payload_ln, 0);
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
+	uint16_t needle_idx = 10;
 
-	EXPECT_LT(idx, UINT64_MAX);
+	unsigned char* needle = &bytes[needle_idx];
+	uint32_t needle_ln = 8;
 
-	if ( idx < UINT64_MAX )
+	findNeedle(needle, needle_ln, needle_idx, bytes, src);
+
+	remove(src.c_str());
+}
+
+TEST_F(FinderTest, testFindWithFailure)
+{
+	uint64_t binary_size = 64;
+	string src = temp_dir+"/testFindInFile.rand";
+
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
+	start = 0;
+	file_size = getSize(file_path);
+
+	vector<uint8_t> bytes = { 1,1,3,4,5,6,7,8,
+						   	  1,2,2,4,5,6,7,8,
+						   	  1,2,3,3,5,6,7,8,
+						   	  1,2,3,4,4,6,7,8,
+						   	  1,2,3,4,5,5,7,8,
+						   	  1,2,3,4,5,6,6,8,
+						   	  1,2,3,4,5,6,7,7,
+						   	  1,2,3,4,5,6,7,8 };
+	misc.createBinary(src, bytes);
+	uint16_t needle_idx = 56;
+
+	unsigned char* needle = &bytes[needle_idx];
+	uint32_t needle_ln = 8;
+
+	findNeedle(needle, needle_ln, needle_idx, bytes, src);
+
+	remove(src.c_str());
+}
+
+TEST_F(FinderTest, testNotFound)
+{
+	uint64_t binary_size = 64;
+	string src = temp_dir+"/testFindInFile.rand";
+
+	snprintf(file_path, PATH_MAX, "%s", &src[0]);
+	start = 0;
+	file_size = getSize(file_path);
+
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
+
+	unsigned char needle[] = {0,0,0,0,0,0,0,0};
+	uint32_t needle_ln = 8;
+	uint64_t expected_idx = UINT64_MAX;
+
+	findNeedle(needle, needle_ln, expected_idx, bytes, src);
+
+	remove(src.c_str());
+}
+
+void FinderTest::findNeedle(unsigned char* needle, uint32_t needle_ln, uint64_t expected_idx, vector<uint8_t>& bytes, const string& src)
+{
+	uint64_t found = find(needle, needle_ln, 0);
+
+	EXPECT_EQ(found, expected_idx);
+
+	if ( found < UINT64_MAX )
 	{
 		ifstream check_fs(src);
-		check_fs.seekg(idx);
+		check_fs.seekg(found);
 
-		for ( int i = 0; i < payload_ln; i++ )
+		for ( int i = 0; i < needle_ln; i++ )
 		{
 			unsigned char cs;
 			check_fs.read(reinterpret_cast<char*>(&(cs)), 1);
-			cout << setw(2) << setfill('0') << i << hex << " : " << +cs << " = " << +payload[i] << dec << endl;
+			cout << setw(2) << setfill('0') << found+i << " : (h) " << hex << +cs << " = " << +needle[i] << dec << " (n)"<<endl;
 
-			EXPECT_EQ(cs, payload[i]);
+			EXPECT_EQ(cs, needle[i]);
 		}
 	}
-
-	remove(src.c_str());
 }
 
 #endif

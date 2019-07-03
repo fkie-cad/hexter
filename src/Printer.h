@@ -1,7 +1,9 @@
 #ifndef HEXTER_SRC_PRINTER_H
 #define HEXTER_SRC_PRINTER_H
 
-void print(uint64_t start, uint8_t skip_bytes);
+void print(uint64_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln);
+void initFailure();
+void cleanUp(unsigned char* block, FILE* fi);
 void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start);
 uint64_t printBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start);
 void printLine(const unsigned char* block, uint64_t block_start, uint64_t size, uint8_t offset_width);

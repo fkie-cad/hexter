@@ -15,32 +15,44 @@
 
 #include "Printer.h"
 #include "Globals.h"
+#include "Finder.h"
 #include "utils/common_fileio.h"
 #include "utils/Helper.h"
 
 #define HEX_GAP "   "
 #define ASCII_GAP " "
+#define HIGHLIGHT_HEX_STYLE "\033[1;42m"
+#define POS_HEX_STYLE "\033[1m"
 
 void (*printHexValue)(uint8_t);
-
-uint64_t printSkipBytes(uint64_t start, FILE* fi, unsigned char* block, uint64_t block_start, uint16_t block_size);
 
 #if defined(_WIN32)
 	HANDLE hStdout;
 	WORD wOldColorAttrs;
 #endif
 
-uint8_t skip_hex_bytes = 0;
-uint8_t skip_ascii_bytes = 0;
+int8_t skip_hex_bytes = 0;
+int8_t skip_ascii_bytes = 0;
+
+int16_t highlight_hex_bytes = 0;
+int16_t highlight_ascii_bytes = 0;
+
+unsigned char* needle = NULL;
+uint32_t needle_ln;
+uint16_t* failure = NULL;
+uint64_t found = 0;
 
 /**
  * Prints the values depending on the mode.
  *
  * If block_size % col_size != 0 some more adjustments have to be taken to the col printings.
- * I.e. the index has to be passed and return and the new line has to check for block and size.
+ * I.e. the index has to be passed and returned and the new line has to check for block and size.
  */
-void print(uint64_t start, uint8_t skip_bytes)
+void print(uint64_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _needle_ln)
 {
+	needle = _needle;
+	needle_ln = _needle_ln;
+
 	FILE* fi;
 	unsigned char* block = NULL;
 	uint64_t block_start = start;
@@ -92,13 +104,38 @@ void print(uint64_t start, uint8_t skip_bytes)
 	if ( skip_bytes > 0 )
 		skip_hex_bytes = skip_ascii_bytes = skip_bytes;
 
+	if ( find_f )
+	{
+		initFailure();
+		found = findNeedle(needle, needle_ln, start, failure);
+		if ( found == UINT64_MAX )
+		{
+			cleanUp(block, fi);
+			return;
+		}
+		highlight_hex_bytes = needle_ln;
+		block_start = found;
+	}
+
 	block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
 
 	if ( continuous_f && block_start < file_size )
 		printBlockLoop(nr_of_parts, block, fi, block_size, block_start);
 
+	cleanUp(block, fi);
+}
+
+void cleanUp(unsigned char* block, FILE* fi)
+{
 	free(block);
+	if ( failure != NULL ) free(failure);
 	fclose(fi);
+}
+
+void initFailure()
+{
+	failure = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
+	computeFailure(needle, needle_ln, failure);
 }
 
 void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start)
@@ -111,8 +148,21 @@ void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 
 		if ( input == ENTER )
 			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
-		else
+		else if ( find_f && input == 'n' )
+		{
+//			printf("block_start: 0x%lx\n", block_start);
+			found = findNeedleInFP(needle, needle_ln, found+needle_ln, failure, fi);
+//			printf("found: 0x%lx\n", found);
+			if ( found == UINT64_MAX )
+				break;
+			printf("\n");
+			highlight_hex_bytes = needle_ln;
+			block_start = printBlock(nr_of_parts, block, fi, block_size, found);
+		}
+		else if ( input == 'q' )
 			break;
+//		else
+//			break;
 
 		if ( block_start == UINT64_MAX )
 			break;
@@ -316,8 +366,15 @@ void printAnsiFormatedHexValue(const unsigned char b)
 	}
 	else
 	{
-		setAnsiFormat("\033[1m"); //Set bold
-//		printf("\033[1;30m"); //Set color
+		if ( highlight_hex_bytes > 0 )
+		{
+			printf(HIGHLIGHT_HEX_STYLE);
+			highlight_hex_bytes--;
+		}
+		else
+		{
+			setAnsiFormat(POS_HEX_STYLE);
+		}
 		printf("%02X ", b);
 		resetAnsiFormat();
 	}

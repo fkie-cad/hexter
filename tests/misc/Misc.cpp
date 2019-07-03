@@ -38,3 +38,20 @@ vector<uint8_t> Misc::createBinary(const string& file_src, size_t f_size)
 
 	return values;
 }
+
+void Misc::createBinary(const string& file_src, const vector<uint8_t>& bytes)
+{
+	ofstream f;
+
+	f.open(file_src, ios::binary | std::ios::out);
+	f.clear();
+	uint8_t size = sizeof(uint8_t);
+
+	for ( size_t i = 0; i < bytes.size(); i++ )
+	{
+		uint8_t value = bytes[i];
+		f.write(reinterpret_cast<char *>(&(value)), size);
+	}
+
+	f.close();
+}

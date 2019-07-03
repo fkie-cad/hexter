@@ -17,6 +17,7 @@ class Misc
 		~Misc();
 
 		std::vector<uint8_t> createBinary(const std::string& file_src, size_t f_size);
+		void createBinary(const std::string& file_src, const std::vector<uint8_t>& bytes);
 };
 
 #endif

@@ -34,7 +34,7 @@ uint8_t delete_f;
 uint8_t continuous_f;
 
 int payload_arg_id;
-const char* vs = "1.4.2";
+const char* vs = "1.4.4";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -57,7 +57,7 @@ uint32_t parsePayload(const char* arg, const char* value, unsigned char** payloa
 
 // TODO:
 // - highlight found part
-// - continuouse find typing 'n'
+// + continuouse find typing 'n'
 // - reversed payload, endianess option for hex and word payload
 // + search option
 // + string, byte, (d/q)word,
@@ -109,11 +109,7 @@ int main(int argc, char** argv)
 	file_size = getSize(file_path);
 	sanitizeParams();
 
-	if ( find_f )
-	{
-		start = find(payload, payload_ln, start);
-	}
-	else if ( delete_f )
+	if ( delete_f )
 	{
 		deleteBytes(start, length);
 		length = DEFAULT_LENGTH;
@@ -122,8 +118,7 @@ int main(int argc, char** argv)
 	getFileNameL(file_path, &file_name);
 	printf("file: %s\n", file_name);
 
-	if ( start < UINT64_MAX )
-		print(start, skip_bytes);
+	print(start, skip_bytes, payload, payload_ln);
 
 	if ( payload != NULL )
 		free(payload);
@@ -188,6 +183,8 @@ void printHelp()
 	printf("Example: ./%s path/to/a.file -oh 0bea -s 0x100\n", BINARYNAME);
 	printf("Example: ./%s path/to/a.file -fh f001 -s 0x100\n", BINARYNAME);
 	printf("Example: ./%s path/to/a.file -d -s 0x100 -l 0x8\n", BINARYNAME);
+	printf("\n");
+	printf("In continuous mode press ENTER to continue, 'n' to find next or 'q' to quit.\n");
 }
 
 void parseArgs(int argc, char** argv)
@@ -362,6 +359,7 @@ void sanitizeParams()
 
 	col_size = getColSize();
 
+	// normalize length to block size for continuous printing
 	if ( continuous_f )
 	{
 		if ( length % col_size != 0 )
@@ -371,6 +369,7 @@ void sanitizeParams()
 	}
 
 	uint8_t info_line_break = 0;
+	// check start offset
 	if ( start > file_size )
 	{
 		fprintf(stderr, "Info: Start offset %lu is greater the the file_size %lu!\nSetting to 0!", start, file_size);
@@ -378,15 +377,20 @@ void sanitizeParams()
 		info_line_break = 1;
 	}
 
-	start = normalizeOffset(start, &skip_bytes);
-	if ( !continuous_f )
-		length += skip_bytes;
+	// normalize start offset to block size
+	if ( !find_f )
+	{
+		start = normalizeOffset(start, &skip_bytes);
+		if ( !continuous_f )
+			length += skip_bytes;
+	}
 
+	// check length
 	if ( start + length > file_size )
 	{
 		fprintf(stdout,
 				"Info: Start offset %lu plus length %lu is greater then the file size %lu\nPrinting only to file size.\n",
-				start, length, file_size);
+				start+skip_bytes, (continuous_f)?length:length-skip_bytes, file_size);
 		length = file_size - start;
 		info_line_break = 1;
 		continuous_f = 0;
