@@ -32,7 +32,7 @@ if ( ${GTEST_FOUND} )
 		CXX_STANDARD_REQUIRED YES
 		CXX_EXTENSIONS NO
 		LANGUAGES CXX
-		COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Werror=return-type"
+		COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Werror=return-type -fsanitize=address -fno-omit-frame-pointer"
 		)
 
 	target_link_libraries(${UNIT_TEST_SUITE} PRIVATE
