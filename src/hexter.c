@@ -33,6 +33,10 @@ uint8_t find_f;
 uint8_t delete_f;
 uint8_t continuous_f;
 
+const uint8_t TYPE_FILE = 1;
+const uint8_t TYPE_PID = 2;
+uint8_t type;
+
 int payload_arg_id;
 const char* vs = "1.4.4";
 
@@ -54,13 +58,14 @@ uint8_t isFormatArgOfType(char* arg, char* type);
 uint8_t hasValue(char* type, int i, int end_i);
 void sanitizeParams();
 uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload);
+uint8_t parseType(const char* arg);
 
 // TODO:
 // - highlight found part
 // + continuouse find typing 'n'
 // - reversed payload, endianess option for hex and word payload
 // + search option
-// + string, byte, (d/q)word,
+// + string, byte, (d/q)word
 // + column to show file offset
 // + delete option
 // + interactive more/scroll
@@ -146,6 +151,8 @@ void initParameters()
 	print_offset_mask = 4;
 	print_hex_mask = 2;
 	print_ascii_mask = 1;
+
+	type = TYPE_FILE;
 }
 
 void printUsage()
@@ -165,15 +172,16 @@ void printHelp()
 		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n"
-		   " * -p Plain, not styled text output.\n"
 		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -fx Find hex byte sequence. Where x is an format option.\n"
 		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte, %c: word, %c: double word, %c: quad word.\n"
 		   "     Expect for the ascii string, all values have to be passed as hex values.\n"
-		   //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
+//		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
 		   " * -d Delete -l bytes from offset -s.\n"
+		   " * -t Type of source ['file', 'pid']. Defaults to 'file'. In 'pid' the a process id is passed.\n"
 		   " * -b Force breaking, not continuous mode.\n"
+		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
 		   FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
 	);
@@ -193,6 +201,7 @@ void parseArgs(int argc, char** argv)
 	int end_i = argc - 1;
 	int i, s;
 	uint8_t length_found = 0;
+	const char* source;
 
 	if ( isArgOfType(argv[1], "-h") )
 	{
@@ -202,7 +211,7 @@ void parseArgs(int argc, char** argv)
 
 	if ( argv[1][0] != '-' )
 	{
-		expandFilePath(argv[1], file_path);
+		source = argv[1];
 		start_i = 2;
 		end_i = argc;
 	}
@@ -287,6 +296,14 @@ void parseArgs(int argc, char** argv)
 				i++;
 			}
 		}
+		else if ( isArgOfType(argv[i], "-t") )
+		{
+			if ( hasValue("-t", i, end_i) )
+			{
+				type = parseType(argv[i+1]);
+				i++;
+			}
+		}
 		else
 		{
 			printf("INFO: Unknown arg type \"%s\"\n", argv[i]);
@@ -306,7 +323,12 @@ void parseArgs(int argc, char** argv)
 	}
 
 	if ( start_i == 1 )
-		expandFilePath(argv[i], file_path);
+		source = argv[i];
+
+	if ( type == TYPE_FILE)
+		expandFilePath(source, file_path);
+	else
+		snprintf(file_path, PATH_MAX, "%s", source);
 }
 
 uint8_t isArgOfType(char* arg, char* type)
@@ -437,4 +459,17 @@ uint32_t parsePayload(const char* arg, const char* value, unsigned char** payloa
 //	ln = payloadParsePlainBytes(arg, payload);
 
 	return ln;
+}
+
+uint8_t parseType(const char* arg)
+{
+	if ( strncmp(arg, "file", 10) == 0 )
+		return TYPE_FILE;
+	else if ( strncmp(arg, "pid", 10) == 0 )
+		return TYPE_PID;
+	else
+	{
+		printf("INFO: Could not parse type. Setting it to 'file'!\n");
+		return TYPE_FILE;
+	}
 }

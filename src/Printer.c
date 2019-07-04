@@ -150,9 +150,7 @@ void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
 		else if ( find_f && input == 'n' )
 		{
-//			printf("block_start: 0x%lx\n", block_start);
 			found = findNeedleInFP(needle, needle_ln, found+needle_ln, failure, fi);
-//			printf("found: 0x%lx\n", found);
 			if ( found == UINT64_MAX )
 				break;
 			printf("\n");
@@ -360,21 +358,20 @@ void printCleanHexValue(uint8_t b)
 
 void printAnsiFormatedHexValue(const unsigned char b)
 {
-	if ( b == 0 )
+	if ( highlight_hex_bytes > 0 )
+	{
+		printf(HIGHLIGHT_HEX_STYLE);
+		highlight_hex_bytes--;
+		printf("%02X ", b);
+		resetAnsiFormat();
+	}
+	else if ( b == 0 )
 	{
 		printf("%02X ", b);
 	}
 	else
 	{
-		if ( highlight_hex_bytes > 0 )
-		{
-			printf(HIGHLIGHT_HEX_STYLE);
-			highlight_hex_bytes--;
-		}
-		else
-		{
-			setAnsiFormat(POS_HEX_STYLE);
-		}
+		setAnsiFormat(POS_HEX_STYLE);
 		printf("%02X ", b);
 		resetAnsiFormat();
 	}
