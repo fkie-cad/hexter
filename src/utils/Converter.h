@@ -16,6 +16,6 @@ uint16_t swapUint16(uint16_t value);
 uint32_t swapUint32(uint32_t value);
 uint64_t swapUint64(uint64_t value);
 
-uint8_t isHexChar(char c);
+uint8_t isHexChar(const char c);
 
 #endif

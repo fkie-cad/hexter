@@ -9,13 +9,35 @@
 #include "utils/common_fileio.h"
 #include "Printer.h"
 
+uint16_t* failure = NULL;
+
+void Finder_initFailure(unsigned char* needle, uint32_t needle_ln)
+{
+	int i = 0;
+	failure = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
+	computeFailure(needle, needle_ln, failure);
+//	if ( failure != NULL )
+//	{
+//		printf("failure\n");
+//		for ( i = 0; i < needle_ln; i++ )
+//		{
+//			printf("%u, ", failure[i]);
+//		}
+//		printf("\n");
+//	}
+//	else
+//	{
+//		printf("no failure initialized!\n");
+//	}
+}
+
 /**
  * Find the needle in the file starting from an offset.
  *
  * @param	needle unsigned char*
  * @param	needle_ln uint32_t
  * @param	offset uint64_t
- * @return	uint64_t the offset of the found needle or UINT64_MAX, if not found
+ * @return	uint64_t the offset of the found needle or FIND_FAILURE, if not found
  */
 uint64_t find(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
 {
@@ -26,11 +48,11 @@ uint64_t find(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
 //	failure = (uint16_t*) malloc(needle_ln*sizeof(uint16_t));
 	computeFailure(needle, needle_ln, failure);
 
-	uint64_t found = findNeedle(needle, needle_ln, offset, failure);
+	uint64_t found = findNeedleInFile(needle, needle_ln, offset);
 //	uint8_t remainder = 0;
 
 //	n_found = normalizeOffset(found, &remainder);
-//	if ( found == UINT64_MAX )
+//	if ( found == FIND_FAILURE )
 //		printf("Pattern not found!\n");
 //	else
 //		print(n_found, remainder);
@@ -48,7 +70,7 @@ uint64_t find(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
  * @param offset uint64_t
  * @return
  */
-uint64_t findNeedle(const unsigned char* needle, uint32_t needle_ln, uint64_t offset, uint16_t* failure)
+uint64_t findNeedleInFile(const unsigned char* needle, uint32_t needle_ln, uint64_t offset)
 {
 //	printf("BLOCKSIZE_LARGE: %u\n",BLOCKSIZE_LARGE);
 	FILE* fi;
@@ -58,10 +80,10 @@ uint64_t findNeedle(const unsigned char* needle, uint32_t needle_ln, uint64_t of
 	if ( !fi )
 	{
 		printf("ERROR: File %s does not exist.\n", file_path);
-		return -1;
+		return FIND_FAILURE;
 	}
 
-	found = findNeedleInFP(needle, needle_ln, offset, failure, fi);
+	found = findNeedleInFP(needle, needle_ln, offset, fi);
 
 	fclose(fi);
 
@@ -76,15 +98,15 @@ uint64_t findNeedle(const unsigned char* needle, uint32_t needle_ln, uint64_t of
  * @param offset
  * @param failure
  * @param fi
- * @return	uint64_t the found offset or UINT64_MAX
+ * @return	uint64_t the found offset or FIND_FAILURE
  */
-uint64_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, uint64_t offset, const uint16_t* failure, FILE* fi)
+uint64_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, uint64_t offset, FILE* fi)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
-	const int buf_ln = BLOCKSIZE_LARGE;
+	const uint16_t buf_ln = BLOCKSIZE_LARGE;
 	size_t n = buf_ln;
-	uint64_t i, j;
-	uint64_t found = UINT64_MAX;
+	uint64_t block_i, j;
+	uint64_t found = FIND_FAILURE;
 
 	j = 0;
 
@@ -93,15 +115,15 @@ uint64_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, uint64_
 		fseek(fi, offset, SEEK_SET);
 		n = fread(buf, 1, buf_ln, fi);
 
-		i = findNeedleInBlock(needle, needle_ln, buf, &j, failure, n);
+		block_i = findNeedleInBlock(needle, needle_ln, buf, &j, n);
 
 		if ( j == needle_ln )
 		{
-			found = offset + i - needle_ln + 1;
+			found = offset + block_i - needle_ln + 1;
 			break;
 		}
 
-		offset += i;
+		offset += block_i;
 	}
 
 	return found;
@@ -119,8 +141,7 @@ uint64_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, uint64_
  * @param n
  * @return	uint64_t the last search offset in the block.
  */
-uint64_t findNeedleInBlock(const unsigned char* needle, uint32_t needle_ln, const unsigned char* buf, uint64_t* j,
-						   const uint16_t* failure, size_t n)
+uint64_t findNeedleInBlock(const unsigned char* needle, uint32_t needle_ln, const unsigned char* buf, uint64_t* j, size_t n)
 {
 	uint64_t i;
 
@@ -166,4 +187,9 @@ void computeFailure(const unsigned char* pattern, uint64_t pattern_ln, uint16_t*
 		}
 		failure[i] = j;
 	}
+}
+
+void Finder_cleanUp()
+{
+	if ( failure != NULL ) free(failure);
 }

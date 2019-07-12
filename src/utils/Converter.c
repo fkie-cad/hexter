@@ -33,7 +33,11 @@ int parseUint64(const char* arg, uint64_t* value, uint8_t base)
 		return 2;
 	}
 
+#if defined(_WIN32)
+	result = strtoull(arg, &endptr, base);
+#else
 	result = strtoul(arg, &endptr, base);
+#endif
 	err_no = errno;
 
 	if ( endptr == arg )

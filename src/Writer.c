@@ -4,6 +4,8 @@
 #include <string.h>
 #if defined(__linux__) || defined(__linux) || defined(linux)
 	#include <unistd.h>
+#elif defined(_WIN32)
+	#include <io.h>
 #endif
 #include <sys/types.h>
 
@@ -169,7 +171,7 @@ uint32_t payloadParseReversedPlainBytes(const char* arg, unsigned char** payload
 uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
 {
 	uint32_t i, j;
-	int arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	uint16_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
 	unsigned char* p;
 	char byte[3] = {0};
 	uint32_t payload_ln;
@@ -202,17 +204,17 @@ uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
 	return payload_ln;
 }
 
-void insert(unsigned char* payload, uint32_t payload_ln)
+void insert(unsigned char* payload, uint32_t payload_ln, uint64_t offset)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
-	int n = buf_ln;
+	size_t n = buf_ln;
 	FILE* fi;
-	uint64_t i, j, offset;
+	uint64_t i, j;
 
-	if ( start > file_size )
+	if ( offset > file_size )
 	{
-		overwrite(payload, payload_ln);
+		overwrite(payload, payload_ln, offset);
 		return;
 	}
 
@@ -223,7 +225,6 @@ void insert(unsigned char* payload, uint32_t payload_ln)
 		return;
 	}
 
-	offset = start;
 	fseek(fi, offset, SEEK_SET);
 	while ( n == buf_ln )
 	{
@@ -258,7 +259,7 @@ void insert(unsigned char* payload, uint32_t payload_ln)
 	fclose(fi);
 }
 
-void overwrite(unsigned char* payload, uint32_t payload_ln)
+void overwrite(unsigned char* payload, uint32_t payload_ln, uint64_t offset)
 {
 	FILE* src;
 	// backup
@@ -292,7 +293,7 @@ void overwrite(unsigned char* payload, uint32_t payload_ln)
 //	fclose(bck);
 	// end backup
 
-	fseek(src, start, SEEK_SET);
+	fseek(src, offset, SEEK_SET);
 	fwrite(payload, 1, payload_ln, src);
 
 	fclose(src);
