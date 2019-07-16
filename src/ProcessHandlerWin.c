@@ -17,7 +17,9 @@
 #include "Finder.h"
 #include "utils/Helper.h"
 
-int printModuleProcessMemory(HANDLE process, MODULEENTRY32* me32, uint64_t base_off);
+typedef int (*MemInfoCallback)(HANDLE, MEMORY_BASIC_INFORMATION*);
+
+int printModuleProcessMemory(HANDLE process, MODULEENTRY32* me32, uint64_t base_off, uint64_t found);
 size_t readProcessBlock(BYTE* base_addr, DWORD base_size, uint64_t base_off, HANDLE process, unsigned char* block);
 bool confirmContinueWithNextModule(MODULEENTRY32* me32);
 size_t printProcessBlock(BYTE* base_addr, DWORD base_size, HANDLE process, uint64_t base_off, unsigned char* buffer);
@@ -29,10 +31,20 @@ BOOL openSnap(HANDLE* snap, uint32_t pid, DWORD dwFlags);
 BOOL openME(HANDLE* snap, MODULEENTRY32* me32);
 BOOL openProcessAndSnapAndME(HANDLE* process, HANDLE* snap, MODULEENTRY32* me32, uint32_t pid, DWORD dwFlags);
 void initME32(MODULEENTRY32* me32);
-BOOL addressIsInModuleRange(uint64_t address, MODULEENTRY32* me32);
+BOOL addressIsInRegionRange(uint64_t address, uint64_t base, DWORD size);
 void ProcessHandler_cleanUp(HANDLE snap, HANDLE process);
 BOOL openProcess(HANDLE* process, uint32_t pid);
+bool getProcessHeapListSnapshot(HANDLE* hHeapSnap, HEAPLIST32* hl, DWORD pid);
+void listProcessHeapBlocks(uint32_t pid, HEAPLIST32* hl);
 char* getHEFlagString(DWORD flag);
+char* getHLFlagString(DWORD flag);
+char* getProtectString(DWORD protect);
+int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info);
+int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb);
+char* getMemoryStateString(DWORD state);
+char* getMemoryTypeString(DWORD type);
+
+BOOL getRegion(uint64_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info);
 
 unsigned char* p_needle = NULL;
 uint32_t p_needle_ln;
@@ -56,28 +68,78 @@ uint64_t getSizeOfProcess(uint32_t pid)
 	return p_size;
 }
 
-uint8_t makeStartAndLengthHitAModule(uint32_t pid, uint64_t* start)
+//uint8_t makeStartAndLengthHitAModule(uint32_t pid, uint64_t* start)
+//{
+//	HANDLE snap = INVALID_HANDLE_VALUE;
+//	MODULEENTRY32 me32;
+//	uint8_t info_line_break = 0;
+//
+//	if ( !openSnapAndME(&snap, &me32, pid, TH32CS_SNAPMODULE) )
+//		return 2;
+//
+//	do
+//	{
+//		if ( addressIsInRegionRange(*start, (uint64_t) me32.modBaseAddr, me32.modBaseSize))
+//		{
+//			if ( *start + length > me32.modBaseSize )
+//			{
+//				printf("Info: Length %llu does not fit in module!\nSetting it to %lu!", (*start), me32.modBaseSize);
+//				length = me32.modBaseSize - *start;
+//				return 1;
+//			}
+//			return 0;
+//		}
+//	}
+//	while ( Module32Next(snap, &me32) );
+//
+//	Module32First(snap, &me32);
+//	CloseHandle(snap);
+//
+//	if ( (*start) > 0 )
+//	{
+//		printf("Info: Start offset %llx does not hit a module!\nSetting it to %p!", (*start), me32.modBaseAddr);
+//		info_line_break = 1;
+//	}
+//	(*start) = (uint64_t) me32.modBaseAddr;
+//
+//	return info_line_break;
+//}
+
+uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t* start)
 {
+	unsigned char *p = NULL;
+	MEMORY_BASIC_INFORMATION info;
+	HANDLE process = NULL;
+	DWORD base_off;
+
 	HANDLE snap = INVALID_HANDLE_VALUE;
 	MODULEENTRY32 me32;
 	uint8_t info_line_break = 0;
 
-	if ( !openSnapAndME(&snap, &me32, pid, TH32CS_SNAPMODULE) )
-		return 2;
+	if ( !openProcess(&process, pid) )
+		return false;
 
-	do
+	for ( p = NULL;
+		  VirtualQueryEx(process, p, &info, sizeof(info)) == sizeof(info);
+		  p += info.RegionSize )
 	{
-		if ( addressIsInModuleRange(*start, &me32) )
+//		if ( addressIsInRegionRange(*start, (uint64_t) info.BaseAddress, info.RegionSize) )
+		if ( addressIsInRegionRange(*start, (uint64_t) info.AllocationBase, info.RegionSize) )
 		{
-			if ( length > me32.modBaseSize )
+			base_off = *start - (uint64_t) info.AllocationBase;
+			if ( base_off + length > info.RegionSize )
 			{
-				printf("Info: Length %llu does not fit in module!\nSetting it to %lu!", (*start), me32.modBaseSize);
-				length = me32.modBaseSize;
+				printf("Info: Length %llx does not fit in region!\nSetting it to %lx!", length, info.RegionSize - base_off);
+				length = info.RegionSize - base_off;
 				return 1;
 			}
 			return 0;
 		}
-	} while ( Module32Next(snap, &me32) );
+	}
+
+
+	if ( !openSnapAndME(&snap, &me32, pid, TH32CS_SNAPMODULE) )
+		return 2;
 
 	Module32First(snap, &me32);
 	CloseHandle(snap);
@@ -123,12 +185,6 @@ BOOL listProcessModules(uint32_t pid)
 	return TRUE;
 }
 
-void initME32(MODULEENTRY32* me32)
-{
-	memset(me32, 0, sizeof(MODULEENTRY32));
-	me32->dwSize = sizeof(MODULEENTRY32);
-}
-
 BOOL listProcessThreads(uint64_t pid)
 {
 	HANDLE hThreadSnap = INVALID_HANDLE_VALUE;
@@ -170,62 +226,70 @@ BOOL listProcessThreads(uint64_t pid)
 
 int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln, uint64_t start)
 {
-	HANDLE snap = INVALID_HANDLE_VALUE;
-	MODULEENTRY32 me32;
 	HANDLE process;
-	uint64_t base_off = start;
+	MEMORY_BASIC_INFORMATION info;
+
+	PVOID base_addr = (PVOID) start;
 	BOOL s;
 	uint8_t i;
 	SIZE_T bytes_written = 0;
 	DWORD last_error;
-	DWORD lpflOldProtect;
+	DWORD old_protect;
 
-	if ( !openProcessAndSnapAndME(&process, &snap, &me32, pid, TH32CS_SNAPMODULE))
+	const DWORD nSize = 512;
+	char f_path[512];
+	char* file_name;
+	memset(f_path, 0, 512);
+
+	if ( !openProcess(&process, pid) )
 		return 1;
 
-	s = getModule(start, snap, &me32);
+	s = getRegion(start, process, &info);
 	if ( !s )
 	{
-		printf("Error: No module hit for writing\n");
+		printf("Error: No region hit for writing\n");
 		return 2;
 	}
 
-	printf("Write into %s:\n", me32.szModule);
+	GetModuleFileNameExA(process, info.AllocationBase, f_path, nSize);
+	getFileNameL(f_path, &file_name);
+
+	printf("Write into %s:\n", file_name);
 	printf("payload_ln %u\n", payload_ln);
 	for ( i = 0; i < payload_ln; i++ )
 		printf("%02x|", payload[i]);
 	printf("\n");
 
-	base_off -= (uint64_t) me32.modBaseAddr;
-	s = VirtualProtectEx(process, me32.modBaseAddr + base_off, payload_ln, PAGE_EXECUTE_READWRITE, &lpflOldProtect);
+	s = VirtualProtectEx(process, base_addr, payload_ln, PAGE_EXECUTE_READWRITE, &old_protect);
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error: VirtualProtect at 0x%llx\n", (uint64_t) me32.modBaseAddr + base_off);
+		printf(" - Error: VirtualProtect at 0x%llx\n", (uint64_t) base_addr);
 		printf(" - - code: %lu\n", last_error);
 		printError("VirtualProtect", last_error);
 	}
 
-	s = WriteProcessMemory(process, me32.modBaseAddr + base_off, payload, payload_ln, &bytes_written);
+	s = WriteProcessMemory(process, base_addr, payload, payload_ln, &bytes_written);
 
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error: WriteProcessMemory %lu bytes at 0x%p\n", bytes_written, me32.modBaseAddr + base_off);
+		printf(" - Error: WriteProcessMemory %lu bytes at 0x%p\n", bytes_written, base_addr);
 		printf(" - - code: %lu\n", last_error);
 		printError("WriteProcessMemory", last_error);
 	}
 
-	s = VirtualProtectEx(process, me32.modBaseAddr + base_off, payload_ln, lpflOldProtect, &lpflOldProtect);
+	s = VirtualProtectEx(process, base_addr, payload_ln, old_protect, &old_protect);
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error: VirtualProtect at 0x%llx\n", (uint64_t) me32.modBaseAddr + base_off);
+		printf(" - Error: VirtualProtect at 0x%llx\n", (uint64_t) base_addr);
 		printf(" - - code: %lu\n", last_error);
 		printError("VirtualProtect", last_error);
 	}
 
-	ProcessHandler_cleanUp(snap, process);
+	CloseHandle(process);
+
 	return 0;
 }
 
@@ -281,14 +345,14 @@ BOOL printProcessModules(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 			else
 			{
 				Printer_setHiglightBytes(p_needle_ln);
-				base_off = found - (uint64_t) me32.modBaseAddr;
-				base_off = normalizeOffset(base_off, &skip_bytes);
+				found = found - (uint64_t) me32.modBaseAddr;
+				base_off = normalizeOffset(found, &skip_bytes);
 				Printer_setHiglightWait(skip_bytes);
 			}
 		}
 
 //		Printer_setSkipBytes(skip_bytes);
-		printModuleProcessMemory(process, &me32, base_off);
+		printModuleProcessMemory(process, &me32, base_off, found);
 
 		s = Module32Next(snap, &me32);
 		if ( !s )
@@ -329,16 +393,14 @@ bool confirmContinueWithNextModule(MODULEENTRY32* me32)
  * @param base_off uint32_t base offset in module to start at printing
  * @return
  */
-int printModuleProcessMemory(HANDLE process, MODULEENTRY32* me32, uint64_t base_off)
+int printModuleProcessMemory(HANDLE process, MODULEENTRY32* me32, uint64_t base_off, uint64_t found)
 {
 	printf("%s (0x%p - 0x%p):\n", me32->szModule, me32->modBaseAddr, me32->modBaseAddr+me32->modBaseSize);
 
 	size_t n_size = length;
 	unsigned char buffer[BLOCKSIZE_LARGE] = {0};
 	char input;
-	uint64_t found;
-
-	found = base_off;
+	uint8_t skip_bytes;
 
 	n_size = printProcessBlock(me32->modBaseAddr, me32->modBaseSize, process, base_off, buffer);
 	base_off += n_size;
@@ -354,14 +416,16 @@ int printModuleProcessMemory(HANDLE process, MODULEENTRY32* me32, uint64_t base_
 			else if ( find_f && input == 'n' )
 			{
 				found = findNeedleInProcessMemoryBlock(me32->modBaseAddr, me32->modBaseSize, found + p_needle_ln,
-													   process,
-													   p_needle, p_needle_ln);
+													   process, p_needle, p_needle_ln);
 				if ( found == FIND_FAILURE )
 					break;
 				found -= (uint64_t) me32->modBaseAddr;
 				printf("\n");
 				Printer_setHiglightBytes(p_needle_ln);
-				n_size = printProcessBlock(me32->modBaseAddr, me32->modBaseSize, process, found, buffer);
+				base_off = normalizeOffset(found, &skip_bytes);
+				Printer_setHiglightWait(skip_bytes);
+
+				n_size = printProcessBlock(me32->modBaseAddr, me32->modBaseSize, process, base_off, buffer);
 			}
 			else if ( input == 'q' )
 				break;
@@ -429,6 +493,28 @@ size_t readProcessBlock(BYTE* base_addr, DWORD base_size, uint64_t base_off, HAN
  * Get module hit by address.
  *
  * @param address
+ * @param process HANDLE
+ * @param info MEMORY_BASIC_INFORMATION*
+ * @return BOOL
+ */
+BOOL getRegion(uint64_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info)
+{
+	unsigned char *p = NULL;
+
+	for ( p = NULL;
+		  VirtualQueryEx(process, p, info, sizeof(*info)) == sizeof(*info);
+		  p += info->RegionSize )
+	{
+		if ( addressIsInRegionRange(address, (uint64_t) info->AllocationBase, info->RegionSize) )
+			return TRUE;
+	}
+	return FALSE;
+}
+
+/**
+ * Get module hit by address.
+ *
+ * @param address
  * @param snap
  * @param me32
  * @return
@@ -437,17 +523,16 @@ BOOL getModule(uint64_t address, HANDLE snap, MODULEENTRY32* me32)
 {
 	do
 	{
-		if ( addressIsInModuleRange(address, me32) )
+		if ( addressIsInRegionRange(address, (uint64_t) me32->modBaseAddr, me32->modBaseSize))
 			return TRUE;
 	}
 	while ( Module32Next(snap, me32) );
 	return FALSE;
 }
 
-BOOL addressIsInModuleRange(uint64_t address, MODULEENTRY32* me32)
+BOOL addressIsInRegionRange(uint64_t address, uint64_t base, DWORD size)
 {
-	uint64_t base = (uint64_t) me32->modBaseAddr;
-	uint64_t end = base + me32->modBaseSize;
+	uint64_t end = base + size;
 	return base <= address && address <= end;
 }
 
@@ -462,9 +547,7 @@ BOOL addressIsInModuleRange(uint64_t address, MODULEENTRY32* me32)
  * @return uint64_t absolute found address
  */
 uint64_t
-findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, uint64_t offset, HANDLE process,
-							   const unsigned char* needle,
-							   uint32_t needle_ln)
+findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, uint64_t offset, HANDLE process, const unsigned char* needle, uint32_t needle_ln)
 {
 	uint64_t found = FIND_FAILURE;
 	uint64_t block_i;
@@ -572,6 +655,12 @@ BOOL openME(HANDLE* snap, MODULEENTRY32* me32)
 	return TRUE;
 }
 
+void initME32(MODULEENTRY32* me32)
+{
+	memset(me32, 0, sizeof(MODULEENTRY32));
+	me32->dwSize = sizeof(MODULEENTRY32);
+}
+
 void ProcessHandler_cleanUp(HANDLE snap, HANDLE process)
 {
 	if ( snap ) CloseHandle(snap);
@@ -611,235 +700,216 @@ void printError(LPTSTR lpszFunction, DWORD last_error)
 	LocalFree(lpDisplayBuf);
 }
 
-bool listProcessMemory(uint32_t pid)
+int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb)
 {
 	unsigned char *p = NULL;
-	MEMORY_BASIC_INFORMATION info;
-	HANDLE process = NULL;
-	uint64_t usage;
+	int s = 0;
 
-	char f_path[512];
-	char* file_name;
-	DWORD nSize = 512;
+	for ( p = NULL;
+		  VirtualQueryEx(process, p, info, sizeof(*info)) == sizeof(*info);
+		  p += info->RegionSize )
+	{
+		s = cb(process, info);
+		if ( s != 0 )
+			return s;
+	}
+
+	return 0;
+}
+
+bool listProcessMemory(uint32_t pid)
+{
+	HANDLE process = NULL;
+	MEMORY_BASIC_INFORMATION info;
 
 	if ( !openProcess(&process, pid) )
 		return false;
 
-	printf("[Name | BaseAddress | AllocationBase | RegionSize | State | Type | Protect | AllocationProtect [| info]]\n");
-	for ( p = NULL;
-		  VirtualQueryEx(process, p, &info, sizeof(info)) == sizeof(info);
-		  p += info.RegionSize )
-	{
-		usage = 0;
-
-		memset(f_path, 0, 512);
-		GetModuleFileNameExA(process, info.AllocationBase, f_path, nSize);
-		getFileNameL(f_path, &file_name);
-		printf("%s : ", file_name);
-		printf("0x%p\t0x%p\t(%6luK)\t", info.BaseAddress, info.AllocationBase, info.RegionSize/1024);
-
-		switch (info.State) {
-			case MEM_COMMIT:
-				printf("Committed");
-				break;
-			case MEM_RESERVE:
-				printf("Reserved");
-				break;
-			case MEM_FREE:
-				printf("Free    ");
-				break;
-			default:
-				printf("None    ");
-		}
-		printf("\t");
-		switch (info.Type) {
-			case MEM_IMAGE:
-				printf("Code Module");
-				break;
-			case MEM_MAPPED:
-				printf("Mapped     ");
-				break;
-			case MEM_PRIVATE:
-				printf("Private    ");
-			default:
-				printf("None       ");
-		}
-		printf("\t");
-
-		if ((info.State == MEM_COMMIT) && (info.Type == MEM_PRIVATE))
-			usage +=info.RegionSize;
-
-		int guard = 0, nocache = 0;
-
-		if ( info.AllocationProtect & PAGE_NOCACHE)
-			nocache = 1;
-		if ( info.AllocationProtect & PAGE_GUARD )
-			guard = 1;
-
-		switch (info.Protect) {
-			case PAGE_READONLY:
-				printf("Read Only         ");
-				break;
-			case PAGE_READWRITE:
-				printf("Read/Write        ");
-				break;
-			case PAGE_WRITECOPY:
-				printf("Copy on Write     ");
-				break;
-			case PAGE_EXECUTE:
-				printf("Execute only      ");
-				break;
-			case PAGE_EXECUTE_READ:
-				printf("Execute/Read      ");
-				break;
-			case PAGE_EXECUTE_READWRITE:
-				printf("Execute/Read/Write");
-				break;
-			case PAGE_EXECUTE_WRITECOPY:
-				printf("COW Executable    ");
-				break;
-			case PAGE_NOACCESS:
-				printf("NOACCESS          ");
-				break;
-			case PAGE_TARGETS_INVALID:
-//			case PAGE_TARGETS_NO_UPDATE:
-				printf("NO_UPDATE/INVALID ");
-				break;
-			default:
-				printf("None              ");
-		}
-
-		info.AllocationProtect &= ~(PAGE_GUARD | PAGE_NOCACHE);
-
-		switch (info.AllocationProtect) {
-			case PAGE_READONLY:
-				printf("Read Only         ");
-				break;
-			case PAGE_READWRITE:
-				printf("Read/Write        ");
-				break;
-			case PAGE_WRITECOPY:
-				printf("Copy on Write     ");
-				break;
-			case PAGE_EXECUTE:
-				printf("Execute only      ");
-				break;
-			case PAGE_EXECUTE_READ:
-				printf("Execute/Read      ");
-				break;
-			case PAGE_EXECUTE_READWRITE:
-				printf("Execute/Read/Write");
-				break;
-			case PAGE_EXECUTE_WRITECOPY:
-				printf("COW Executable    ");
-				break;
-			case PAGE_NOACCESS:
-				printf("NOACCESS          ");
-				break;
-			case PAGE_TARGETS_INVALID:
-//			case PAGE_TARGETS_NO_UPDATE:
-				printf("NO_UPDATE/INVALID ");
-				break;
-			default:
-				printf("None              ");
-		}
-
-		if (guard)
-			printf("\tguard page");
-		if (nocache)
-			printf("\tnon-cachable");
-//		printf("usage: %lu\n", usage);
-		printf("\n");
-	}
+	printf("%-18s | %-18s | %10s | %-9s | %-11s | %-18s | %-18s | %s [| %s]\n",
+			"BaseAddress", "AllocationBase", "RegionSize", "State", "Type", "Protect", "AllocationProtect", "Name", "info");
+	printf("----------------------------------------------------------------------------------------------------------------------------------------\n");
+	iterateProcessMemory(process, &info, &printMemoryInfo);
 	printf("\n");
-
-//	int i;
-//	uint64_t addr = 0x000001CE38B93460;
-//	unsigned char* ptr = (unsigned char*) 0x000001CE38B93460;
-//	printf("data of 0x%llx:  ", addr);
-//	for ( i = 0; i < 4; i++ )
-//		printf("0x%02x", ptr[i]);
 
 	return true;
 }
 
-bool listProcessHeaps(uint32_t pid)
+int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
+{
+	uint64_t usage = 0;
+
+	char f_path[512];
+	char* file_name;
+	DWORD nSize = 512;
+	const char* SEPARATOR = " | ";
+	int guard = 0, nocache = 0;
+
+	printf("0x%p | 0x%p | 0x%8lx | ", info->BaseAddress, info->AllocationBase, info->RegionSize);
+
+	printf("%s%s", getMemoryStateString(info->State), SEPARATOR);
+
+	printf("%s%s" , getMemoryTypeString(info->Type), SEPARATOR);
+
+	if ((info->State == MEM_COMMIT) && (info->Type == MEM_PRIVATE))
+		usage +=info->RegionSize;
+
+	guard = 0;
+	nocache = 0;
+	if ( info->AllocationProtect & PAGE_NOCACHE )
+		nocache = 1;
+	if ( info->AllocationProtect & PAGE_GUARD )
+		guard = 1;
+
+	printf("%s%s", getProtectString(info->Protect), SEPARATOR);
+
+	info->AllocationProtect &= ~(PAGE_GUARD | PAGE_NOCACHE);
+	printf("%s%s", getProtectString(info->AllocationProtect), SEPARATOR);
+
+	memset(f_path, 0, 512);
+	GetModuleFileNameExA(process, info->AllocationBase, f_path, nSize);
+	getFileNameL(f_path, &file_name);
+	printf("%s", file_name);
+
+	if (guard)
+		printf("%sguard page", SEPARATOR);
+	if (nocache)
+		printf("%snon-cachable", SEPARATOR);
+//		printf("usage: %lu\n", usage);
+	printf("\n");
+
+	return 0;
+}
+
+char* getMemoryStateString(DWORD state)
+{
+	switch (state) {
+		case MEM_COMMIT:
+			return("Committed");
+		case MEM_RESERVE:
+			return("Reserved ");
+		case MEM_FREE:
+			return("Free     ");
+		default:
+			return("None     ");
+	}
+}
+
+char* getMemoryTypeString(DWORD type)
+{
+	switch (type) {
+		case MEM_IMAGE:
+			return("Code Module");
+		case MEM_MAPPED:
+			return("Mapped     ");
+		case MEM_PRIVATE:
+			return("Private    ");
+		default:
+			return("None       ");
+	}
+}
+
+char* getProtectString(DWORD protect)
+{
+	switch ( protect )
+	{
+		case PAGE_READONLY:
+			return("Read Only         ");
+		case PAGE_READWRITE:
+			return("Read/Write        ");
+		case PAGE_WRITECOPY:
+			return("Copy on Write     ");
+		case PAGE_EXECUTE:
+			return("Execute only      ");
+		case PAGE_EXECUTE_READ:
+			return("Execute/Read      ");
+		case PAGE_EXECUTE_READWRITE:
+			return("Execute/Read/Write");
+		case PAGE_EXECUTE_WRITECOPY:
+			return("COW Executable    ");
+		case PAGE_NOACCESS:
+			return("No Access         ");
+		case PAGE_TARGETS_INVALID:
+//			case PAGE_TARGETS_NO_UPDATE:
+			return("NO_UPDATE/INVALID ");
+		default:
+			return("None              ");
+	}
+}
+
+bool listProcessHeaps(uint32_t pid, int type)
 {
 	HEAPLIST32 hl;
 	HANDLE hHeapSnap = INVALID_HANDLE_VALUE;
-	HANDLE process = NULL;
-//	uint32_t i;
-//	BOOL s;
-//	unsigned char* ptr = NULL;
-//	SIZE_T bytes_read = 0;
-//	SIZE_T n_size;
-//	unsigned char block[BLOCKSIZE_LARGE];
-	uint32_t heap_size;
 
-	if ( !openProcess(&process, pid) )
+	if( !getProcessHeapListSnapshot(&hHeapSnap, &hl, pid) )
+	{
 		return false;
-
-	if ( !openSnap(&hHeapSnap, pid, TH32CS_SNAPHEAPLIST) )
-		return false;
-
-	hl.dwSize = sizeof(HEAPLIST32);
-
-	if( !Heap32ListFirst(hHeapSnap, &hl) )
-		printf ("Cannot list first heap (%lu)\n", GetLastError());
+	}
 
 	printf("List of Heaps:\n");
-	printf("[flags | heap id | pid]\n");
+	printf(" : [flags | heap id | pid]\n");
 	do
 	{
-		printf("Heap %lu | 0x%llx | %lu\n", hl.dwFlags, hl.th32HeapID, hl.th32ProcessID);
-//		ptr = (unsigned char*) hl.th32HeapID;
+		printf("Heap: %s | 0x%llx | %lu\n", getHLFlagString(hl.dwFlags), hl.th32HeapID, hl.th32ProcessID);
 
-		HEAPENTRY32 he;
-		ZeroMemory(&he, sizeof(HEAPENTRY32));
-		he.dwSize = sizeof(HEAPENTRY32);
-		heap_size = 0;
-
-		if( Heap32First( &he, pid, hl.th32HeapID ) )
-		{
-			printf(" - [hHandle | dwAddress | dwBlockSize | dwFlags | fwLockCount | dwResvd | th32ProcessId | th32HeapId]\n");
-			do
-			{
-				heap_size += he.dwBlockSize;
-				printf( "- 0x%p | 0x%p | 0x%lx | %s |  %lu |  %lu |  %lu | 0x%llx \n",
-						he.hHandle, he.dwAddress, he.dwBlockSize, getHEFlagString(he.dwFlags), he.dwLockCount, he.dwResvd, he.th32ProcessID, he.th32HeapID);
-
-//				memset(&block, 0, BLOCKSIZE_LARGE);
-//				n_size = (he.dwBlockSize < BLOCKSIZE_LARGE ) ? he.dwBlockSize : BLOCKSIZE_LARGE;
-//				s = ReadProcessMemory(process, ptr+heap_size, block, n_size, &bytes_read);
-//				if ( s )
-//				{
-//					printf(" - data: ");
-//					for ( i = 0; i < bytes_read; i++ )
-//					{
-//						printf("%02x|", block[i]);
-//					}
-//					printf("\n");
-//				}
-//				else
-//					printf("ERROR: reading block failed\n");
-
-
-				he.dwSize = sizeof(HEAPENTRY32);
-			} while( Heap32Next(&he) );
-		}
-		printf(" - - heap_size: 0x%lx (%lu)\n", heap_size, heap_size);
+		if ( type == 2 )
+			listProcessHeapBlocks(pid, &hl);
 
 		hl.dwSize = sizeof(HEAPLIST32);
-
-//		s = VirtualProtectEx(process, hl.th32HeapID, hl.dwSize, lpflOldProtect, &lpflOldProtect);
 	}
-	while (Heap32ListNext( hHeapSnap, &hl ));
+	while (Heap32ListNext(hHeapSnap, &hl));
 
 	printf("\n");
 
 	CloseHandle(hHeapSnap);
 
-	return 0;
+	return true;
+}
+
+bool getProcessHeapListSnapshot(HANDLE* hHeapSnap, HEAPLIST32* hl, DWORD pid)
+{
+	if ( !openSnap(hHeapSnap, pid, TH32CS_SNAPHEAPLIST) )
+		return false;
+
+	hl->dwSize = sizeof(HEAPLIST32);
+
+	if( !Heap32ListFirst((*hHeapSnap), hl) )
+	{
+		printf("Cannot list first heap (%lu)\n", GetLastError());
+		return false;
+	}
+	return true;
+}
+
+void listProcessHeapBlocks(uint32_t pid, HEAPLIST32* hl)
+{
+	uint32_t heap_size = 0;
+	HEAPENTRY32 he;
+	ZeroMemory(&he, sizeof(HEAPENTRY32));
+	he.dwSize = sizeof(HEAPENTRY32);
+
+	if ( Heap32First(&he, pid, hl->th32HeapID))
+	{
+		printf(" - [hHandle | dwAddress | dwBlockSize | dwFlags | fwLockCount | dwResvd | th32ProcessId | th32HeapId]\n");
+		do
+		{
+			heap_size += he.dwBlockSize;
+			printf(" - 0x%p | 0x%p | 0x%lx | %s |  %lu |  %lu |  %lu | 0x%llx \n",
+				   he.hHandle, he.dwAddress, he.dwBlockSize, getHEFlagString(he.dwFlags), he.dwLockCount, he.dwResvd,
+				   he.th32ProcessID, he.th32HeapID);
+
+			he.dwSize = sizeof(HEAPENTRY32);
+		} while ( Heap32Next(&he) );
+	}
+	printf(" - - heap_size: 0x%x (%u)\n", heap_size, heap_size);
+}
+
+char* getHLFlagString(DWORD flag)
+{
+	if ( flag == HF32_DEFAULT )
+		return "HF32_DEFAULT";
+	else
+		return "HF32_NONE";
 }
 
 char* getHEFlagString(DWORD flag)

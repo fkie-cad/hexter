@@ -26,12 +26,35 @@ $ cmake --build . [--config Release] --target hexter
 "-DCMAKE_BUILD_TYPE=Release" on the other hand is only meaningful to Linux.  
 "Release" will build with -Ofast.  
 
+### CMake on Windows (recommended way)###
+Since keeping control off the bitness of the built program seems to be complicated on Windows, using the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX" is advised, if you plan to build for a different bitness than you actual OS.
+Alternatively running
+```bash
+"C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsXX.bat"
+```
+in a normal terminal, where the XX (in vcvarsXX.bat) is 32 or 64, should do the same trick.
+Either way will set the necessary environment variables correctly.
+
+Then you may simply run:
+```
+$ mkdir build
+$ cd build
+cmake .. -DCMAKE_BUILD_TYPE=Debug/Release -G "CodeBlocks - NMake Makefiles"
+cmake --build . --config Debug/Release --target hexter
+```
+
 ### MSBUILD & Windows commandline ###
+Run the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX".
+
 Use cmake for creating .vcxproj without Visual Studio:
 ```bash
-$ cmake . -G "Visual Studio 14 2015 Win64"  
+$ mkdir build
+$ cd build
+$ cmake .. -G "Visual Studio 14 2015 Win64"  
 $ msbuild (/p:PlatformToolset=v140) (/p:Platform=x64) (/p:Configuration=Release) hexter.vcxproj
 ```
+For a 32-bit (x86) build, delete the "Win64" part.
+On some systems this did nonetheless only support the creation of 64-bit binaries.
 The "p" options are more or less mandatory and used without the enclosing "()".  
 
 ## USAGE ##

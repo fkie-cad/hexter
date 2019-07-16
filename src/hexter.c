@@ -42,7 +42,7 @@ uint8_t continuous_f;
 bool list_process_memory_f;
 bool list_process_modules_f;
 bool list_process_threads_f;
-bool list_process_heaps_f;
+int list_process_heaps_f;
 
 const uint8_t TYPE_FILE = 1;
 const uint8_t TYPE_PID = 2;
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
 		if ( list_process_threads_f )
 			listProcessThreads(pid);
 		if ( list_process_heaps_f )
-			listProcessHeaps(pid);
+			listProcessHeaps(pid, list_process_heaps_f);
 		printProcessModules(pid, start, skip_bytes, payload, payload_ln);
 	}
 
@@ -194,7 +194,7 @@ void initParameters()
 	list_process_memory_f = false;
 	list_process_modules_f = false;
 	list_process_threads_f = false;
-	list_process_heaps_f = false;
+	list_process_heaps_f = 0;
 
 	clean_printing = 0;
 
@@ -236,6 +236,7 @@ void printHelp()
 		   " * * -lpm List all process modules.\n"
 		   " * * -lpt List all process threads.\n"
 		   " * * -lph List all process heaps.\n"
+		   " * * -lph List all process heaps and its blocks.\n"
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
@@ -311,7 +312,11 @@ void parseArgs(int argc, char** argv)
 		}
 		else if ( isArgOfType(argv[i], "-lph") )
 		{
-			list_process_heaps_f = true;
+			list_process_heaps_f = 1;
+		}
+		else if ( isArgOfType(argv[i], "-lphb") )
+		{
+			list_process_heaps_f = 2;
 		}
 		else if ( isArgOfType(argv[i], "-s") )
 		{
@@ -331,6 +336,7 @@ void parseArgs(int argc, char** argv)
 			if ( hasValue("-l", i, end_i) )
 			{
 				s = parseUint64Auto(argv[i + 1], &length);
+				printf("length: %llx\n", length);
 				if ( s != 0 )
 				{
 					printf("INFO: Could not parse length. Setting it to %u!\n", DEFAULT_LENGTH);
@@ -474,7 +480,8 @@ void sanitizeParams(uint32_t pid)
 		info_line_break = keepStartInFile();
 	else if ( type == TYPE_PID )
 	{
-		info_line_break = makeStartAndLengthHitAModule(pid, &start);
+//		info_line_break = makeStartAndLengthHitAModule(pid, &start);
+		info_line_break = makeStartAndLengthHitAccessableMemory(pid, &start);
 	}
 
 	// normalize start offset to block size
