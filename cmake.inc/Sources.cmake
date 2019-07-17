@@ -37,3 +37,8 @@ if (WIN32)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerWin.c
     )
 endif (WIN32)
+
+
+set(HEXTER_LIB_FILES
+	${HEXTER_FILES}
+	)

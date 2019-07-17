@@ -168,7 +168,7 @@ int main(int argc, char** argv)
 			listProcessThreads(pid);
 		if ( list_process_heaps_f )
 			listProcessHeaps(pid, list_process_heaps_f);
-		printProcessModules(pid, start, skip_bytes, payload, payload_ln);
+		printProcessRegions(pid, start, skip_bytes, payload, payload_ln);
 	}
 
 	if ( payload != NULL )
