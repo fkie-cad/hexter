@@ -201,20 +201,19 @@ BOOL listProcessThreads(uint64_t pid)
 	{
 		printf("Error: Thread32First\n");
 		CloseHandle(snap);
-		return (FALSE);
+		return FALSE;
 	}
 
 	printf("List of threads:\n");
-	printf("[Base priority | Delta priority]\n");
+	printf("nr | ThreadID   | OwnerProcessID | BasePri\n");
+	printf("------------------------------------------\n");
 	do
 	{
 		if ( te32.th32OwnerProcessID == pid )
 		{
 			i++;
-
-			printf("%u. Thread ID: 0x%08lX\n", i, te32.th32ThreadID);
-			printf(" - %lu |", te32.tpBasePri);
-			printf(" %lu\n", te32.tpDeltaPri);
+			printf("%2u | 0x%-8lx | %14lu | %7lu\n",
+					i, te32.th32ThreadID, te32.th32OwnerProcessID, te32.tpBasePri);
 		}
 	}
 	while ( Thread32Next(snap, &te32) );
