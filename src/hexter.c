@@ -78,12 +78,10 @@ uint8_t keepLengthInFile();
 // - highlight found part
 // + continuouse find typing 'n'
 // - reversed payload, endianess option for hex and word payload
-// + search option
-// + string, byte, (d/q)word
-// + column to show file offset
-// + delete option
-// + interactive more/scroll
 // + align offset to 0x10, print spaces to fill col up
+// - view processes
+//   - windows
+//   - linux
 int main(int argc, char** argv)
 {
 	char* file_name = NULL;
@@ -177,6 +175,11 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+void run()
+{
+
+}
+
 void initParameters()
 {
 	file_size = 0;
@@ -232,11 +235,11 @@ void printHelp()
 		   " * -d Delete -l bytes from offset -s.\n"
 		   " * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'filename'.\n"
 		   " * -pid only.\n"
-		   " * * -lpx List whole process memory.\n"
+		   " * * -lpx List whole process memory layout.\n"
 		   " * * -lpm List all process modules.\n"
 		   " * * -lpt List all process threads.\n"
 		   " * * -lph List all process heaps.\n"
-		   " * * -lph List all process heaps and its blocks.\n"
+		   " * * -lphb List all process heaps and its blocks.\n"
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
@@ -405,6 +408,14 @@ void parseArgs(int argc, char** argv)
 		printf("ERROR: Inserting or deleting is not supported in process mode!\n");
 		exit(0);
 	}
+
+#ifndef _WIN32
+	if ( type == TYPE_PID )
+	{
+		printf("ERROR: process mode is only yet supported in windows!\n");
+		exit(0);
+	}
+#endif
 
 	if ( start_i == 1 )
 		source = argv[i];

@@ -72,7 +72,6 @@ void getFileNameL(char* file_path, char** file_name)
 	if ( strnlen(file_path, PATH_MAX) == 0 ) return;
 
 	int64_t offset = getFileNameOffset(file_path);
-
 	*file_name = &file_path[offset];
 }
 
@@ -133,7 +132,6 @@ int64_t getFileNameOffset(const char* file_path)
 {
 	size_t file_path_ln = strnlen(file_path, PATH_MAX);
 	int64_t i = 0;
-
 	for ( i = file_path_ln-1; i >= 0; i--)
 	{
 		if ( file_path[i] == PATH_SEPARATOR )

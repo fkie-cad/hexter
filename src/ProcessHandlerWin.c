@@ -21,11 +21,12 @@ typedef int (*MemInfoCallback)(HANDLE, MEMORY_BASIC_INFORMATION*);
 
 //int printModuleProcessMemory(HANDLE process, MODULEENTRY32* me32, uint64_t base_off, uint64_t found);
 size_t readProcessBlock(BYTE* base_addr, DWORD base_size, uint64_t base_off, HANDLE process, unsigned char* block);
+BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char** file_name, int print_s, PVOID last_base);
 BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name);
 BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name);
 BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name);
 bool confirmContinueWithNextRegion(char* name);
-size_t printMemoryBlock(BYTE* base_addr, DWORD base_size, HANDLE process, uint64_t base_off, unsigned char* buffer);
+size_t printMemoryBlock(HANDLE process, BYTE* base_addr, uint64_t base_off, DWORD base_size, unsigned char* buffer);
 void printError(LPTSTR lpszFunction, DWORD last_error);
 BOOL getModule(uint64_t address, HANDLE snap, MODULEENTRY32* me32);
 uint64_t findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, uint64_t offset, HANDLE process, const unsigned char* needle, uint32_t needle_ln);
@@ -38,7 +39,7 @@ BOOL addressIsInRegionRange(uint64_t address, uint64_t base, DWORD size);
 void ProcessHandler_cleanUp(HANDLE snap, HANDLE process);
 BOOL openProcess(HANDLE* process, uint32_t pid);
 bool getProcessHeapListSnapshot(HANDLE* hHeapSnap, HEAPLIST32* hl, DWORD pid);
-void listProcessHeapBlocks(uint32_t pid, HEAPLIST32* hl);
+void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base);
 char* getHEFlagString(DWORD flag);
 char* getHLFlagString(DWORD flag);
 char* getProtectString(DWORD protect);
@@ -49,6 +50,11 @@ char* getMemoryTypeString(DWORD type);
 int printRegionProcessMemory(HANDLE process, BYTE* base_addr, uint64_t base_off, SIZE_T size, uint64_t found, char* reg_name);
 BOOL getRegion(uint64_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info);
 BOOL getRegionName(HANDLE process, PVOID base, char** file_name);
+BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
+BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
+BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect);
+
+void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name);
 
 unsigned char* p_needle = NULL;
 uint32_t p_needle_ln;
@@ -72,43 +78,6 @@ uint64_t getSizeOfProcess(uint32_t pid)
 	return p_size;
 }
 
-//uint8_t makeStartAndLengthHitAModule(uint32_t pid, uint64_t* start)
-//{
-//	HANDLE snap = INVALID_HANDLE_VALUE;
-//	MODULEENTRY32 me32;
-//	uint8_t info_line_break = 0;
-//
-//	if ( !openSnapAndME(&snap, &me32, pid, TH32CS_SNAPMODULE) )
-//		return 2;
-//
-//	do
-//	{
-//		if ( addressIsInRegionRange(*start, (uint64_t) me32.modBaseAddr, me32.modBaseSize))
-//		{
-//			if ( *start + length > me32.modBaseSize )
-//			{
-//				printf("Info: Length %llu does not fit in module!\nSetting it to %lu!", (*start), me32.modBaseSize);
-//				length = me32.modBaseSize - *start;
-//				return 1;
-//			}
-//			return 0;
-//		}
-//	}
-//	while ( Module32Next(snap, &me32) );
-//
-//	Module32First(snap, &me32);
-//	CloseHandle(snap);
-//
-//	if ( (*start) > 0 )
-//	{
-//		printf("Info: Start offset %llx does not hit a module!\nSetting it to %p!", (*start), me32.modBaseAddr);
-//		info_line_break = 1;
-//	}
-//	(*start) = (uint64_t) me32.modBaseAddr;
-//
-//	return info_line_break;
-//}
-
 /**
  * Try to hit accessible memory with start offset.
  * If not hit, set start to first accessible region.
@@ -121,7 +90,7 @@ uint64_t getSizeOfProcess(uint32_t pid)
 uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t* start)
 {
 	unsigned char *p = NULL;
-	unsigned char *first_region = NULL;
+//	unsigned char *first_region = NULL;
 	MEMORY_BASIC_INFORMATION info;
 	HANDLE process = NULL;
 	DWORD base_off;
@@ -138,8 +107,8 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t* start)
 	{
 		if ( info.Protect == PAGE_NOACCESS || info.Protect == 0 )
 			continue;
-		if ( first_region == NULL )
-			first_region = p;
+//		if ( first_region == NULL )
+//			first_region = p;
 
 		base_addr = info.BaseAddress;
 //		base_addr = info.AllocationBase;
@@ -161,12 +130,14 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t* start)
 		}
 	}
 
-	if ( first_region == NULL )
+//	if ( first_region == NULL )
+	if ( p == NULL )
 	{
 		CloseHandle(process);
 		return 2;
 	}
 
+//	if ( VirtualQueryEx(process, first_region, &info, sizeof(info)) != sizeof(info) )
 	if ( VirtualQueryEx(process, p, &info, sizeof(info)) != sizeof(info) )
 	{
 		CloseHandle(process);
@@ -284,18 +255,17 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	GetModuleFileNameExA(process, info.AllocationBase, f_path, nSize);
 	getFileNameL(f_path, &file_name);
 
-	printf("Write into %s:\n", file_name);
-	printf("payload_ln %u\n", payload_ln);
-	for ( i = 0; i < payload_ln; i++ )
-		printf("%02x|", payload[i]);
-	printf("\n");
+//	printf("Write into %s:\n", file_name);
+//	printf("payload_ln %u\n", payload_ln);
+//	for ( i = 0; i < payload_ln; i++ )
+//		printf("%02x|", payload[i]);
+//	printf("\n");
 
 	s = VirtualProtectEx(process, base_addr, payload_ln, PAGE_EXECUTE_READWRITE, &old_protect);
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error: VirtualProtect at 0x%llx\n", (uint64_t) base_addr);
-		printf(" - - code: %lu\n", last_error);
+		printf(" - Error (%lu): VirtualProtect at 0x%llx\n", last_error, (uint64_t) base_addr);
 		printError("VirtualProtect", last_error);
 	}
 
@@ -304,8 +274,7 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error: WriteProcessMemory %lu bytes at 0x%p\n", bytes_written, base_addr);
-		printf(" - - code: %lu\n", last_error);
+		printf(" - Error (%lu): WriteProcessMemory %lu bytes at 0x%p\n", last_error, bytes_written, base_addr);
 		printError("WriteProcessMemory", last_error);
 	}
 
@@ -313,8 +282,7 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error: VirtualProtect at 0x%llx\n", (uint64_t) base_addr);
-		printf(" - - code: %lu\n", last_error);
+		printf(" - Error (%lu): VirtualProtect at 0x%llx\n", last_error, (uint64_t) base_addr);
 		printError("VirtualProtect", last_error);
 	}
 
@@ -368,30 +336,28 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 	p = info.BaseAddress;
 	last_base = info.AllocationBase;
 	base_off = start - (uint64_t) info.AllocationBase;
+	printRegionInfo(&info, file_name);
 
 	while ( s )
 	{
-		printf("protect: %lu : %s\n", info.Protect, getProtectString(info.Protect));
+//		printf("protect: %lu : %s\n", info.Protect, getProtectString(info.Protect));
 
-		if ( strncmp(getProtectString(info.Protect), "None", 6) == 0 )
-		{
-			s = VirtualProtectEx(process, info.BaseAddress, info.RegionSize, PAGE_READONLY, &old_protect);
-			if ( !s )
-			{
-				printf(" - Error (%lu): VirtualProtect at 0x%llx\n", GetLastError(), (uint64_t) info.BaseAddress);
-				printError("VirtualProtect", GetLastError());
-			}
-		}
+		setUnflagedRegionProtection(process, &info, PAGE_READONLY, &old_protect);
 
 		if ( find_f )
 		{
+//			printf("Region Start Find\n");
 			found = findNeedleInProcessMemoryBlock(info.BaseAddress, info.RegionSize, base_off, process, p_needle,
 												   p_needle_ln);
 			if ( found == FIND_FAILURE )
 			{
-				s = queryNextAccessibleRegion(process, &p, &info, &file_name);
-				if ( !s )
+//				printf(" - Region Start Find: not found\n");
+
+				if ( !getNextPrintableRegion(process, &info, &p, &file_name, print_s, last_base) )
 					break;
+//				s = queryNextAccessibleRegion(process, &p, &info, &file_name);
+//				if ( !s )
+//					break;
 				last_base = info.AllocationBase;
 				continue;
 			}
@@ -407,33 +373,40 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 //		Printer_setSkipBytes(skip_bytes);
 		print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found, file_name);
 
-		if ( strncmp(getProtectString(info.Protect), "None", 20) == 0 )
-		{
-			s = VirtualProtectEx(process, info.BaseAddress, info.RegionSize, old_protect, &old_protect);
-			if ( !s )
-			{
-				printf(" - Error (%lu): VirtualProtect at 0x%llx\n", GetLastError(), (uint64_t) info.BaseAddress);
-				printError("VirtualProtect", GetLastError());
-			}
-		}
+		setUnflagedRegionProtection(process, &info, old_protect, &old_protect);
+//		if ( strncmp(getProtectString(info.Protect), "None", 20) == 0 )
+//		{
+//			s = VirtualProtectEx(process, info.BaseAddress, info.RegionSize, old_protect, &old_protect);
+//			if ( !s )
+//			{
+//				printf(" - Error (%lu): VirtualProtect at 0x%llx\n", GetLastError(), (uint64_t) info.BaseAddress);
+//				printError("VirtualProtect", GetLastError());
+//			}
+//		}
 
-		if ( print_s == 0 )
-			s = queryNextAccessibleRegion(process, &p, &info, &file_name);
-		else
-			s = queryNextAccessibleBaseRegion(process, &p, &info, &file_name);
-
-		if ( !s )
+		if ( !getNextPrintableRegion(process, &info, &p, &file_name, print_s, last_base) )
 			break;
-		printf("last_base: %p\n", last_base);
-		printf("info.AllocationBase: %p\n", info.AllocationBase);
+//		if ( print_s == 0 )
+//			s = queryNextAccessibleRegion(process, &p, &info, &file_name);
+//		else
+//			s = queryNextAccessibleBaseRegion(process, &p, &info, &file_name);
+//
+//		if ( !s )
+//			break;
+//
+//		printf("last_base: %p\n", last_base);
+//		printf("info.AllocationBase: %p\n", info.AllocationBase);
+//
+//		getRegionName(process, info.AllocationBase, &file_name);
+//		printf("file_name: %s\n", file_name);
+//		if ( last_base != info.AllocationBase )
+//		{
+//			if ( !confirmContinueWithNextRegion(file_name) )
+//				break;
+//		}
 
-		getRegionName(process, info.AllocationBase, &file_name);
-		if ( last_base != info.AllocationBase )
-		{
-			if ( !confirmContinueWithNextRegion(file_name) )
-				break;
-		}
-
+		if ( print_s == 1 )
+			printRegionInfo(&info, file_name);
 		last_base = info.AllocationBase;
 		base_off = 0;
 	}
@@ -444,6 +417,52 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 	return TRUE;
 }
 
+void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name)
+{
+	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
+}
+
+BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect)
+{
+	BOOL s;
+	if ( strncmp(getProtectString(info->Protect), "None", 6) == 0 )
+	{
+		s = VirtualProtectEx(process, info->BaseAddress, info->RegionSize, new_protect, old_protect);
+		if ( !s )
+		{
+			printf(" - Error (%lu): VirtualProtect at 0x%llx\n", GetLastError(), (uint64_t) info->BaseAddress);
+			printError("VirtualProtect", GetLastError());
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char** file_name, int print_s, PVOID last_base)
+{
+	BOOL s;
+
+	if ( print_s == 0 )
+		s = queryNextAccessibleRegion(process, p, info, file_name);
+	else
+		s = queryNextAccessibleBaseRegion(process, p, info, file_name);
+
+	if ( !s )
+		return FALSE;
+
+//	printf("last_base: %p\n", last_base);
+//	printf("info.AllocationBase: %p\n", info->AllocationBase);
+
+	getRegionName(process, info->AllocationBase, file_name);
+//	printf("file_name: %s\n", *file_name);
+	if ( last_base != info->AllocationBase )
+	{
+		if ( !confirmContinueWithNextRegion(*file_name) )
+			return FALSE;
+	}
+	return TRUE;
+}
+
 BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name)
 {
 	BOOL s;
@@ -451,9 +470,9 @@ BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_I
 
 	while ( s )
 	{
-		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
+//		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
 
-		if ( info->Protect == PAGE_NOACCESS || info->Protect == 0 )
+		if ( !isAccessibleRegion(info) )
 			s = queryNextRegion(process, p, info, file_name);
 		else
 			break;
@@ -471,9 +490,9 @@ BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BAS
 
 	while ( s )
 	{
-		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
+//		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
 
-		if ( old_base == info->AllocationBase || info->Protect == PAGE_NOACCESS || info->Protect == 0 )
+		if ( old_base == info->AllocationBase || !isAccessibleRegion(info) )
 			s = queryNextRegion(process, p, info, file_name);
 		else
 			break;
@@ -487,8 +506,8 @@ BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION
 
 	*p += info->RegionSize;
 	query_size = VirtualQueryEx(process, *p, info, sizeof(*info));
-	printf("query_size: %lu\n", query_size);
-	printf("sizeof(*info): %lu\n", sizeof(*info));
+//	printf("query_size: %lu\n", query_size);
+//	printf("sizeof(*info): %lu\n", sizeof(*info));
 
 	if ( query_size != sizeof(*info) )
 	{
@@ -506,87 +525,12 @@ BOOL getRegionName(HANDLE process, PVOID base, char** file_name)
 	char f_path[512];
 
 	memset(f_path, 0, 512);
-	GetModuleFileNameExA(process, base, f_path, f_path_size);
+//	GetModuleBaseNameA(process, base, f_path, f_path_size);
+	GetMappedFileNameA(process, base, f_path, f_path_size);
 	getFileNameL(f_path, file_name);
-}
 
-///**
-// *
-// * @param pid
-// * @param start uint64_t absolute start offset
-// * @param skip_bytes
-// * @param needle
-// * @param needle_ln
-// * @return
-// */
-//BOOL printProcessModules(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln)
-//{
-//	MODULEENTRY32 me32;
-//	HANDLE snap = INVALID_HANDLE_VALUE;
-//	HANDLE process;
-//	BOOL s;
-//
-//	uint64_t base_off;
-//	uint64_t found = FIND_FAILURE;
-//
-//	p_needle = needle;
-//	p_needle_ln = needle_ln;
-//
-//	if ( !openProcessAndSnapAndME(&process, &snap, &me32, pid, TH32CS_SNAPMODULE))
-//		return FALSE;
-//
-//	// find module hit by start address
-//	s = getModule(start, snap, &me32);
-//	if ( !s )
-//	{
-//		printf("Error: No module hit!\n");
-//		return FALSE;
-//	}
-//
-//	if ( find_f )
-//		Finder_initFailure(p_needle, p_needle_ln);
-//
-//	base_off = start - (uint64_t) me32.modBaseAddr;
-//
-//	do
-//	{
-//		if ( find_f )
-//		{
-//			found = findNeedleInProcessMemoryBlock(me32.modBaseAddr, me32.modBaseSize, base_off, process, p_needle,
-//												   p_needle_ln);
-//			if ( found == FIND_FAILURE )
-//			{
-//				s = Module32Next(snap, &me32);
-//				continue;
-//			}
-//			else
-//			{
-//				Printer_setHiglightBytes(p_needle_ln);
-//				found = found - (uint64_t) me32.modBaseAddr;
-//				base_off = normalizeOffset(found, &skip_bytes);
-//				Printer_setHiglightWait(skip_bytes);
-//			}
-//		}
-//
-////		Printer_setSkipBytes(skip_bytes);
-////		printModuleProcessMemory(process, &me32, base_off, found);
-//		printRegionProcessMemory(process, me32.modBaseAddr, base_off, me32.modBaseSize, found);
-//
-//		s = Module32Next(snap, &me32);
-//		if ( !s )
-//			break;
-//		if ( !confirmContinueWithNextRegion(me32.szModule))
-//			break;
-//
-//		base_off = 0;
-//	}
-//	while ( s );
-//
-//	ProcessHandler_cleanUp(snap, process);
-//	Finder_cleanUp();
-//
-//	return TRUE;
-//}
+	return TRUE;
+}
 
 bool confirmContinueWithNextRegion(char* name)
 {
@@ -597,6 +541,7 @@ bool confirmContinueWithNextRegion(char* name)
 	printf("Continue with next region");
 	if ( name != NULL ) printf(": %s", name);
 	printf(" (c/q)?\n");
+
 	while ( 1 )
 	{
 		input = _getch();
@@ -609,6 +554,7 @@ bool confirmContinueWithNextRegion(char* name)
 
 		counter++;
 	}
+//	return false;
 }
 
 /**
@@ -627,9 +573,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, uint64_t base_off,
 	uint8_t skip_bytes;
 	int s = 0;
 
-	printf("%s (0x%p - 0x%p):\n", reg_name, base_addr, base_addr+size);
-
-	n_size = printMemoryBlock(base_addr, size, process, base_off, buffer);
+	n_size = printMemoryBlock(process, base_addr, base_off, size, buffer);
 	base_off += n_size;
 
 	if ( !continuous_f )
@@ -640,7 +584,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, uint64_t base_off,
 		input = _getch();
 
 		if ( input == ENTER )
-			n_size = printMemoryBlock(base_addr, size, process, base_off, buffer);
+			n_size = printMemoryBlock(process, base_addr, base_off, size, buffer);
 		else if ( find_f && input == 'n' )
 		{
 			found = findNeedleInProcessMemoryBlock(base_addr, size, found + p_needle_ln,
@@ -656,7 +600,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, uint64_t base_off,
 			base_off = normalizeOffset(found, &skip_bytes);
 			Printer_setHiglightWait(skip_bytes);
 
-			n_size = printMemoryBlock(base_addr, size, process, base_off, buffer);
+			n_size = printMemoryBlock(process, base_addr, base_off, size, buffer);
 		}
 		else if ( input == 'q' )
 		{
@@ -670,57 +614,6 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, uint64_t base_off,
 	return s;
 }
 
-///**
-// *
-// * @param process
-// * @param me32
-// * @param base_off uint32_t base offset in module to start at printing
-// * @return
-// */
-//int printModuleProcessMemory(HANDLE process, MODULEENTRY32* me32, uint64_t base_off, uint64_t found)
-//{
-//	printf("%s (0x%p - 0x%p):\n", me32->szModule, me32->modBaseAddr, me32->modBaseAddr+me32->modBaseSize);
-//
-//	size_t n_size = length;
-//	unsigned char buffer[BLOCKSIZE_LARGE] = {0};
-//	char input;
-//	uint8_t skip_bytes;
-//
-//	n_size = printMemoryBlock(me32->modBaseAddr, me32->modBaseSize, process, base_off, buffer);
-//	base_off += n_size;
-//
-//	if ( continuous_f )
-//	{
-//		while ( n_size && n_size == length )
-//		{
-//			input = _getch();
-//
-//			if ( input == ENTER )
-//				n_size = printMemoryBlock(me32->modBaseAddr, me32->modBaseSize, process, base_off, buffer);
-//			else if ( find_f && input == 'n' )
-//			{
-//				found = findNeedleInProcessMemoryBlock(me32->modBaseAddr, me32->modBaseSize, found + p_needle_ln,
-//													   process, p_needle, p_needle_ln);
-//				if ( found == FIND_FAILURE )
-//					break;
-//				found -= (uint64_t) me32->modBaseAddr;
-//				printf("\n");
-//				Printer_setHiglightBytes(p_needle_ln);
-//				base_off = normalizeOffset(found, &skip_bytes);
-//				Printer_setHiglightWait(skip_bytes);
-//
-//				n_size = printMemoryBlock(me32->modBaseAddr, me32->modBaseSize, process, base_off, buffer);
-//			}
-//			else if ( input == 'q' )
-//				break;
-//
-//			base_off += n_size;
-//		}
-//	}
-//
-//	return 0;
-//}
-
 /**
  *
  * @param me32
@@ -731,7 +624,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, uint64_t base_off,
  * @return
  */
 size_t
-printMemoryBlock(BYTE* base_addr, DWORD base_size, HANDLE process, uint64_t base_off, unsigned char* buffer)
+printMemoryBlock(HANDLE process, BYTE* base_addr, uint64_t base_off, DWORD base_size, unsigned char* buffer)
 {
 	size_t n_size = readProcessBlock(base_addr, base_size, base_off, process, buffer);
 	uint8_t offset_width = countHexWidth64((uint64_t)base_addr+base_size);
@@ -790,6 +683,7 @@ BOOL getRegion(uint64_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info)
 		  p += info->RegionSize )
 	{
 		if ( info->Protect == PAGE_NOACCESS )
+//		if ( !isAccessibleRegion(info) )
 			continue;
 
 		if ( addressIsInRegionRange(address, (uint64_t) info->AllocationBase, info->RegionSize) )
@@ -1023,13 +917,23 @@ bool listProcessMemory(uint32_t pid)
 
 int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 {
-	uint64_t usage = 0;
-
+//	uint64_t usage = 0;
 	char f_path[512];
 	char* file_name;
 	DWORD f_path_size = 512;
 	const char* SEPARATOR = " | ";
 	int guard = 0, nocache = 0;
+
+	HANDLE hStdout;
+	WORD wOldColorAttrs;
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+	GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
+	wOldColorAttrs = csbiInfo.wAttributes;
+
+	if ( !isAccessibleRegion(info) )
+//	if ( notAccessibleRegion(info) )
+		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
 
 	printf("0x%p | 0x%p | 0x%8lx | ", info->BaseAddress, info->AllocationBase, info->RegionSize);
 
@@ -1037,8 +941,8 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 
 	printf("%-11s%s" , getMemoryTypeString(info->Type), SEPARATOR);
 
-	if ((info->State == MEM_COMMIT) && (info->Type == MEM_PRIVATE))
-		usage +=info->RegionSize;
+//	if ((info->State == MEM_COMMIT) && (info->Type == MEM_PRIVATE))
+//		usage +=info->RegionSize;
 
 	guard = 0;
 	nocache = 0;
@@ -1053,18 +957,39 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 	printf("%-18s%s", getProtectString(info->AllocationProtect), SEPARATOR);
 
 	memset(f_path, 0, 512);
-	GetModuleFileNameExA(process, info->AllocationBase, f_path, f_path_size);
-	getFileNameL(f_path, &file_name);
-	printf("%s", file_name);
+//	if ( GetModuleBaseNameA(process, info->AllocationBase, f_path, f_path_size) )
+	if ( GetMappedFileNameA(process, info->AllocationBase, f_path, f_path_size) )
+	{
+		getFileNameL(f_path, &file_name);
+		printf("%s", file_name);
+	}
 
-	if (guard)
+	if ( guard )
 		printf("%sguard page", SEPARATOR);
-	if (nocache)
+	if ( nocache )
 		printf("%snon-cachable", SEPARATOR);
-//		printf("usage: %lu\n", usage);
+
 	printf("\n");
 
+//	if ( notAccessibleRegion(info) )
+	if ( !isAccessibleRegion(info) )
+		SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+
 	return 0;
+}
+
+BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
+{
+//	info->State == MEM_RESERVE
+	return ( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS ) ||
+			( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
+}
+
+BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
+{
+	return	!( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS )
+			&&
+			!( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
 }
 
 char* getMemoryStateString(DWORD state)
@@ -1140,7 +1065,7 @@ bool listProcessHeaps(uint32_t pid, int type)
 		printf("Heap: %s | 0x%llx | %lu\n", getHLFlagString(hl.dwFlags), hl.th32HeapID, hl.th32ProcessID);
 
 		if ( type == 2 )
-			listProcessHeapBlocks(pid, &hl);
+			listProcessHeapBlocks(pid, hl.th32HeapID);
 
 		hl.dwSize = sizeof(HEAPLIST32);
 	}
@@ -1168,14 +1093,14 @@ bool getProcessHeapListSnapshot(HANDLE* hHeapSnap, HEAPLIST32* hl, DWORD pid)
 	return true;
 }
 
-void listProcessHeapBlocks(uint32_t pid, HEAPLIST32* hl)
+void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base)
 {
 	uint32_t heap_size = 0;
 	HEAPENTRY32 he;
 	ZeroMemory(&he, sizeof(HEAPENTRY32));
 	he.dwSize = sizeof(HEAPENTRY32);
 
-	if ( Heap32First(&he, pid, hl->th32HeapID))
+	if ( Heap32First(&he, pid, base) )
 	{
 		printf(" - [hHandle | dwAddress | dwBlockSize | dwFlags | fwLockCount | dwResvd | th32ProcessId | th32HeapId]\n");
 		do
@@ -1187,8 +1112,8 @@ void listProcessHeapBlocks(uint32_t pid, HEAPLIST32* hl)
 
 			he.dwSize = sizeof(HEAPENTRY32);
 		} while ( Heap32Next(&he) );
+		printf(" - - heap_size: 0x%x (%u)\n", heap_size, heap_size);
 	}
-	printf(" - - heap_size: 0x%x (%u)\n", heap_size, heap_size);
 }
 
 char* getHLFlagString(DWORD flag)
