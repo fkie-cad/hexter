@@ -394,7 +394,7 @@ void sanitizeParams()
 	// check start offset
 	if ( start > file_size )
 	{
-		fprintf(stderr, "Info: Start offset %lu is greater the the file_size %lu!\nSetting to 0!", start, file_size);
+		fprintf(stderr, "Info: Start offset 0x%lx is greater the the file_size 0x%lx (%lu)!\nSetting to 0!", start, file_size, file_size);
 		start = 0;
 		info_line_break = 1;
 	}
