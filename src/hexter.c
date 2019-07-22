@@ -1,10 +1,13 @@
-#include <limits.h>
+//#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
 
+#define HEXTER_EXPORTS
+
+#include "hexter.h"
 #include "Globals.h"
 #include "utils/common_fileio.h"
 #include "Finder.h"
@@ -68,8 +71,10 @@ uint8_t isArgOfType(char* arg, char* type);
 uint8_t isFormatArgOfType(char* arg, char* type);
 uint8_t hasValue(char* type, int i, int end_i);
 void sanitizeParams(uint32_t pid);
-uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload);
+uint32_t parsePayload(const char format, const char* value, unsigned char** payload);
 uint8_t parseType(const char* arg);
+
+int run(const char payload_format, const char* raw_payload);
 
 uint8_t keepStartInFile();
 uint8_t keepLengthInFile();
@@ -84,10 +89,11 @@ uint8_t keepLengthInFile();
 //   - linux
 int main(int argc, char** argv)
 {
-	char* file_name = NULL;
-	uint32_t pid = 0;
-	unsigned char* payload = NULL;
-	uint32_t payload_ln = 0;
+//	char* file_name = NULL;
+//	uint32_t pid = 0;
+//	unsigned char* payload = NULL;
+//	uint32_t payload_ln = 0;
+//	int s;
 
 	if ( argc < 2 )
 	{
@@ -98,6 +104,96 @@ int main(int argc, char** argv)
 	initParameters();
 	parseArgs(argc, argv);
 
+	if ( payload_arg_id > 0 )
+		run(argv[payload_arg_id][2], argv[payload_arg_id + 1]);
+	else
+		run(0, NULL);
+
+//	if ( type == TYPE_FILE )
+//	{
+//		file_size = getSize(file_path);
+//		if ( file_size == 0 ) return 0;
+//	}
+//	else if ( type == TYPE_PID )
+//	{
+//		s = parseUint32(file_path, &pid, 10);
+//		if ( pid == 0 )
+//#if defined(__linux__) || defined(__linux) || defined(linux)
+//			pid = getpid();
+//#elif defined(_WIN32)
+//			pid = _getpid();
+//#endif
+//		file_size = getSizeOfProcess(pid);
+//		if ( file_size == 0 ) return 0;
+//	}
+//
+//	debug_info("file_path: %s\n", file_path);
+//	debug_info("file_size: %lu\n", file_size);
+//	debug_info("start: %lu\n", start);
+//	debug_info("length: %lu\n", length);
+//	debug_info("print_col_mask only: %d\n", print_col_mask);
+//	debug_info("insert: %d\n", insert_f);
+//	debug_info("overwrite: %d\n", overwrite_f);
+//	debug_info("find: %d\n", find_f);
+//	debug_info("delete: %d\n", delete_f);
+//	debug_info("\n");
+//
+//	if ( (insert_f || overwrite_f || find_f) && payload_arg_id >= 0 )
+//	{
+//		payload_ln = parsePayload(argv[payload_arg_id][2], argv[payload_arg_id + 1], &payload);
+//		if ( payload == NULL) exit(0);
+//	}
+//
+//	if ( insert_f )
+//		insert(payload, payload_ln, start);
+//	else if ( overwrite_f && type == TYPE_FILE )
+//		overwrite(payload, payload_ln, start);
+//	else if ( overwrite_f && type == TYPE_PID )
+//		writeProcessMemory(pid, payload, payload_ln, start);
+//
+//	sanitizeParams(pid);
+//
+//	if ( delete_f )
+//	{
+//		deleteBytes(start, length);
+//		length = DEFAULT_LENGTH;
+//	}
+//
+//	setPrintingStyle();
+//	if ( type == TYPE_FILE )
+//	{
+//		getFileNameL(file_path, &file_name);
+//		printf("file: %s\n", file_name);
+//		print(start, skip_bytes, payload, payload_ln);
+//	}
+//	else if ( type == TYPE_PID )
+//	{
+//		printf("pid: %u\n", pid);
+//		if ( list_process_memory_f )
+//			listProcessMemory(pid);
+//		if ( list_process_modules_f )
+//			listProcessModules(pid);
+//		if ( list_process_threads_f )
+//			listProcessThreads(pid);
+//		if ( list_process_heaps_f )
+//			listProcessHeaps(pid, list_process_heaps_f);
+//		printProcessRegions(pid, start, skip_bytes, payload, payload_ln);
+//	}
+//
+//	if ( payload != NULL )
+//		free(payload);
+
+	return 0;
+}
+
+int run(const char payload_format, const char* raw_payload)
+{
+	uint32_t pid = 0;
+	int s;
+	unsigned char* payload = NULL;
+	uint32_t payload_ln = 0;
+	char* file_name = NULL;
+
 	if ( type == TYPE_FILE )
 	{
 		file_size = getSize(file_path);
@@ -105,7 +201,9 @@ int main(int argc, char** argv)
 	}
 	else if ( type == TYPE_PID )
 	{
-		int s = parseUint32(file_path, &pid, 10);
+		s = parseUint32(file_path, &pid, 10);
+		if ( s != 0 )
+			return 1;
 		if ( pid == 0 )
 #if defined(__linux__) || defined(__linux) || defined(linux)
 			pid = getpid();
@@ -113,9 +211,10 @@ int main(int argc, char** argv)
 			pid = _getpid();
 #endif
 		file_size = getSizeOfProcess(pid);
-		if ( file_size == 0 ) return 0;
+		if ( file_size == 0 )
+			return 2;
 	}
-	
+
 	debug_info("file_path: %s\n", file_path);
 	debug_info("file_size: %lu\n", file_size);
 	debug_info("start: %lu\n", start);
@@ -127,9 +226,9 @@ int main(int argc, char** argv)
 	debug_info("delete: %d\n", delete_f);
 	debug_info("\n");
 
-	if ( (insert_f || overwrite_f || find_f) && payload_arg_id >= 0 )
+	if ( (insert_f || overwrite_f || find_f) && payload_format > 0 )
 	{
-		payload_ln = parsePayload(argv[payload_arg_id], argv[payload_arg_id + 1], &payload);
+		payload_ln = parsePayload(payload_format, raw_payload, &payload);
 		if ( payload == NULL) exit(0);
 	}
 
@@ -173,11 +272,6 @@ int main(int argc, char** argv)
 		free(payload);
 
 	return 0;
-}
-
-void run()
-{
-
 }
 
 void initParameters()
@@ -420,7 +514,7 @@ void parseArgs(int argc, char** argv)
 	if ( start_i == 1 )
 		source = argv[i];
 
-	if ( type == TYPE_FILE)
+	if ( type == TYPE_FILE )
 		expandFilePath(source, file_path);
 	else
 		snprintf(file_path, PATH_MAX, "%s", source);
@@ -552,10 +646,16 @@ uint8_t keepLengthInFile()
 	return 0;
 }
 
-uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload)
+/**
+ * Parse payload from
+ * @param format char the format of the raw payload string
+ * @param value char* the raw payload value
+ * @param payload char** the array to store the formated payload in
+ * @return uint32_t length of parsed payload.
+ */
+uint32_t parsePayload(const char format, const char* value, unsigned char** payload)
 {
 	uint32_t ln = 0;
-	char format = arg[2];
 
 	if ( strnlen(value, MAX_PAYLOAD_LN) < 1 )
 		return 0;
@@ -576,11 +676,9 @@ uint32_t parsePayload(const char* arg, const char* value, unsigned char** payloa
 		ln = payloadParsePlainBytes(value, payload);
 	else
 	{
-		printf("ERROR: No format specifier found in %s!\n", arg);
+		printf("ERROR: %c is not a supported format!\n", format);
 		ln = 0;
 	}
-
-//	ln = payloadParsePlainBytes(arg, payload);
 
 	return ln;
 }
@@ -596,4 +694,41 @@ uint8_t parseType(const char* arg)
 		printf("INFO: Could not parse type. Setting it to 'file'!\n");
 		return TYPE_FILE;
 	}
+}
+
+HEXTER_API int printFile(char* _file_name, uint64_t _start, uint64_t _length)
+{
+	initParameters();
+	expandFilePath(_file_name, file_path);
+
+	type = TYPE_FILE;
+	start = _start;
+	length = _length;
+
+//	print_col_mask = print_col_mask | print_hex_mask;
+
+	run(0, NULL);
+}
+
+HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, int _lpm, int _lpx, int _lph, int _lpt)
+{
+	initParameters();
+#ifdef _WIN32
+	snprintf(file_path, PATH_MAX, "%u", _pid);
+#else
+	snprintf(file_path, PATH_MAX, "%lu", _pid);
+#endif
+
+	type = TYPE_PID;
+	start = _start;
+	length = _length;
+
+	list_process_memory_f = _lpx;
+	list_process_modules_f = _lpm;
+	list_process_heaps_f = _lph;
+	list_process_threads_f = _lpt;
+
+//	print_col_mask = print_col_mask | print_hex_mask;
+
+	run(0, NULL);
 }

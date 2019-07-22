@@ -53,7 +53,6 @@ BOOL getRegionName(HANDLE process, PVOID base, char** file_name);
 BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect);
-
 void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name);
 
 unsigned char* p_needle = NULL;
@@ -1113,6 +1112,16 @@ void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base)
 		} while ( Heap32Next(&he) );
 		printf(" - - heap_size: 0x%x (%u)\n", heap_size, heap_size);
 	}
+}
+
+BOOL stackTrace(uint32_t pid)
+{
+	HANDLE process;
+
+	if ( !openProcess(&process, pid) )
+		return FALSE;
+
+	return TRUE;
 }
 
 char* getHLFlagString(DWORD flag)
