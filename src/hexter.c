@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 
 #include "Globals.h"
@@ -339,7 +340,11 @@ void parseArgs(int argc, char** argv)
 			if ( hasValue("-l", i, end_i) )
 			{
 				s = parseUint64Auto(argv[i + 1], &length);
+#ifdef _WIN32
 				printf("length: %llx\n", length);
+#else
+				printf("length: %lx\n", length);
+#endif
 				if ( s != 0 )
 				{
 					printf("INFO: Could not parse length. Setting it to %u!\n", DEFAULT_LENGTH);

@@ -7,3 +7,6 @@ tests/sources
 headerParser
 *.7z
 tests/compareResultToObjDump.c
+.cproject
+.project
+.settings/

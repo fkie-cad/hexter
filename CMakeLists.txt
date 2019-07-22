@@ -23,7 +23,7 @@ include(cmake.inc/Sources.cmake)
 include(cmake.inc/Main.cmake)
 
 # tests
-if ( ${GTEST_FOUND} )
-	enable_language(CXX)
-	include(cmake.inc/Tests.cmake)
-endif()
+#if ( ${GTEST_FOUND} )
+#	enable_language(CXX)
+#	include(cmake.inc/Tests.cmake)
+#endif()

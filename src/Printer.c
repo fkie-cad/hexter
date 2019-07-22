@@ -259,12 +259,11 @@ void printTripleCols(const unsigned char* block, uint64_t size, uint64_t offset,
 
 void printOffsetCol(uint64_t offset, uint8_t width)
 {
-	printf("%p: ", offset);
-//#if defined(_WIN32)
-//	printf("%0*llx: ", width, offset);
-//#else
-//	printf("%0*lx: ", width, offset);
-//#endif
+#if defined(_WIN32)
+	printf("%0*llx: ", width, offset);
+#else
+	printf("%0*lx: ", width, offset);
+#endif
 }
 
 void fillGap(uint8_t k)
