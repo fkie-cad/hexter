@@ -414,14 +414,6 @@ void parseArgs(int argc, char** argv)
 		exit(0);
 	}
 
-#ifndef _WIN32
-	if ( type == TYPE_PID )
-	{
-		printf("ERROR: process mode is only yet supported in windows!\n");
-		exit(0);
-	}
-#endif
-
 	if ( start_i == 1 )
 		source = argv[i];
 
