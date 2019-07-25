@@ -22,10 +22,9 @@ typedef int (*MemInfoCallback)(HANDLE, MEMORY_BASIC_INFORMATION*);
 //int printModuleProcessMemory(HANDLE process, MODULEENTRY32* me32, uint64_t base_off, uint64_t found);
 size_t readProcessBlock(BYTE* base_addr, DWORD base_size, uint64_t base_off, HANDLE process, unsigned char* block);
 BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char** file_name, int print_s, PVOID last_base);
-BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name);
-BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name);
-BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name);
-bool confirmContinueWithNextRegion(char* name);
+BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
+BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
+BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
 size_t printMemoryBlock(HANDLE process, BYTE* base_addr, uint64_t base_off, DWORD base_size, unsigned char* buffer);
 void printError(LPTSTR lpszFunction, DWORD last_error);
 BOOL getModule(uint64_t address, HANDLE snap, MODULEENTRY32* me32);
@@ -53,11 +52,11 @@ BOOL getRegionName(HANDLE process, PVOID base, char** file_name);
 BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect);
-
+BOOL keepLengthInModule(MEMORY_BASIC_INFORMATION* info, uint64_t start, uint64_t *length);
 void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name);
 
-unsigned char* p_needle = NULL;
-uint32_t p_needle_ln;
+static unsigned char* p_needle = NULL;
+static uint32_t p_needle_ln;
 
 uint64_t getSizeOfProcess(uint32_t pid)
 {
@@ -93,7 +92,6 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t* start)
 //	unsigned char *first_region = NULL;
 	MEMORY_BASIC_INFORMATION info;
 	HANDLE process = NULL;
-	DWORD base_off;
 	PVOID base_addr;
 
 	uint8_t info_line_break = 0;
@@ -117,16 +115,9 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t* start)
 
 		if ( addressIsInRegionRange(*start, (uint64_t) base_addr, info.RegionSize) )
 		{
-			base_off = *start - (uint64_t) base_addr;
-			if ( base_off + length > info.RegionSize )
-			{
-				printf("Info: Length %llx does not fit in region!\nSetting it to %lx!", length, info.RegionSize - base_off);
-				length = info.RegionSize - base_off;
-				CloseHandle(process);
-				return 1;
-			}
+			info_line_break = keepLengthInModule(&info, *start, &length);
 			CloseHandle(process);
-			return 0;
+			return info_line_break;
 		}
 	}
 
@@ -150,8 +141,23 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t* start)
 		info_line_break = 1;
 	}
 	(*start) = (uint64_t) info.AllocationBase;
+	if ( keepLengthInModule(&info, *start, &length) )
+		info_line_break = 1;
 
 	return info_line_break;
+}
+
+BOOL keepLengthInModule(MEMORY_BASIC_INFORMATION* info, uint64_t start, uint64_t *length)
+{
+	printf("TODO: get size of whole module, the region belongs to.\n");
+	DWORD base_off = start - (uint64_t) info->BaseAddress;
+	if ( base_off + *length > info->RegionSize )
+	{
+		printf("Info: Length %llx does not fit in region!\nSetting it to %lx!\n", *length, info->RegionSize - base_off);
+		*length = info->RegionSize - base_off;
+		return 1;
+	}
+	return 0;
 }
 
 BOOL listProcessModules(uint32_t pid)
@@ -334,7 +340,7 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 	getRegionName(process, info.AllocationBase, &file_name);
 	p = info.BaseAddress;
 	last_base = info.AllocationBase;
-	base_off = start - (uint64_t) info.AllocationBase;
+	base_off = start - (uint64_t) info.AllocationBase; // ?? not address ??
 	printRegionInfo(&info, file_name);
 
 	while ( s )
@@ -354,7 +360,7 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 
 				if ( !getNextPrintableRegion(process, &info, &p, &file_name, print_s, last_base) )
 					break;
-//				s = queryNextAccessibleRegion(process, &p, &info, &file_name);
+//				s = queryNextAccessibleRegion(process, &p, &info);
 //				if ( !s )
 //					break;
 				last_base = info.AllocationBase;
@@ -386,9 +392,9 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 		if ( !getNextPrintableRegion(process, &info, &p, &file_name, print_s, last_base) )
 			break;
 //		if ( print_s == 0 )
-//			s = queryNextAccessibleRegion(process, &p, &info, &file_name);
+//			s = queryNextAccessibleRegion(process, &p, &info);
 //		else
-//			s = queryNextAccessibleBaseRegion(process, &p, &info, &file_name);
+//			s = queryNextAccessibleBaseRegion(process, &p, &info);
 //
 //		if ( !s )
 //			break;
@@ -418,7 +424,8 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 
 void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name)
 {
-	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
+//	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
+	printf("%s (%p - %p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
 }
 
 BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect)
@@ -442,9 +449,9 @@ BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsi
 	BOOL s;
 
 	if ( print_s == 0 )
-		s = queryNextAccessibleRegion(process, p, info, file_name);
+		s = queryNextAccessibleRegion(process, p, info);
 	else
-		s = queryNextAccessibleBaseRegion(process, p, info, file_name);
+		s = queryNextAccessibleBaseRegion(process, p, info);
 
 	if ( !s )
 		return FALSE;
@@ -462,44 +469,44 @@ BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsi
 	return TRUE;
 }
 
-BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name)
+BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info)
 {
 	BOOL s;
-	s = queryNextRegion(process, p, info, file_name);
+	s = queryNextRegion(process, p, info);
 
 	while ( s )
 	{
 //		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
 
 		if ( !isAccessibleRegion(info) )
-			s = queryNextRegion(process, p, info, file_name);
+			s = queryNextRegion(process, p, info);
 		else
 			break;
 	}
 	return s;
 }
 
-BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name)
+BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info)
 {
 	BOOL s;
 	PVOID old_base;
 
 	old_base = info->AllocationBase;
-	s = queryNextRegion(process, p, info, file_name);
+	s = queryNextRegion(process, p, info);
 
 	while ( s )
 	{
 //		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
 
 		if ( old_base == info->AllocationBase || !isAccessibleRegion(info) )
-			s = queryNextRegion(process, p, info, file_name);
+			s = queryNextRegion(process, p, info);
 		else
 			break;
 	}
 	return s;
 }
 
-BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info, char** file_name)
+BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info)
 {
 	SIZE_T query_size = 0;
 
@@ -529,31 +536,6 @@ BOOL getRegionName(HANDLE process, PVOID base, char** file_name)
 	getFileNameL(f_path, file_name);
 
 	return TRUE;
-}
-
-bool confirmContinueWithNextRegion(char* name)
-{
-	char input;
-	int counter = 0;
-
-	printf("\n");
-	printf("Continue with next region");
-	if ( name != NULL ) printf(": %s", name);
-	printf(" (c/q)?\n");
-
-	while ( 1 )
-	{
-		input = _getch();
-		if ( input == 'c' )
-			return true;
-		else if ( input == 'q' )
-			return false;
-		else if ( counter > 100 )
-			return false;
-
-		counter++;
-	}
-//	return false;
 }
 
 /**
