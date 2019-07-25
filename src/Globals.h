@@ -53,7 +53,7 @@ extern char file_path[PATH_MAX];
 extern uint64_t length;
 //extern uint8_t skip_bytes;
 
-extern uint8_t type;
+//extern uint8_t type;
 //extern const uint8_t TYPE_FILE;
 //extern const uint8_t TYPE_PID;
 

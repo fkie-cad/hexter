@@ -46,3 +46,4 @@ set(HEXTER_LIB_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/hexter.c
 	${UTILS_FILES}
 	)
+

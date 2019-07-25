@@ -1097,6 +1097,16 @@ void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base)
 	}
 }
 
+BOOL stackTrace(uint32_t pid)
+{
+	HANDLE process;
+
+	if ( !openProcess(&process, pid) )
+		return FALSE;
+
+	return TRUE;
+}
+
 char* getHLFlagString(DWORD flag)
 {
 	if ( flag == HF32_DEFAULT )
