@@ -102,11 +102,14 @@ int main(int argc, char** argv)
 	if ( type == TYPE_FILE )
 	{
 		file_size = getSize(file_path);
-		if ( file_size == 0 ) return 0;
+		if ( file_size == 0 )
+			return 0;
 	}
 	else if ( type == TYPE_PID )
 	{
-		int s = parseUint32(file_path, &pid, 10);
+		int s = parseUint32Auto(file_path, &pid);
+		if ( s != 0 )
+			return 0;
 		if ( pid == 0 )
 #if defined(__linux__) || defined(__linux) || defined(linux)
 			pid = getpid();
@@ -118,9 +121,9 @@ int main(int argc, char** argv)
 	}
 	
 	debug_info("file_path: %s\n", file_path);
-	debug_info("file_size: %lu\n", file_size);
-	debug_info("start: %lu\n", start);
-	debug_info("length: %lu\n", length);
+	debug_info("file_size: 0x%lx\n", file_size);
+	debug_info("start: 0x%lx\n", start);
+	debug_info("length: 0x%lx\n", length);
 	debug_info("print_col_mask only: %d\n", print_col_mask);
 	debug_info("insert: %d\n", insert_f);
 	debug_info("overwrite: %d\n", overwrite_f);
@@ -135,9 +138,9 @@ int main(int argc, char** argv)
 	}
 
 	if ( insert_f )
-		insert(payload, payload_ln, start);
+		insert(file_path, payload, payload_ln, start);
 	else if ( overwrite_f && type == TYPE_FILE )
-		overwrite(payload, payload_ln, start);
+		overwrite(file_path, payload, payload_ln, start);
 	else if ( overwrite_f && type == TYPE_PID )
 		writeProcessMemory(pid, payload, payload_ln, start);
 
@@ -145,7 +148,7 @@ int main(int argc, char** argv)
 
 	if ( delete_f )
 	{
-		deleteBytes(start, length);
+		deleteBytes(file_path, start, length);
 		length = DEFAULT_LENGTH;
 	}
 

@@ -204,37 +204,37 @@ uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
 	return payload_ln;
 }
 
-void insert(unsigned char* payload, uint32_t payload_ln, uint64_t offset)
+void insert(char* file_path, unsigned char* payload, uint32_t payload_ln, uint64_t offset)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
 	size_t n = buf_ln;
-	FILE* fi;
+	FILE* fp;
 	uint64_t i, j;
 
 	if ( offset > file_size )
 	{
-		overwrite(payload, payload_ln, offset);
+		overwrite(file_path, payload, payload_ln, offset);
 		return;
 	}
 
-	fi = fopen(file_path, "rb+");
-	if ( !fi )
+	fp = fopen(file_path, "rb+");
+	if ( !fp )
 	{
 		printf("File %s does not exist.\n", file_path);
 		return;
 	}
 
-	fseek(fi, offset, SEEK_SET);
+	fseek(fp, offset, SEEK_SET);
 	while ( n == buf_ln )
 	{
-		n = fread(buf, 1, buf_ln, fi);
+		n = fread(buf, 1, buf_ln, fp);
 
-		fseek(fi, offset, SEEK_SET);		// f: .....0123456789ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
-		fwrite(payload, 1, payload_ln, fi); // f: .....DEAD0BEA89ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
+		fseek(fp, offset, SEEK_SET);		// f: .....0123456789ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
+		fwrite(payload, 1, payload_ln, fp); // f: .....DEAD0BEA89ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
 		if ( n > payload_ln )
 		{
-			fwrite(buf, 1, n-payload_ln, fi);   // f: .....DEAD0BEA01234567, buf = 0123456789ABCDEF, payload = DEAD0BEA
+			fwrite(buf, 1, n-payload_ln, fp);   // f: .....DEAD0BEA01234567, buf = 0123456789ABCDEF, payload = DEAD0BEA
 
 			for ( i = n-payload_ln, j=0; i < n; i++ )
 			{
@@ -252,16 +252,24 @@ void insert(unsigned char* payload, uint32_t payload_ln, uint64_t offset)
 		offset += n;
 	}
 	if ( n > payload_ln )
-		fwrite(payload, 1, payload_ln, fi);
+		fwrite(payload, 1, payload_ln, fp);
 	else
-		fwrite(payload, 1, n, fi);
+		fwrite(payload, 1, n, fp);
 
-	fclose(fi);
+	fclose(fp);
 }
 
-void overwrite(unsigned char* payload, uint32_t payload_ln, uint64_t offset)
+/**
+ * Overwrite bytes in file with payload.
+ *
+ * @param	file_path char*
+ * @param	payload unsigned char* the bytes to write
+ * @param	payload_ln uint32_t the length of the bytes to write
+ * @param	offset uint64_t the offset to write the bytes at
+ */
+void overwrite(char* file_path, unsigned char* payload, uint32_t payload_ln, uint64_t offset)
 {
-	FILE* src;
+	FILE* fp;
 	// backup
 //	FILE* bck;
 //	char buf[1024];
@@ -271,8 +279,8 @@ void overwrite(unsigned char* payload, uint32_t payload_ln, uint64_t offset)
 //	int n = buf_ln;
 	// end backup
 
-	src = fopen(file_path, "rb+");
-	if ( !src )
+	fp = fopen(file_path, "rb+");
+	if ( !fp )
 	{
 		printf("File %s does not exist.\n", file_path);
 		return;
@@ -293,18 +301,18 @@ void overwrite(unsigned char* payload, uint32_t payload_ln, uint64_t offset)
 //	fclose(bck);
 	// end backup
 
-	fseek(src, offset, SEEK_SET);
-	fwrite(payload, 1, payload_ln, src);
+	fseek(fp, offset, SEEK_SET);
+	fwrite(payload, 1, payload_ln, fp);
 
-	fclose(src);
+	fclose(fp);
 }
 
-void deleteBytes(uint64_t start, uint64_t length)
+void deleteBytes(char* file_path, uint64_t start, uint64_t length)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
 	int n = buf_ln;
-	FILE* fi;
+	FILE* fp;
 	uint64_t offset;
 
 	if ( start > file_size )
@@ -312,39 +320,39 @@ void deleteBytes(uint64_t start, uint64_t length)
 		return;
 	}
 
-	fi = fopen(file_path, "rb+");
-	if ( !fi )
+	fp = fopen(file_path, "rb+");
+	if ( !fp )
 	{
 		printf("File %s does not exist.\n", file_path);
 		return;
 	}
 
 	offset = start;
-	fseek(fi, offset, SEEK_SET);
+	fseek(fp, offset, SEEK_SET);
 	while ( n == buf_ln )
 	{
-		fseek(fi, offset, SEEK_SET);
-		n = fread(buf, 1, buf_ln, fi);
+		fseek(fp, offset, SEEK_SET);
+		n = fread(buf, 1, buf_ln, fp);
 
 		if ( offset == start )
 		{
-			fseek(fi, offset, SEEK_SET);	   	   // f: ....0123456789ABCDEF, buf = 0123456789ABCDEF, length = 4
-			fwrite(&buf[length], 1, n-length, fi); // f: ....456789ABCDEF...., buf = 0123[456789ABCDEF]
+			fseek(fp, offset, SEEK_SET);	   	   // f: ....0123456789ABCDEF, buf = 0123456789ABCDEF, length = 4
+			fwrite(&buf[length], 1, n-length, fp); // f: ....456789ABCDEF...., buf = 0123[456789ABCDEF]
 		}
 		else
 		{
-			fseek(fi, offset-length, SEEK_SET);	 // f: ....0123456789ABCDEF, buf = 01234567, length =
-			fwrite(buf, 1, n, fi);               // f: 01234567896789ABCDEF...., buf = 01234567
+			fseek(fp, offset-length, SEEK_SET);	 // f: ....0123456789ABCDEF, buf = 01234567, length =
+			fwrite(buf, 1, n, fp);               // f: 01234567896789ABCDEF...., buf = 01234567
 		}
 
 		offset += n;
 	}
 
 #if defined(__linux__) || defined(__linux) || defined(linux)
-	ftruncate(fileno(fi), file_size-length);
+	ftruncate(fileno(fp), file_size-length);
 #elif defined(_WIN32)
-	_chsize(_fileno(fi), file_size-length);
+	_chsize(_fileno(fp), file_size-length);
 #endif
 
-	fclose(fi);
+	fclose(fp);
 }

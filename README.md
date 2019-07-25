@@ -67,7 +67,6 @@ Optional Parameters:
  * -l:uint64_t Length of the part to display in hex or dec. Default = 0x50.
  * -a ASCII only print.
  * -x HEX only print.
- * -p For a plain, not styled text output. 
  * -ix Insert hex byte sequence (destructive!). Where x is an format option.
  * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.
  * -fx Find hex byte sequence. Where x is an format option.
@@ -80,13 +79,22 @@ Optional Parameters:
    * q: quad word.  
    Expect for the ascii string, all values have to be passed as hex values.
  * -d Delete -l bytes from offset -s.
+ * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'filename'.
+ * -pid only.
+   * -lpx List whole process memory layout.
+   * -lpm List all process modules.
+   * -lpt List all process threads.
+   * -lph List all process heaps.
+   * -lphb List all process heaps and its blocks.
  * -b Force breaking, not continuous mode and print just one block.
+ * -p For a plain, not styled text output. 
  * -h Print this.
 
 The program runs in continuous mode by default, expect for the -i, -o and -d option, or if the -b option is set.  
 Step through the file by pressing ENTER.  
 Quit with "q".  
-If searching something in continuous mode, type "n" to find next occurrence.
+If searching something in continuous mode, type "n" to find next occurrence.  
+The length value will be padded to fit a block size in continuous mode.
 
 Examples:  
 Print 100 bytes from offset 20 in hex only style.

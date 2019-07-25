@@ -31,17 +31,17 @@ void (*printHexValue)(uint8_t);
 	WORD wOldColorAttrs;
 #endif
 
-int8_t skip_hex_bytes = 0;
-int8_t skip_ascii_bytes = 0;
+static int8_t skip_hex_bytes = 0;
+static int8_t skip_ascii_bytes = 0;
 
-int16_t highlight_hex_bytes = 0;
-int16_t highlight_hex_wait = 0;
-int16_t highlight_ascii_bytes = 0;
-int16_t highlight_ascii_wait = 0;
+static int16_t highlight_hex_bytes = 0;
+static int16_t highlight_hex_wait = 0;
+static int16_t highlight_ascii_bytes = 0;
+static int16_t highlight_ascii_wait = 0;
 
-unsigned char* needle = NULL;
-uint32_t needle_ln;
-uint64_t found = 0;
+static unsigned char* needle = NULL;
+static uint32_t needle_ln;
+static uint64_t found = 0;
 
 /**
  * Prints the values depending on the mode.
@@ -175,7 +175,7 @@ uint64_t printBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 	uint64_t size;
 	uint64_t end = block_start + length;
 	uint8_t offset_width = countHexWidth64(end);
-
+//	printf("printBlock(0x%lx, %p, %p, %u, 0x%lx)\n", nr_of_parts, block, fi, block_size, block_start);
 	for ( p = 0; p < nr_of_parts; p++ )
 	{
 		debug_info("%lu / %lu\n", (p+1), nr_of_parts);
