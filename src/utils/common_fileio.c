@@ -150,11 +150,7 @@ uint64_t cfio_readFile(const char* finame, uint64_t begin, uint64_t size, unsign
 		return 0;
 	}
 
-	if ( begin )
-	{
-		fseek(fi, begin, SEEK_SET);
-	}
-
+	fseek(fi, begin, SEEK_SET);
 	n = fread(data, 1, size, fi);
 
 	fclose(fi);
@@ -166,11 +162,7 @@ uint64_t readFile(FILE* fi, uint64_t begin, uint64_t size, unsigned char* data)
 {
 	uint64_t n = 0;
 
-	if ( begin )
-	{
-		fseek(fi, begin, SEEK_SET);
-	}
-
+	fseek(fi, begin, SEEK_SET);
 	n = fread(data, 1, size, fi);
 
 	return n;

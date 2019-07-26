@@ -227,6 +227,7 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t *start)
 		return 0;
 	}
 
+//	while ( queryNextRegion(fp, &entry) )
 	while ( fgets(line, line_size, fp) )
 	{
 		line[line_size] = 0;

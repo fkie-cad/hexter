@@ -91,8 +91,11 @@ void print(uint64_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t 
 			Printer_cleanUp(block, fi);
 			return;
 		}
-		highlight_hex_bytes = needle_ln;
-		block_start = found;
+
+		block_start = normalizeOffset(found, &skip_bytes);
+		Printer_setHiglightBytes(needle_ln);
+		Printer_setHiglightWait(skip_bytes);
+		skip_bytes = 0;
 	}
 
 	block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, file_size);
@@ -144,6 +147,7 @@ void Printer_cleanUp(unsigned char* block, FILE* fi)
 void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start, uint64_t block_max)
 {
 	char input;
+	uint8_t skip_bytes = 0;
 
 	while ( 1 )
 	{
@@ -156,9 +160,14 @@ void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 			found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max);
 			if ( found == FIND_FAILURE )
 				break;
+
+			block_start = normalizeOffset(found, &skip_bytes);
+			Printer_setHiglightBytes(needle_ln);
+			Printer_setHiglightWait(skip_bytes);
+			skip_bytes = 0;
+
 			printf("\n");
-			highlight_hex_bytes = needle_ln;
-			block_start = printBlock(nr_of_parts, block, fi, block_size, found, block_max);
+			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
 		}
 		else if ( input == 'q' )
 			break;
