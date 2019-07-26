@@ -110,80 +110,6 @@ int main(int argc, char** argv)
 	else
 		run(0, NULL);
 
-//	if ( type == TYPE_FILE )
-//	{
-//		file_size = getSize(file_path);
-//		if ( file_size == 0 ) return 0;
-//	}
-//	else if ( type == TYPE_PID )
-//	{
-//		s = parseUint32(file_path, &pid, 10);
-//		if ( pid == 0 )
-//#if defined(__linux__) || defined(__linux) || defined(linux)
-//			pid = getpid();
-//#elif defined(_WIN32)
-//			pid = _getpid();
-//#endif
-//		file_size = getSizeOfProcess(pid);
-//		if ( file_size == 0 ) return 0;
-//	}
-//
-//	debug_info("file_path: %s\n", file_path);
-//	debug_info("file_size: %lu\n", file_size);
-//	debug_info("start: %lu\n", start);
-//	debug_info("length: %lu\n", length);
-//	debug_info("print_col_mask only: %d\n", print_col_mask);
-//	debug_info("insert: %d\n", insert_f);
-//	debug_info("overwrite: %d\n", overwrite_f);
-//	debug_info("find: %d\n", find_f);
-//	debug_info("delete: %d\n", delete_f);
-//	debug_info("\n");
-//
-//	if ( (insert_f || overwrite_f || find_f) && payload_arg_id >= 0 )
-//	{
-//		payload_ln = parsePayload(argv[payload_arg_id][2], argv[payload_arg_id + 1], &payload);
-//		if ( payload == NULL) exit(0);
-//	}
-//
-//	if ( insert_f )
-//		insert(payload, payload_ln, start);
-//	else if ( overwrite_f && type == TYPE_FILE )
-//		overwrite(payload, payload_ln, start);
-//	else if ( overwrite_f && type == TYPE_PID )
-//		writeProcessMemory(pid, payload, payload_ln, start);
-//
-//	sanitizeParams(pid);
-//
-//	if ( delete_f )
-//	{
-//		deleteBytes(start, length);
-//		length = DEFAULT_LENGTH;
-//	}
-//
-//	setPrintingStyle();
-//	if ( type == TYPE_FILE )
-//	{
-//		getFileNameL(file_path, &file_name);
-//		printf("file: %s\n", file_name);
-//		print(start, skip_bytes, payload, payload_ln);
-//	}
-//	else if ( type == TYPE_PID )
-//	{
-//		printf("pid: %u\n", pid);
-//		if ( list_process_memory_f )
-//			listProcessMemory(pid);
-//		if ( list_process_modules_f )
-//			listProcessModules(pid);
-//		if ( list_process_threads_f )
-//			listProcessThreads(pid);
-//		if ( list_process_heaps_f )
-//			listProcessHeaps(pid, list_process_heaps_f);
-//		printProcessRegions(pid, start, skip_bytes, payload, payload_ln);
-//	}
-//
-//	if ( payload != NULL )
-//		free(payload);
-
 	return 0;
 }
 
@@ -323,14 +249,14 @@ void printHelp()
 		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n"
-		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option.\n"
+		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)\n"
 		   " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -fx Find hex byte sequence. Where x is an format option.\n"
 		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte, %c: word, %c: double word, %c: quad word.\n"
 		   "     Expect for the ascii string, all values have to be passed as hex values.\n"
 //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
-		   " * -d Delete -l bytes from offset -s.\n"
-		   " * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'filename'.\n"
+		   " * -d Delete -l bytes from offset -s. (File mode only.)\n"
+		   " * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'a/file/name'.\n"
 		   " * -pid only.\n"
 		   " * * -lpx List whole process memory layout.\n"
 		   " * * -lpm List all process modules.\n"

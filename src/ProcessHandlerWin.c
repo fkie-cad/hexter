@@ -58,6 +58,11 @@ void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name);
 static unsigned char* p_needle = NULL;
 static uint32_t p_needle_ln;
 
+static HANDLE hStdout;
+static WORD wOldColorAttrs;
+static hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+
 uint64_t getSizeOfProcess(uint32_t pid)
 {
 	size_t p_size = 0;
@@ -888,6 +893,9 @@ bool listProcessMemory(uint32_t pid)
 	if ( !openProcess(&process, pid) )
 		return false;
 
+	GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
+	wOldColorAttrs = csbiInfo.wAttributes;
+
 	printf("%-18s | %-18s | %10s | %-9s | %-11s | %-18s | %-18s | %s [| %s]\n",
 			"BaseAddress", "AllocationBase", "RegionSize", "State", "Type", "Protect", "AllocationProtect", "Name", "info");
 	printf("----------------------------------------------------------------------------------------------------------------------------------------\n");
@@ -906,15 +914,7 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 	const char* SEPARATOR = " | ";
 	int guard = 0, nocache = 0;
 
-	HANDLE hStdout;
-	WORD wOldColorAttrs;
-	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
-	GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
-	wOldColorAttrs = csbiInfo.wAttributes;
-
 	if ( !isAccessibleRegion(info) )
-//	if ( notAccessibleRegion(info) )
 		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
 
 	printf("0x%p | 0x%p | 0x%8lx | ", info->BaseAddress, info->AllocationBase, info->RegionSize);

@@ -269,3 +269,13 @@ bool confirmContinueWithNextRegion(char* name, uint64_t address)
 	}
 //	return false;
 }
+
+void setAnsiFormat(char* format)
+{
+	printf("%s", format);
+}
+
+void resetAnsiFormat()
+{
+	printf("\033[0m");
+}

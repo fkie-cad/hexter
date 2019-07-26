@@ -20,8 +20,6 @@
 
 #define HEX_GAP "   "
 #define ASCII_GAP " "
-#define HIGHLIGHT_HEX_STYLE "\033[1;42m"
-#define POS_HEX_STYLE "\033[1m"
 
 void printAsciiByte(const unsigned char c);
 void (*printHexValue)(uint8_t);
@@ -381,16 +379,6 @@ void printAnsiFormatedHexValue(const unsigned char b)
 		printf("%02X ", b);
 		resetAnsiFormat();
 	}
-}
-
-void setAnsiFormat(char* format)
-{
-	printf("%s", format);
-}
-
-void resetAnsiFormat()
-{
-	printf("\033[0m");
 }
 
 #ifdef _WIN32

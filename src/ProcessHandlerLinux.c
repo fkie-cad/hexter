@@ -555,6 +555,9 @@ int printProcMapEntry(ProcMapsEntry* entry, uint32_t last_module_inode, size_t l
 {
 	char* name = NULL;
 
+	if ( !isReadableRegion(entry) )
+		setAnsiFormat(LIGHT_STYLE);
+
 	printf("0x%0*lx | 0x%0*lx | %*s | 0x%0*lx | %*s | %*u | ",
 			map_entry_col_width[0], entry->address, map_entry_col_width[0], entry->size, map_entry_col_width[1], entry->perms,
 			map_entry_col_width[2], entry->offset, map_entry_col_width[3], entry->dev, map_entry_col_width[4], entry->inode);
@@ -565,6 +568,9 @@ int printProcMapEntry(ProcMapsEntry* entry, uint32_t last_module_inode, size_t l
 		printf("%s", name);
 	}
 	printf("\n");
+
+	if ( !isReadableRegion(entry) )
+		resetAnsiFormat();
 
 	return 0;
 }

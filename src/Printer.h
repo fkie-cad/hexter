@@ -1,6 +1,10 @@
 #ifndef HEXTER_SRC_PRINTER_H
 #define HEXTER_SRC_PRINTER_H
 
+#define HIGHLIGHT_HEX_STYLE "\033[1;42m"
+#define POS_HEX_STYLE "\033[1m"
+#define LIGHT_STYLE "\033[38;2;150;150;150m"
+
 void print(uint64_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln);
 void setPrintingStyle();
 void Printer_cleanUp(unsigned char* block, FILE* fi);
@@ -17,8 +21,6 @@ void printOffsetCol(uint64_t offset, uint8_t width);
 uint8_t printHexCol(const unsigned char* block, uint64_t i, uint64_t size, uint8_t col_size);
 void printCleanHexValue(uint8_t b);
 void printAnsiFormatedHexValue(const unsigned char b);
-void setAnsiFormat(char* format);
-void resetAnsiFormat();
 #ifdef _WIN32
 void printWinFormatedHexValue(const unsigned char b);
 #endif

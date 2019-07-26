@@ -26,8 +26,8 @@ $ cmake --build . [--config Release] --target hexter
 "-DCMAKE_BUILD_TYPE=Release" on the other hand is only meaningful to Linux.  
 "Release" will build with -Ofast.  
 
-### CMake on Windows (recommended way) ###
-Since keeping control off the bitness of the built program seems to be complicated on Windows, using the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX" is advised, if you plan to build for a different bitness than you actual OS.
+### CMake on Windows and bitness ###
+Since keeping control off the bitness of the built program seems to be complicated on Windows, using the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX" is advised, if you plan to build for a different bitness than you actual OS.  
 Alternatively running
 ```bash
 "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsXX.bat"
@@ -39,8 +39,8 @@ Then you may simply run:
 ```bash
 $ mkdir build
 $ cd build
-cmake .. -DCMAKE_BUILD_TYPE=Debug/Release -G "CodeBlocks - NMake Makefiles"
-cmake --build . --config Debug/Release --target hexter
+cmake .. -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - NMake Makefiles"
+cmake --build . --config Release --target hexter
 ```
 
 Running
@@ -73,7 +73,7 @@ Optional Parameters:
  * -l:uint64_t Length of the part to display in hex or dec. Default = 0x50.
  * -a ASCII only print.
  * -x HEX only print.
- * -ix Insert hex byte sequence (destructive!). Where x is an format option.
+ * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)
  * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.
  * -fx Find hex byte sequence. Where x is an format option.
  * Format options: 
@@ -84,8 +84,8 @@ Optional Parameters:
    * d: double word, 
    * q: quad word.  
    Expect for the ascii string, all values have to be passed as hex values.
- * -d Delete -l bytes from offset -s.
- * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'filename'.
+ * -d Delete -l bytes from offset -s. (File mode only.)
+ * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'a/file/name'.
  * -pid only.
    * -lpx List whole process memory layout.
    * -lpm List all process modules.
