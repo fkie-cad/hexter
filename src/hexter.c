@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 
 #define HEXTER_EXPORTS
@@ -197,13 +198,15 @@ int run(const char payload_format, const char* raw_payload)
 	if ( type == TYPE_FILE )
 	{
 		file_size = getSize(file_path);
-		if ( file_size == 0 ) return 0;
+		if ( file_size == 0 )
+			return 0;
 	}
 	else if ( type == TYPE_PID )
 	{
-		s = parseUint32(file_path, &pid, 10);
+		s = parseUint32Auto(file_path, &pid);
 		if ( s != 0 )
-			return 1;
+			return 0;
+
 		if ( pid == 0 )
 #if defined(__linux__) || defined(__linux) || defined(linux)
 			pid = getpid();
@@ -216,9 +219,9 @@ int run(const char payload_format, const char* raw_payload)
 	}
 
 	debug_info("file_path: %s\n", file_path);
-	debug_info("file_size: %lu\n", file_size);
-	debug_info("start: %lu\n", start);
-	debug_info("length: %lu\n", length);
+	debug_info("file_size: 0x%lx\n", file_size);
+	debug_info("start: 0x%lx\n", start);
+	debug_info("length: 0x%lx\n", length);
 	debug_info("print_col_mask only: %d\n", print_col_mask);
 	debug_info("insert: %d\n", insert_f);
 	debug_info("overwrite: %d\n", overwrite_f);
@@ -233,9 +236,9 @@ int run(const char payload_format, const char* raw_payload)
 	}
 
 	if ( insert_f )
-		insert(payload, payload_ln, start);
+		insert(file_path, payload, payload_ln, start);
 	else if ( overwrite_f && type == TYPE_FILE )
-		overwrite(payload, payload_ln, start);
+		overwrite(file_path, payload, payload_ln, start);
 	else if ( overwrite_f && type == TYPE_PID )
 		writeProcessMemory(pid, payload, payload_ln, start);
 
@@ -243,7 +246,7 @@ int run(const char payload_format, const char* raw_payload)
 
 	if ( delete_f )
 	{
-		deleteBytes(start, length);
+		deleteBytes(file_path, start, length);
 		length = DEFAULT_LENGTH;
 	}
 
@@ -433,7 +436,11 @@ void parseArgs(int argc, char** argv)
 			if ( hasValue("-l", i, end_i) )
 			{
 				s = parseUint64Auto(argv[i + 1], &length);
+#ifdef _WIN32
 				printf("length: %llx\n", length);
+#else
+				printf("length: %lx\n", length);
+#endif
 				if ( s != 0 )
 				{
 					printf("INFO: Could not parse length. Setting it to %u!\n", DEFAULT_LENGTH);
@@ -502,14 +509,6 @@ void parseArgs(int argc, char** argv)
 		printf("ERROR: Inserting or deleting is not supported in process mode!\n");
 		exit(0);
 	}
-
-#ifndef _WIN32
-	if ( type == TYPE_PID )
-	{
-		printf("ERROR: process mode is only yet supported in windows!\n");
-		exit(0);
-	}
-#endif
 
 	if ( start_i == 1 )
 		source = argv[i];
@@ -708,6 +707,8 @@ HEXTER_API int printFile(char* _file_name, uint64_t _start, uint64_t _length)
 //	print_col_mask = print_col_mask | print_hex_mask;
 
 	run(0, NULL);
+
+	return 0;
 }
 
 HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, int _lpm, int _lpx, int _lph, int _lpt)
@@ -731,4 +732,6 @@ HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, in
 //	print_col_mask = print_col_mask | print_hex_mask;
 
 	run(0, NULL);
+
+	return 0;
 }

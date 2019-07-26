@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <limits.h>
 
+#include "bool.h"
+
 #if defined(__linux__) || defined(__linux) || defined(linux)
 	#define ENTER 10 // aka \n
 #endif
@@ -18,12 +20,6 @@
 
 #define DEBUG_PRINT_INFO 0
 #define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
-
-#ifndef bool
-	#define bool int
-	#define true 1
-	#define false 0
-#endif
 
 
 #ifndef PATH_MAX
