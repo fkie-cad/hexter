@@ -241,15 +241,15 @@ size_t split(char* str, const char* delimiter, char** bucket, const size_t bucke
 	return token_id;
 }
 
-bool confirmContinueWithNextRegion(char* name)
+bool confirmContinueWithNextRegion(char* name, uint64_t address)
 {
 	char input;
 	int counter = 0;
 
 	printf("\n");
 	printf("Continue with next region");
-	if ( name != NULL ) printf(": %s", name);
-	printf(" (c/q)?\n");
+	if ( name != NULL ) printf(": %s ", name);
+	printf(" (0x%p) (c/q)?\n", address);
 
 	while ( 1 )
 	{

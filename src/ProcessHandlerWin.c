@@ -464,7 +464,7 @@ BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsi
 //	printf("file_name: %s\n", *file_name);
 	if ( last_base != info->AllocationBase )
 	{
-		if ( !confirmContinueWithNextRegion(*file_name) )
+		if ( !confirmContinueWithNextRegion(*file_name, info->AllocationBase) )
 			return FALSE;
 	}
 	return TRUE;

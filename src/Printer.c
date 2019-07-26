@@ -175,7 +175,7 @@ uint64_t printBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 	uint64_t size;
 	uint64_t end = block_start + length;
 	uint8_t offset_width = countHexWidth64(end);
-//	printf("printBlock(0x%lx, %p, %p, %u, 0x%lx)\n", nr_of_parts, block, fi, block_size, block_start);
+
 	for ( p = 0; p < nr_of_parts; p++ )
 	{
 		debug_info("%lu / %lu\n", (p+1), nr_of_parts);

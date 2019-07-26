@@ -108,11 +108,13 @@ uint64_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, uint64_
 	size_t read_size = buf_ln;
 	uint64_t block_i, j;
 	uint64_t found = FIND_FAILURE;
+//	printf("findNeedleInFP(0x%lx, 0x%lx)\n", offset, max_offset);
 
 	j = 0;
 
 	while ( n == buf_ln )
 	{
+//		printf("\r0x%lx, ", offset);
 		if ( offset + read_size > max_offset )
 			read_size = max_offset - offset;
 
@@ -129,7 +131,6 @@ uint64_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, uint64_
 
 		offset += block_i;
 	}
-
 	return found;
 }
 
