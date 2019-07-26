@@ -1,11 +1,11 @@
 # Hexter #
-A minimal terminal hex viewer supporting big files and offsets.
+A minimal terminal hex viewer supporting reading, writing and searching in files and processes.
 
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.4.4  
-Last changed: 2019.07.03
+1.5.0  
+Last changed: 2019.07.26
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  
@@ -26,7 +26,7 @@ $ cmake --build . [--config Release] --target hexter
 "-DCMAKE_BUILD_TYPE=Release" on the other hand is only meaningful to Linux.  
 "Release" will build with -Ofast.  
 
-### CMake on Windows (recommended way)###
+### CMake on Windows (recommended way) ###
 Since keeping control off the bitness of the built program seems to be complicated on Windows, using the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX" is advised, if you plan to build for a different bitness than you actual OS.
 Alternatively running
 ```bash
@@ -36,12 +36,18 @@ in a normal terminal, where the XX (in vcvarsXX.bat) is 32 or 64, should do the 
 Either way will set the necessary environment variables correctly.
 
 Then you may simply run:
-```
+```bash
 $ mkdir build
 $ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug/Release -G "CodeBlocks - NMake Makefiles"
 cmake --build . --config Debug/Release --target hexter
 ```
+
+Running
+```bash
+buildWin.bat [/h]
+```
+will do this in one rush.
 
 ### MSBUILD & Windows commandline ###
 Run the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX".
@@ -50,12 +56,12 @@ Use cmake for creating .vcxproj without Visual Studio:
 ```bash
 $ mkdir build
 $ cd build
-$ cmake .. -G "Visual Studio 14 2015 Win64"  
-$ msbuild (/p:PlatformToolset=v140) (/p:Platform=x64) (/p:Configuration=Release) hexter.vcxproj
+$ cmake .. -G "Visual Studio 16 2019 Win64"  
+$ msbuild /p:PlatformToolset=v160 /p:Platform=x64 /p:Configuration=Release hexter.vcxproj
 ```
-For a 32-bit (x86) build, delete the "Win64" part.
+For a 32-bit (x86) build, delete the "Win64" part and change to x32 in the fourth line.  
+Change "Release" to "Debug" in the fourth line for a debug build.  
 On some systems this did nonetheless only support the creation of 64-bit binaries.
-The "p" options are more or less mandatory and used without the enclosing "()".  
 
 ## USAGE ##
 ```bash
