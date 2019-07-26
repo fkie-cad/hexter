@@ -368,10 +368,11 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 			}
 			else
 			{
-				Printer_setHiglightBytes(p_needle_ln);
 				found = found - (uint64_t) info.BaseAddress;
 				base_off = normalizeOffset(found, &skip_bytes);
+				Printer_setHiglightBytes(p_needle_ln);
 				Printer_setHiglightWait(skip_bytes);
+				skip_bytes = 0;
 			}
 		}
 
@@ -568,19 +569,19 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, uint64_t base_off,
 			n_size = printMemoryBlock(process, base_addr, base_off, size, buffer);
 		else if ( find_f && input == 'n' )
 		{
-			found = findNeedleInProcessMemoryBlock(base_addr, size, found + p_needle_ln,
-												   process, p_needle, p_needle_ln);
+			found = findNeedleInProcessMemoryBlock(base_addr, size, found + p_needle_ln, process, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
 			{
 				s = 0;
 				break;
 			}
 			found -= (uint64_t) base_addr;
-			printf("\n");
-			Printer_setHiglightBytes(p_needle_ln);
 			base_off = normalizeOffset(found, &skip_bytes);
+			Printer_setHiglightBytes(p_needle_ln);
 			Printer_setHiglightWait(skip_bytes);
+			skip_bytes = 0;
 
+			printf("\n");
 			n_size = printMemoryBlock(process, base_addr, base_off, size, buffer);
 		}
 		else if ( input == 'q' )

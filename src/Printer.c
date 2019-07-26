@@ -85,7 +85,7 @@ void print(uint64_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t 
 	if ( find_f )
 	{
 		Finder_initFailure(needle, needle_ln);
-		found = findNeedleInFile(needle, needle_ln, start);
+		found = findNeedleInFile(file_path, needle, needle_ln, start, file_size);
 		if ( found == FIND_FAILURE )
 		{
 			Printer_cleanUp(block, fi);
@@ -95,10 +95,10 @@ void print(uint64_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t 
 		block_start = found;
 	}
 
-	block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
+	block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, file_size);
 
 	if ( continuous_f && block_start < file_size )
-		printBlockLoop(nr_of_parts, block, fi, block_size, block_start);
+		printBlockLoop(nr_of_parts, block, fi, block_size, block_start, file_size);
 
 	Printer_cleanUp(block, fi);
 }
@@ -141,7 +141,7 @@ void Printer_cleanUp(unsigned char* block, FILE* fi)
 	Finder_cleanUp();
 }
 
-void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start)
+void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start, uint64_t block_max)
 {
 	char input;
 
@@ -150,15 +150,15 @@ void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 		input = getch();
 
 		if ( input == ENTER )
-			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start);
+			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
 		else if ( find_f && input == 'n' )
 		{
-			found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi);
+			found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max);
 			if ( found == FIND_FAILURE )
 				break;
 			printf("\n");
 			highlight_hex_bytes = needle_ln;
-			block_start = printBlock(nr_of_parts, block, fi, block_size, found);
+			block_start = printBlock(nr_of_parts, block, fi, block_size, found, block_max);
 		}
 		else if ( input == 'q' )
 			break;
@@ -168,7 +168,7 @@ void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 	}
 }
 
-uint64_t printBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start)
+uint64_t printBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start, uint64_t block_max)
 {
 	uint64_t p;
 	uint64_t read_size = 0;
@@ -188,7 +188,8 @@ uint64_t printBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 
 		if ( !size )
 		{
-			fprintf(stderr, "Reading block of bytes failed!\n");
+			printf("ERROR: Reading block of bytes failed!\n");
+			block_start = block_max;
 			break;
 		}
 
@@ -197,7 +198,7 @@ uint64_t printBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 		block_start += read_size;
 	}
 
-	if ( block_start >= file_size )
+	if ( block_start >= block_max )
 		block_start = UINT64_MAX;
 
 	return block_start;

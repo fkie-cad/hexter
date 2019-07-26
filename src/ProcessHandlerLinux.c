@@ -59,7 +59,7 @@ bool getRegion(uint64_t start, FILE* fp, ProcMapsEntry* entry);
 void printRegionInfo(ProcMapsEntry* entry, const char* file_name);
 bool queryNextRegion(FILE* fp, ProcMapsEntry* entry);
 int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s);
-uint64_t printMemoryBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start, uint64_t block_max);
+uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const unsigned char* needle, uint32_t needle_ln);
 
 static const uint8_t map_entry_col_width[6] = { 16, 5, 8, 5, 8, 8 };
 #define LINE_BUFFER_SPACE 513
@@ -288,7 +288,7 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t *start)
 		info_line_break = 1;
 	}
 	printf("Info: Start offset 0x%lx does not hit a module!\nSetting it to 0x%lx!\n", (*start), entry.address);
-	(*start) = (uint64_t) entry.address;
+	(*start) =  entry.address;
 
 	setModuleEndAddress(&entry, fp);
 	if ( keepLengthInModule(&entry, *start, &length) )
@@ -481,7 +481,6 @@ bool listProcessModules(uint32_t pid)
 			break;
 
 		if ( !entry.pathname || entry.pathname[0] == 0 )
-//		if ( !entry.pathname || strnlen(entry.pathname, PATH_MAX) == 0 )
 			continue;
 		if ( entry.pathname[0] == '[' || entry.inode == 0 )
 			continue;
@@ -525,8 +524,6 @@ bool listProcessModules(uint32_t pid)
 void printProcessModulesTableHeader(const uint8_t map_entry_col_width[6])
 {
 	printf("List of modules:\n");
-	printf("x. Name\n");
-	printf(" - Path\n");
 	printf(" - %-*s | %-*s | %-*s | %*s | %*s | %*s\n",
 			map_entry_col_width[0] + 2, "address", map_entry_col_width[0] + 2, "size", map_entry_col_width[1], "perms",
 			map_entry_col_width[2] + 2, "offset", map_entry_col_width[3], "dev", map_entry_col_width[4], "inode");
@@ -688,7 +685,7 @@ bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 {
 	FILE* fp;
 	ProcMapsEntry entry;
-	bool s;
+//	bool s;
 	int print_s = 0;
 
 	uint64_t base_off = 0;
@@ -709,6 +706,7 @@ bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 		printf("ERROR: Could not open process %u memory.\nRoot permissions are required!", pid);
 		return false;
 	}
+	fclose(fp); // maybe hold pointer to mem, since it is used anyway
 
 	if ( !fopenProcessMaps(pid, &fp) )
 	{
@@ -734,6 +732,8 @@ bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 
 	while ( queryNextRegion(fp, &entry) )
 	{
+		printf("next region:\n");
+		// set correct entry base
 		if ( entry.inode != 0 && entry.inode == last_inode )
 			entry.base = last_base;
 		else
@@ -744,23 +744,24 @@ bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 		if ( !isReadableRegion(&entry) )
 			continue;
 
-		// print_s == 1 => quit printing actual module
+		// print_s == 1 => quit printing last entry (module) has been chosen
 		// printed_module_base == entry.base => still in actual module
 		if ( print_s == 1 && printed_module_base == entry.base )
-		{
 			continue;
-		}
 
+		// skip until start offset is reached
 		if ( start > entry.address )
 			continue;
 		else
 		{
+			// first time, start offset is reached, init variables correctly
 			if ( start > 0 )
 			{
 				base_off = start - entry.address;
 				printed_module_base = entry.base;
 				print_s = 1;
 			}
+			// not needed anymore
 			start = 0;
 		}
 
@@ -778,27 +779,30 @@ bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 		if ( print_s == 1 )
 			printRegionInfo(&entry, file_name);
 
-		/*if ( find_f )
+		if ( find_f )
 		{
-//			printf("Region Start Find\n");
-			found = findNeedleInProcessMemoryBlock(entry.address, entry.RegionSize, base_off, fp, p_needle, p_needle_ln);
+			printf("Region Start Find\n");
+			found = findNeedleInProcessMemoryBlock(pid, entry.address, entry.size, base_off, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
 			{
 //				printf(" - Region Start Find: not found\n");
 
-				if ( !getNextPrintableRegion(fp, &entry, &p, &file_name, print_s, last_base) )
-					break;
-				last_base = entry.address; // module base
+//				if ( !getNextPrintableRegion(fp, &entry, &p, &file_name, print_s, last_base) )
+//					break;
+				printed_module_base = entry.base;
+				base_off = 0;
 				continue;
 			}
 			else
 			{
-				Printer_setHiglightBytes(p_needle_ln);
-				found = found - (uint64_t) entry.address;
+				found = found - entry.address;
 				base_off = normalizeOffset(found, &skip_bytes);
+				Printer_setHiglightBytes(p_needle_ln);
 				Printer_setHiglightWait(skip_bytes);
+				skip_bytes = 0;
+				print_s = 1;
 			}
-		}*/
+		}
 
 //		printf("region: 0x%lx 0x%lx 0x%x %s\n", entry.address, entry.base, entry.size, entry.pathname);
 //		Printer_setSkipBytes(skip_bytes);
@@ -819,6 +823,135 @@ bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 	return true;
 }
 
+bool queryNextRegion(FILE* fp, ProcMapsEntry* entry)
+{
+	char line[LINE_BUFFER_SPACE];
+
+	if ( !fgets(line, line_size, fp) )
+		return false;
+
+	line[line_size] = 0;
+
+	if ( !parseProcMapsLine(line, entry) )
+	{
+		printf("ERROR: could not parse entry!\n");
+		return false;
+	}
+
+	return true;
+}
+
+void printRegionInfo(ProcMapsEntry* entry, const char* file_name)
+{
+	printf("%s (0x%lx - 0x%lx):\n", (file_name!=NULL)?file_name:"", entry->address, entry->address + entry->size);
+}
+
+
+/**
+ * Find needle in a process memory block.
+ *
+ * @param pid
+ * @param base_addr
+ * @param base_size
+ * @param offset
+ * @param needle
+ * @param needle_ln
+ * @return uint64_t absolute found address
+ */
+uint64_t
+findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const unsigned char* needle, uint32_t needle_ln)
+{
+	FILE* fp;
+	uint64_t found = FIND_FAILURE;
+
+	if ( !fopenProcessMemory(pid, &fp, "r") )
+	{
+		printf("ERROR: Could not open process %u memory.\n", pid);
+		return false;
+	}
+	found = findNeedleInFP(needle, needle_ln, base_addr+offset, fp, base_addr+base_size);
+
+	fclose(fp);
+	return found;
+}
+
+/**
+ *
+ * @param fp
+ * @param me32
+ * @param base_off uint32_t base offset in module to start at printing
+ * @return 0 if end of block is reached, 1 if forced to quit
+ */
+int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s)
+{
+	FILE* fp;
+	unsigned char block[BLOCKSIZE_LARGE] = {0};
+	char input;
+	uint8_t skip_bytes;
+	int s = 0;
+	uint16_t block_size = BLOCKSIZE_LARGE;
+	uint64_t nr_of_parts = length / block_size;
+	if ( length % block_size != 0 ) nr_of_parts++;
+	uint64_t base_end = base_addr + size;
+
+	if ( !fopenProcessMemory(pid, &fp, "r") )
+	{
+		printf("ERROR: Could not open process %u memory.\n", pid);
+		return false;
+	}
+//	printf("printRegionProcessMemory\n");
+//	printf(" - base_addr: 0x%lx\n", base_addr);
+//	printf(" - base_off: 0x%lx\n", base_off);
+//	printf(" - size: 0x%lx\n", size);
+//	printf(" - found: 0x%lx\n", found);
+	base_off += base_addr;
+//	printf(" - base_off: 0x%lx\n", base_off);
+
+	// prevent auto print, if next region of a module is accessed, to prevent printing two blocks at once
+	if ( print_s == 1 )
+		base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end);
+//	printf(" - base_off: 0x%lx\n", base_off);
+
+	if ( !continuous_f )
+		return 1;
+
+	while ( base_off != UINT64_MAX )
+	{
+		input = getch();
+
+		if ( input == ENTER )
+		{
+			base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end);
+//			printf(" -- base_off: 0x%lx\n", base_off);
+		}
+		else if ( find_f && input == 'n' )
+		{
+			found = findNeedleInProcessMemoryBlock(pid, base_addr, size, found + p_needle_ln, p_needle, p_needle_ln);
+			if ( found == FIND_FAILURE )
+			{
+				s = 0;
+				break;
+			}
+
+			found -= base_addr;
+			base_off = normalizeOffset(found, &skip_bytes);
+			Printer_setHiglightBytes(p_needle_ln);
+			Printer_setHiglightWait(skip_bytes);
+			skip_bytes = 0;
+
+			printf("\n");
+			base_off = printBlock(nr_of_parts, block, fp, block_size, base_addr+base_off, base_end);
+		}
+		else if ( input == 'q' )
+		{
+			s = 1;
+			break;
+		}
+	}
+
+	return s;
+}
+
 // find first region hitting start
 //bool getRegion(uint64_t start, FILE* fp, ProcMapsEntry* entry)
 //{
@@ -834,54 +967,6 @@ bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 //			return 1;
 //	}
 //	return 0;
-//}
-
-void printRegionInfo(ProcMapsEntry* entry, const char* file_name)
-{
-	printf("%s (0x%lx - 0x%lx):\n", (file_name!=NULL)?file_name:"", entry->address, entry->address + entry->size);
-}
-
-
-///**
-// * Find needle in a process memory block.
-// *
-// * @param me32
-// * @param process
-// * @param needle
-// * @param needle_ln
-// * @param offset
-// * @return uint64_t absolute found address
-// */
-//uint64_t
-//findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, uint64_t offset, FILE* fp, const unsigned char* needle, uint32_t needle_ln)
-//{
-//	uint64_t found = FIND_FAILURE;
-//	uint64_t block_i;
-//	uint64_t j = 0;
-//	uint64_t base_off = offset;
-//	size_t n_size = length;
-//	unsigned char buf[BLOCKSIZE_LARGE] = {0};
-//
-//	debug_info("Find: ");
-//	for ( block_i = 0; block_i < needle_ln; block_i++ )
-//		debug_info("%02x", p_needle[block_i]);
-//	debug_info("\n");
-//
-//	while ( n_size && n_size == length )
-//	{
-//		n_size = readProcessBlock(base_addr, base_size, base_off, fp, buf);
-//		block_i = findNeedleInBlock(needle, needle_ln, buf, &j, n_size);
-//
-//		if ( j == needle_ln )
-//		{
-//			found = (uint64_t) base_addr + base_off + block_i - needle_ln + 1;
-//			break;
-//		}
-//
-//		base_off += block_i;
-//	}
-//
-//	return found;
 //}
 
 //bool getNextPrintableRegion(FILE* fp, ProcMapsEntry* entry, char** file_name, int print_s, uint64_t last_base)
@@ -941,136 +1026,3 @@ void printRegionInfo(ProcMapsEntry* entry, const char* file_name)
 //	}
 //	return s;
 //}
-
-bool queryNextRegion(FILE* fp, ProcMapsEntry* entry)
-{
-	char line[LINE_BUFFER_SPACE];
-
-	if ( !fgets(line, line_size, fp) )
-		return false;
-
-	line[line_size] = 0;
-
-	if ( !parseProcMapsLine(line, entry) )
-	{
-		printf("ERROR: could not parse entry!\n");
-		return false;
-	}
-
-	return true;
-}
-
-/**
- *
- * @param fp
- * @param me32
- * @param base_off uint32_t base offset in module to start at printing
- * @return 0 if end of block is reached, 1 if forced to quit
- */
-int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s)
-{
-	FILE* fp;
-	unsigned char block[BLOCKSIZE_LARGE] = {0};
-	char input;
-	uint8_t skip_bytes;
-	int s = 0;
-	uint16_t block_size = BLOCKSIZE_LARGE;
-	uint64_t nr_of_parts = length / block_size;
-	if ( length % block_size != 0 ) nr_of_parts++;
-	uint64_t base_end = base_addr + size;
-
-	if ( !fopenProcessMemory(pid, &fp, "r") )
-	{
-		printf("ERROR: Could not open process %u memory.\n", pid);
-		return false;
-	}
-//	printf(" - base_addr: 0x%lx\n", base_addr);
-//	printf(" - base_off: 0x%lx\n", base_off);
-	base_off += base_addr;
-//	printf(" - base_off: 0x%lx\n", base_off);
-
-	// prevent auto print, if next region of a module is accessed, two prevent printing two blocks at once
-	if ( print_s == 1 )
-		base_off = printMemoryBlock(nr_of_parts, block, fp, block_size, base_off, base_end);
-//	printf(" - base_off: 0x%lx\n", base_off);
-
-	if ( !continuous_f )
-		return 1;
-
-	while ( base_off != UINT64_MAX )
-	{
-		input = getch();
-
-		if ( input == ENTER )
-		{
-			base_off = printMemoryBlock(nr_of_parts, block, fp, block_size, base_off, base_end);
-//			printf(" -- base_off: 0x%lx\n", base_off);
-		}
-//		else if ( find_f && input == 'n' )
-//		{
-//			found = findNeedleInProcessMemoryBlock(base_addr, size, found + p_needle_ln, fp, p_needle, p_needle_ln);
-//			if ( found == FIND_FAILURE )
-//			{
-//				s = 0;
-//				break;
-//			}
-//			found -= (uint64_t) base_addr;
-//			printf("\n");
-//			Printer_setHiglightBytes(p_needle_ln);
-//			base_off = normalizeOffset(found, &skip_bytes);
-//			Printer_setHiglightWait(skip_bytes);
-//
-//			base_addr = printMemoryBlock(nr_of_parts, block, fp, block_size, base_addr, size);
-//		}
-		else if ( input == 'q' )
-		{
-			s = 1;
-			break;
-		}
-	}
-
-	return s;
-}
-
-uint64_t printMemoryBlock(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, uint64_t block_start, uint64_t block_max)
-{
-	uint64_t p;
-	uint64_t read_size = 0;
-	uint64_t size;
-	uint64_t end = block_start + length;
-	uint8_t offset_width = countHexWidth64(end);
-//	printf(" - printMemoryBlock(0x%lx, %p, %p, %u, 0x%lx, 0x%lx)\n", nr_of_parts, block, fi, block_size, block_start, block_max);
-//	printf(" - - end: 0x%x\n", end);
-//	printf(" - - offset_width: %u\n", offset_width);
-
-	for ( p = 0; p < nr_of_parts; p++ )
-	{
-		debug_info("%lu / %lu\n", (p+1), nr_of_parts);
-		read_size = block_size;
-		if ( block_start + read_size > end ) read_size = end - block_start;
-//		printf(" - - - read_size: 0x%lx\n", read_size);
-
-		memset(block, 0, block_size);
-		size = readFile(fi, block_start, read_size, block);
-//		printf(" - - - size: 0x%lx\n", size);
-
-		if ( !size )
-		{
-			printf("ERROR: Reading block of bytes failed!\n");
-			block_start = block_max;
-			break;
-		}
-
-		printLine(block, block_start, size, offset_width);
-
-		block_start += read_size;
-//		printf(" - - - block_start: 0x%lx\n", block_start);
-	}
-
-//	printf(" - - block_start: 0x%lx\n", block_start);
-	if ( block_start >= block_max )
-		block_start = UINT64_MAX;
-
-//	printf(" - - block_start: 0x%lx\n", block_start);
-	return block_start;
-}
