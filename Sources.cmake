@@ -1,10 +1,10 @@
 set(UTILS_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/common_fileio.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/common_fileio.c
-	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Converter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Converter.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Helper.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Helper.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Converter.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Converter.c
 	)
 if (UNIX)
     set(UTILS_FILES
@@ -15,7 +15,6 @@ if (UNIX)
 endif (UNIX)
 
 set(HEXTER_FILES
-	${CMAKE_CURRENT_SOURCE_DIR}/src/bool.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Globals.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Finder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Finder.c
@@ -23,7 +22,6 @@ set(HEXTER_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Printer.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Writer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Writer.c
-	${UTILS_FILES}
 	)
 if (UNIX)
     set(HEXTER_FILES
@@ -40,10 +38,7 @@ if (WIN32)
     )
 endif (WIN32)
 
+
 set(HEXTER_LIB_FILES
 	${HEXTER_FILES}
-	${CMAKE_CURRENT_SOURCE_DIR}/src/hexter.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/hexter.c
-	${UTILS_FILES}
 	)
-

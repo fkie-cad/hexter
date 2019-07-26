@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__linux__) || defined(__linux) || defined(linux)
+	#include "TerminalUtil.h"
+#endif
 
 #include "Helper.h"
 #include "../Globals.h"
@@ -72,7 +75,6 @@ void getFileNameL(char* file_path, char** file_name)
 	if ( strnlen(file_path, PATH_MAX) == 0 ) return;
 
 	int64_t offset = getFileNameOffset(file_path);
-
 	*file_name = &file_path[offset];
 }
 
@@ -133,7 +135,6 @@ int64_t getFileNameOffset(const char* file_path)
 {
 	size_t file_path_ln = strnlen(file_path, PATH_MAX);
 	int64_t i = 0;
-
 	for ( i = file_path_ln-1; i >= 0; i--)
 	{
 		if ( file_path[i] == PATH_SEPARATOR )
@@ -207,4 +208,64 @@ uint8_t getColSize()
 	else if ( print_col_mask == print_hex_mask )
 		col_size = HEX_COL_SIZE;
 	return col_size;
+}
+
+/**
+ * Split string into its parts, determined by the delimiter.
+ * str will be changed!!!
+ * TODO: show, if max_bucket is exceeded
+ *
+ * @param	str char* the source string
+ * @param	delimiter char* the splitting delimiter
+ * @param	bucket char** the bucket to hold the parts (should be allocated memory)
+ * @param	bucket_max size_t the max size of the bucket (if there are more parts, the loop will break before)
+ * @return	size_t the size of the actual bucket, i.e. number of found parts.
+ */
+size_t split(char* str, const char* delimiter, char** bucket, const size_t bucket_max)
+{
+	char *token;
+
+	token = strtok(str, delimiter);
+	size_t token_id = 0;
+
+	while ( token != NULL )
+	{
+		bucket[token_id] = token;
+		token = strtok(NULL, delimiter);
+
+		token_id++;
+		if ( token_id >= bucket_max )
+			break;
+	}
+
+	return token_id;
+}
+
+bool confirmContinueWithNextRegion(char* name, uint64_t address)
+{
+	char input;
+	int counter = 0;
+
+	printf("\n");
+	printf("Continue with next region");
+	if ( name != NULL ) printf(": %s ", name);
+	printf(" (0x%p) (c/q)?\n", address);
+
+	while ( 1 )
+	{
+#if defined(_WIN32)
+		input = _getch();
+#else
+		input = getch();
+#endif
+		if ( input == 'c' )
+			return true;
+		else if ( input == 'q' )
+			return false;
+		else if ( counter > 100 )
+			return false;
+
+		counter++;
+	}
+//	return false;
 }

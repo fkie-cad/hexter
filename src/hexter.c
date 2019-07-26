@@ -3,8 +3,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 
+#define HEXTER_EXPORTS
+
+#include "hexter.h"
 #include "Globals.h"
 #include "utils/common_fileio.h"
 #include "Finder.h"
@@ -12,6 +16,12 @@
 #include "Writer.h"
 #include "utils/Converter.h"
 #include "utils/Helper.h"
+#if defined(__linux__) || defined(__linux) || defined(linux)
+	#include "ProcessHandlerLinux.h"
+#elif defined(_WIN32)
+	#include <process.h>
+	#include "ProcessHandlerWin.h"
+#endif
 
 #define BINARYNAME ("hexter")
 
@@ -33,12 +43,17 @@ uint8_t find_f;
 uint8_t delete_f;
 uint8_t continuous_f;
 
+bool list_process_memory_f;
+bool list_process_modules_f;
+bool list_process_threads_f;
+int list_process_heaps_f;
+
 const uint8_t TYPE_FILE = 1;
 const uint8_t TYPE_PID = 2;
 uint8_t type;
 
 int payload_arg_id;
-const char* vs = "1.4.4";
+const char* vs = "1.5.0";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -56,23 +71,30 @@ void parseArgs(int argc, char** argv);
 uint8_t isArgOfType(char* arg, char* type);
 uint8_t isFormatArgOfType(char* arg, char* type);
 uint8_t hasValue(char* type, int i, int end_i);
-void sanitizeParams();
-uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload);
+void sanitizeParams(uint32_t pid);
+uint32_t parsePayload(const char format, const char* value, unsigned char** payload);
 uint8_t parseType(const char* arg);
+
+int run(const char payload_format, const char* raw_payload);
+
+uint8_t keepStartInFile();
+uint8_t keepLengthInFile();
 
 // TODO:
 // - highlight found part
 // + continuouse find typing 'n'
 // - reversed payload, endianess option for hex and word payload
-// + search option
-// + string, byte, (d/q)word
-// + column to show file offset
-// + delete option
-// + interactive more/scroll
 // + align offset to 0x10, print spaces to fill col up
+// - view processes
+//   - windows
+//   - linux
 int main(int argc, char** argv)
 {
-	char* file_name = NULL;
+//	char* file_name = NULL;
+//	uint32_t pid = 0;
+//	unsigned char* payload = NULL;
+//	uint32_t payload_ln = 0;
+//	int s;
 
 	if ( argc < 2 )
 	{
@@ -83,13 +105,123 @@ int main(int argc, char** argv)
 	initParameters();
 	parseArgs(argc, argv);
 
-	file_size = getSize(file_path);
-	if ( file_size == 0 ) return 0;
+	if ( payload_arg_id > 0 )
+		run(argv[payload_arg_id][2], argv[payload_arg_id + 1]);
+	else
+		run(0, NULL);
+
+//	if ( type == TYPE_FILE )
+//	{
+//		file_size = getSize(file_path);
+//		if ( file_size == 0 ) return 0;
+//	}
+//	else if ( type == TYPE_PID )
+//	{
+//		s = parseUint32(file_path, &pid, 10);
+//		if ( pid == 0 )
+//#if defined(__linux__) || defined(__linux) || defined(linux)
+//			pid = getpid();
+//#elif defined(_WIN32)
+//			pid = _getpid();
+//#endif
+//		file_size = getSizeOfProcess(pid);
+//		if ( file_size == 0 ) return 0;
+//	}
+//
+//	debug_info("file_path: %s\n", file_path);
+//	debug_info("file_size: %lu\n", file_size);
+//	debug_info("start: %lu\n", start);
+//	debug_info("length: %lu\n", length);
+//	debug_info("print_col_mask only: %d\n", print_col_mask);
+//	debug_info("insert: %d\n", insert_f);
+//	debug_info("overwrite: %d\n", overwrite_f);
+//	debug_info("find: %d\n", find_f);
+//	debug_info("delete: %d\n", delete_f);
+//	debug_info("\n");
+//
+//	if ( (insert_f || overwrite_f || find_f) && payload_arg_id >= 0 )
+//	{
+//		payload_ln = parsePayload(argv[payload_arg_id][2], argv[payload_arg_id + 1], &payload);
+//		if ( payload == NULL) exit(0);
+//	}
+//
+//	if ( insert_f )
+//		insert(payload, payload_ln, start);
+//	else if ( overwrite_f && type == TYPE_FILE )
+//		overwrite(payload, payload_ln, start);
+//	else if ( overwrite_f && type == TYPE_PID )
+//		writeProcessMemory(pid, payload, payload_ln, start);
+//
+//	sanitizeParams(pid);
+//
+//	if ( delete_f )
+//	{
+//		deleteBytes(start, length);
+//		length = DEFAULT_LENGTH;
+//	}
+//
+//	setPrintingStyle();
+//	if ( type == TYPE_FILE )
+//	{
+//		getFileNameL(file_path, &file_name);
+//		printf("file: %s\n", file_name);
+//		print(start, skip_bytes, payload, payload_ln);
+//	}
+//	else if ( type == TYPE_PID )
+//	{
+//		printf("pid: %u\n", pid);
+//		if ( list_process_memory_f )
+//			listProcessMemory(pid);
+//		if ( list_process_modules_f )
+//			listProcessModules(pid);
+//		if ( list_process_threads_f )
+//			listProcessThreads(pid);
+//		if ( list_process_heaps_f )
+//			listProcessHeaps(pid, list_process_heaps_f);
+//		printProcessRegions(pid, start, skip_bytes, payload, payload_ln);
+//	}
+//
+//	if ( payload != NULL )
+//		free(payload);
+
+	return 0;
+}
+
+int run(const char payload_format, const char* raw_payload)
+{
+	uint32_t pid = 0;
+	int s;
+	unsigned char* payload = NULL;
+	uint32_t payload_ln = 0;
+	char* file_name = NULL;
+
+	if ( type == TYPE_FILE )
+	{
+		file_size = getSize(file_path);
+		if ( file_size == 0 )
+			return 0;
+	}
+	else if ( type == TYPE_PID )
+	{
+		s = parseUint32Auto(file_path, &pid);
+		if ( s != 0 )
+			return 0;
+
+		if ( pid == 0 )
+#if defined(__linux__) || defined(__linux) || defined(linux)
+			pid = getpid();
+#elif defined(_WIN32)
+			pid = _getpid();
+#endif
+		file_size = getSizeOfProcess(pid);
+		if ( file_size == 0 )
+			return 2;
+	}
 
 	debug_info("file_path: %s\n", file_path);
-	debug_info("file_size: %lu\n", file_size);
-	debug_info("start: %lu\n", start);
-	debug_info("length: %lu\n", length);
+	debug_info("file_size: 0x%lx\n", file_size);
+	debug_info("start: 0x%lx\n", start);
+	debug_info("length: 0x%lx\n", length);
 	debug_info("print_col_mask only: %d\n", print_col_mask);
 	debug_info("insert: %d\n", insert_f);
 	debug_info("overwrite: %d\n", overwrite_f);
@@ -97,33 +229,47 @@ int main(int argc, char** argv)
 	debug_info("delete: %d\n", delete_f);
 	debug_info("\n");
 
-	unsigned char* payload = NULL;
-	uint32_t payload_ln = 0;
-
-	if ((insert_f || overwrite_f || find_f) && payload_arg_id >= 0 )
+	if ( (insert_f || overwrite_f || find_f) && payload_format > 0 )
 	{
-		payload_ln = parsePayload(argv[payload_arg_id], argv[payload_arg_id + 1], &payload);
+		payload_ln = parsePayload(payload_format, raw_payload, &payload);
 		if ( payload == NULL) exit(0);
 	}
 
 	if ( insert_f )
-		insert(payload, payload_ln);
-	else if ( overwrite_f )
-		overwrite(payload, payload_ln);
+		insert(file_path, payload, payload_ln, start);
+	else if ( overwrite_f && type == TYPE_FILE )
+		overwrite(file_path, payload, payload_ln, start);
+	else if ( overwrite_f && type == TYPE_PID )
+		writeProcessMemory(pid, payload, payload_ln, start);
 
-	file_size = getSize(file_path);
-	sanitizeParams();
+	sanitizeParams(pid);
 
 	if ( delete_f )
 	{
-		deleteBytes(start, length);
+		deleteBytes(file_path, start, length);
 		length = DEFAULT_LENGTH;
 	}
 
-	getFileNameL(file_path, &file_name);
-	printf("file: %s\n", file_name);
-
-	print(start, skip_bytes, payload, payload_ln);
+	setPrintingStyle();
+	if ( type == TYPE_FILE )
+	{
+		getFileNameL(file_path, &file_name);
+		printf("file: %s\n", file_name);
+		print(start, skip_bytes, payload, payload_ln);
+	}
+	else if ( type == TYPE_PID )
+	{
+		printf("pid: %u\n", pid);
+		if ( list_process_memory_f )
+			listProcessMemory(pid);
+		if ( list_process_modules_f )
+			listProcessModules(pid);
+		if ( list_process_threads_f )
+			listProcessThreads(pid);
+		if ( list_process_heaps_f )
+			listProcessHeaps(pid, list_process_heaps_f);
+		printProcessRegions(pid, start, skip_bytes, payload, payload_ln);
+	}
 
 	if ( payload != NULL )
 		free(payload);
@@ -144,6 +290,11 @@ void initParameters()
 	find_f = 0;
 	delete_f = 0;
 	payload_arg_id = -1;
+
+	list_process_memory_f = false;
+	list_process_modules_f = false;
+	list_process_threads_f = false;
+	list_process_heaps_f = 0;
 
 	clean_printing = 0;
 
@@ -179,7 +330,13 @@ void printHelp()
 		   "     Expect for the ascii string, all values have to be passed as hex values.\n"
 //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
 		   " * -d Delete -l bytes from offset -s.\n"
-		   " * -t Type of source ['file', 'pid']. Defaults to 'file'. In 'pid' the a process id is passed.\n"
+		   " * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'filename'.\n"
+		   " * -pid only.\n"
+		   " * * -lpx List whole process memory layout.\n"
+		   " * * -lpm List all process modules.\n"
+		   " * * -lpt List all process threads.\n"
+		   " * * -lph List all process heaps.\n"
+		   " * * -lphb List all process heaps and its blocks.\n"
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
@@ -201,7 +358,7 @@ void parseArgs(int argc, char** argv)
 	int end_i = argc - 1;
 	int i, s;
 	uint8_t length_found = 0;
-	const char* source;
+	const char* source = NULL;
 
 	if ( isArgOfType(argv[1], "-h") )
 	{
@@ -241,6 +398,26 @@ void parseArgs(int argc, char** argv)
 		{
 			continuous_f = 0;
 		}
+		else if ( isArgOfType(argv[i], "-lpx") )
+		{
+			list_process_memory_f = true;
+		}
+		else if ( isArgOfType(argv[i], "-lpm") )
+		{
+			list_process_modules_f = true;
+		}
+		else if ( isArgOfType(argv[i], "-lpt") )
+		{
+			list_process_threads_f = true;
+		}
+		else if ( isArgOfType(argv[i], "-lph") )
+		{
+			list_process_heaps_f = 1;
+		}
+		else if ( isArgOfType(argv[i], "-lphb") )
+		{
+			list_process_heaps_f = 2;
+		}
 		else if ( isArgOfType(argv[i], "-s") )
 		{
 			if ( hasValue("-s", i, end_i) )
@@ -259,6 +436,11 @@ void parseArgs(int argc, char** argv)
 			if ( hasValue("-l", i, end_i) )
 			{
 				s = parseUint64Auto(argv[i + 1], &length);
+#ifdef _WIN32
+				printf("length: %llx\n", length);
+#else
+				printf("length: %lx\n", length);
+#endif
 				if ( s != 0 )
 				{
 					printf("INFO: Could not parse length. Setting it to %u!\n", DEFAULT_LENGTH);
@@ -310,7 +492,7 @@ void parseArgs(int argc, char** argv)
 		}
 	}
 
-	if ((find_f + overwrite_f + insert_f + delete_f) > 1 )
+	if ( (find_f + overwrite_f + insert_f + delete_f) > 1 )
 	{
 		printf("ERROR: overwrite, insert, delete and find have to be used exclusively!\n");
 		exit(0);
@@ -322,10 +504,16 @@ void parseArgs(int argc, char** argv)
 		exit(0);
 	}
 
+	if ( type == TYPE_PID && (insert_f + delete_f) > 0 )
+	{
+		printf("ERROR: Inserting or deleting is not supported in process mode!\n");
+		exit(0);
+	}
+
 	if ( start_i == 1 )
 		source = argv[i];
 
-	if ( type == TYPE_FILE)
+	if ( type == TYPE_FILE )
 		expandFilePath(source, file_path);
 	else
 		snprintf(file_path, PATH_MAX, "%s", source);
@@ -333,7 +521,7 @@ void parseArgs(int argc, char** argv)
 
 uint8_t isArgOfType(char* arg, char* type)
 {
-	int type_ln = strnlen(type, 10);
+	uint8_t type_ln = strnlen(type, 10);
 	return strnlen(arg, 10) == type_ln && strncmp(arg, type, type_ln) == 0;
 }
 
@@ -369,7 +557,7 @@ uint8_t hasValue(char* type, int i, int end_i)
 	return 1;
 }
 
-void sanitizeParams()
+void sanitizeParams(uint32_t pid)
 {
 	uint8_t col_size;
 
@@ -392,12 +580,10 @@ void sanitizeParams()
 
 	uint8_t info_line_break = 0;
 	// check start offset
-	if ( start > file_size )
-	{
-		fprintf(stderr, "Info: Start offset 0x%lx is greater the the file_size 0x%lx (%lu)!\nSetting to 0!", start, file_size, file_size);
-		start = 0;
-		info_line_break = 1;
-	}
+	if ( type == TYPE_FILE )
+		info_line_break = keepStartInFile();
+	else if ( type == TYPE_PID )
+		info_line_break = makeStartAndLengthHitAccessableMemory(pid, &start);
 
 	// normalize start offset to block size
 	if ( !find_f )
@@ -408,16 +594,12 @@ void sanitizeParams()
 	}
 
 	// check length
-	if ( start + length > file_size )
-	{
-		fprintf(stdout,
-				"Info: Start offset %lu plus length %lu is greater then the file size %lu\nPrinting only to file size.\n",
-				start+skip_bytes, (continuous_f)?length:length-skip_bytes, file_size);
-		length = file_size - start;
-		info_line_break = 1;
-		continuous_f = 0;
-	}
-	else if ( length == 0 )
+	if ( type == TYPE_FILE )
+		info_line_break = keepLengthInFile();
+//	else if ( type == TYPE_PID )
+//		info_line_break = keepLengthInModule(pid);
+
+	if ( length == 0 )
 	{
 		fprintf(stdout, "Info: Length is 0. Setting to %u!\n", DEFAULT_LENGTH);
 		length = DEFAULT_LENGTH;
@@ -428,10 +610,48 @@ void sanitizeParams()
 		printf("\n");
 }
 
-uint32_t parsePayload(const char* arg, const char* value, unsigned char** payload)
+uint8_t keepStartInFile()
+{
+	if ( start > file_size )
+	{
+#if defined(_WIN32)
+		fprintf(stderr, "Info: Start offset %llx is greater the the file_size %llx (%llu)!\nSetting to 0!", start, file_size, file_size);
+#else
+		fprintf(stderr, "Info: Start offset %lx is greater the the file_size %lx (%lu)!\nSetting to 0!", start, file_size, file_size);
+#endif
+		start = 0;
+		return 1;
+	}
+	return 0;
+}
+
+uint8_t keepLengthInFile()
+{
+	if ( start + length > file_size )
+	{
+#if defined(_WIN32)
+		printf("Info: Start offset %llu plus length %llu is greater then the file size %llu\nPrinting only to file size.\n",
+#else
+		printf("Info: Start offset %lu plus length %lu is greater then the file size %lu\nPrinting only to file size.\n",
+#endif
+			   start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
+		length = file_size - start;
+		continuous_f = 0;
+		return 1;
+	}
+	return 0;
+}
+
+/**
+ * Parse payload from
+ * @param format char the format of the raw payload string
+ * @param value char* the raw payload value
+ * @param payload char** the array to store the formated payload in
+ * @return uint32_t length of parsed payload.
+ */
+uint32_t parsePayload(const char format, const char* value, unsigned char** payload)
 {
 	uint32_t ln = 0;
-	char format = arg[2];
 
 	if ( strnlen(value, MAX_PAYLOAD_LN) < 1 )
 		return 0;
@@ -452,11 +672,9 @@ uint32_t parsePayload(const char* arg, const char* value, unsigned char** payloa
 		ln = payloadParsePlainBytes(value, payload);
 	else
 	{
-		printf("ERROR: No format specifier found in %s!\n", arg);
+		printf("ERROR: %c is not a supported format!\n", format);
 		ln = 0;
 	}
-
-//	ln = payloadParsePlainBytes(arg, payload);
 
 	return ln;
 }
@@ -472,4 +690,45 @@ uint8_t parseType(const char* arg)
 		printf("INFO: Could not parse type. Setting it to 'file'!\n");
 		return TYPE_FILE;
 	}
+}
+
+HEXTER_API int printFile(char* _file_name, uint64_t _start, uint64_t _length)
+{
+	initParameters();
+	expandFilePath(_file_name, file_path);
+
+	type = TYPE_FILE;
+	start = _start;
+	length = _length;
+
+//	print_col_mask = print_col_mask | print_hex_mask;
+
+	run(0, NULL);
+
+	return 0;
+}
+
+HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, int _lpm, int _lpx, int _lph, int _lpt)
+{
+	initParameters();
+#ifdef _WIN32
+	snprintf(file_path, PATH_MAX, "%u", _pid);
+#else
+	snprintf(file_path, PATH_MAX, "%lu", _pid);
+#endif
+
+	type = TYPE_PID;
+	start = _start;
+	length = _length;
+
+	list_process_memory_f = _lpx;
+	list_process_modules_f = _lpm;
+	list_process_heaps_f = _lph;
+	list_process_threads_f = _lpt;
+
+//	print_col_mask = print_col_mask | print_hex_mask;
+
+	run(0, NULL);
+
+	return 0;
 }

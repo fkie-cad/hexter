@@ -120,4 +120,9 @@ void HelperTest::testGetFileNameA(vector<PNP> pathes)
 	}
 }
 
+TEST_F(HelperTest, testSplit)
+{
+	cout << "testSplit()"<<endl;
+}
+
 #endif
