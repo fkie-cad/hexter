@@ -735,3 +735,13 @@ HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, in
 
 	return 0;
 }
+
+HEXTER_API void printString(char* in)
+{
+	printf("the string: %s\n", in);
+}
+
+HEXTER_API void printValue(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
+{
+	printf("the value: %s\n", lpszCmdLine);
+}
