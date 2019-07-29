@@ -19,7 +19,8 @@
 
 HEXTER_API int printFile(char* _file_name, uint64_t _start, uint64_t _length);
 HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, int _lpm, int _lpx, int _lph, int _lpt);
-HEXTER_API void printString(char* in);
-HEXTER_API void printValue(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow);
+#ifdef _WIN32
+HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow);
+#endif
 
 #endif

@@ -799,7 +799,7 @@ BOOL openSnap(HANDLE* snap, uint32_t pid, DWORD dwFlags)
 	(*snap) = CreateToolhelp32Snapshot(dwFlags, pid);
 	if ( (*snap) == INVALID_HANDLE_VALUE)
 	{
-		printf("Error (%lu): CreateToolhelp32Snapshot (of modules)\n", GetLastError());
+		printf("Error (%lu): CreateToolhelp32Snapshot\n", GetLastError());
 		return FALSE;
 	}
 	return TRUE;
@@ -1088,7 +1088,7 @@ void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base)
 		do
 		{
 			heap_size += he.dwBlockSize;
-			printf(" - 0x%p | 0x%p | 0x%lx | %s |  %lu |  %lu |  %lu | 0x%llx \n",
+			printf(" - 0x%p | 0x%llx | 0x%lx | %s |  %lu |  %lu |  %lu | 0x%llx \n",
 				   he.hHandle, he.dwAddress, he.dwBlockSize, getHEFlagString(he.dwFlags), he.dwLockCount, he.dwResvd,
 				   he.th32ProcessID, he.th32HeapID);
 
@@ -1129,4 +1129,52 @@ char* getHEFlagString(DWORD flag)
 		default:
 			return "NONE";
 	}
+}
+
+bool listRunningProcesses()
+{
+	HANDLE snap;
+	HANDLE process;
+	PROCESSENTRY32 pe32;
+	DWORD dwPriorityClass;
+	bool readable;
+
+	if ( !openSnap(&snap, 0, TH32CS_SNAPPROCESS) )
+		return false;
+
+	pe32.dwSize = sizeof( PROCESSENTRY32 );
+	if( !Process32First(snap, &pe32))
+	{
+		printf("ERROR: Process32First\n");
+		CloseHandle(snap);
+		return false;
+	}
+
+	printf("List of processes\n");
+	printf("%-10s | %-10s | %s | %s | %s |  %s | %s\n", "pid", "ppid", "threads", "pcPriClassBase", "dwPriorityClass", "readable", "name");
+	do
+	{
+		dwPriorityClass = 0;
+		readable = false;
+		process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+		if ( process )
+		{
+			dwPriorityClass = GetPriorityClass(process);
+//			if ( !dwPriorityClass )
+//				printf("ERROR: GetPriorityClass\n");
+			CloseHandle(process);
+			readable = true;
+		}
+//		else
+//			printf("ERROR: OpenProcess\n");
+
+		printf("0x%08lx | 0x%08lx | %7lu | %14lu | %15lu | %8s | %s\n",
+				pe32.th32ProcessID, pe32.th32ParentProcessID, pe32.cntThreads, pe32.pcPriClassBase,
+				dwPriorityClass, (readable)?"true":"false", pe32.szExeFile);
+	}
+	while (Process32Next(snap, &pe32));
+	printf("\n");
+
+	CloseHandle(snap);
+	return true;
 }
