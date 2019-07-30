@@ -836,6 +836,18 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 	if ( length % block_size != 0 ) nr_of_parts++;
 	uint64_t base_end = base_addr + size;
 
+	// older linux ??
+//	ptrace(PTRACE_ATTACH, pid, 0, 0);
+//	waitpid(pid, NULL, 0);
+//
+//	off_t addr = ...; // target process address
+//	pread(fd, &value, sizeof(value), addr);
+//	// or
+//	pwrite(fd, &value, sizeof(value), addr);
+//
+//	ptrace(PTRACE_DETACH, pid, 0, 0);
+
+
 	if ( !fopenProcessMemory(pid, &fp, "r") )
 	{
 		printf("ERROR: Could not open process %u memory.\n", pid);
