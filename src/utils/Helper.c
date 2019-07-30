@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -5,6 +6,9 @@
 #include <string.h>
 #if defined(__linux__) || defined(__linux) || defined(linux)
 	#include "TerminalUtil.h"
+#endif
+#if defined(_WIN32)
+	#include <conio.h>
 #endif
 
 #include "Helper.h"
@@ -239,6 +243,55 @@ size_t split(char* str, const char* delimiter, char** bucket, const size_t bucke
 	}
 
 	return token_id;
+}
+
+size_t splitArgs(char *buffer, char *argv[], size_t argv_size)
+{
+	char *p = NULL;
+	char *start_of_word = NULL;
+	int c;
+	enum states { DULL, IN_WORD, IN_STRING } state = DULL;
+	size_t argc = 0;
+
+	for (p = buffer; argc < argv_size && *p != '\0'; p++) {
+		c = (unsigned char) *p;
+		switch (state) {
+			case DULL:
+				if (isspace(c)) {
+					continue;
+				}
+
+				if (c == '"') {
+					state = IN_STRING;
+					start_of_word = p + 1;
+					continue;
+				}
+				state = IN_WORD;
+				start_of_word = p;
+				continue;
+
+			case IN_STRING:
+				if (c == '"') {
+					*p = 0;
+					argv[argc++] = start_of_word;
+					state = DULL;
+				}
+				continue;
+
+			case IN_WORD:
+				if (isspace(c)) {
+					*p = 0;
+					argv[argc++] = start_of_word;
+					state = DULL;
+				}
+				continue;
+		}
+	}
+
+	if (state != DULL && argc < argv_size)
+		argv[argc++] = start_of_word;
+
+	return argc;
 }
 
 bool confirmContinueWithNextRegion(char* name, uint64_t address)

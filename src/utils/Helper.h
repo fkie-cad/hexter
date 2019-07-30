@@ -13,6 +13,7 @@ uint8_t countHexWidth64(uint64_t value);
 uint64_t normalizeOffset(uint64_t offset, uint8_t* remainder);
 uint8_t getColSize();
 size_t split(char* str, const char* delimiter, char** bucket, const size_t bucket_max);
+size_t splitArgs(char *buffer, char *argv[], size_t argv_size);
 bool confirmContinueWithNextRegion(char* name, uint64_t address);
 void setAnsiFormat(char* format);
 void resetAnsiFormat();
