@@ -500,21 +500,21 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 	const DWORD f_path_size = PATH_MAX;
 	char f_path[PATH_MAX];
 	DWORD s;
-	printf("getRegionName()\n");
+//	printf("getRegionName()\n");
 
 //	GetModuleBaseNameA(process, base, f_path, f_path_size);
 	s = GetMappedFileNameA(process, base, f_path, f_path_size);
-	printf(" - s: %lu\n", s);
+//	printf(" - s: %lu\n", s);
 	if ( s == 0 )
 	{
 		*file_name = NULL;
 		return FALSE;
 	}
-	printf(" - f_path: %s\n", f_path);
+//	printf(" - f_path: %s\n", f_path);
 	f_path[f_path_size-1] = 0;
-	printf(" - f_path: %s\n", f_path);
+//	printf(" - f_path: %s\n", f_path);
 	getFileName(f_path, file_name);
-	printf(" - file_name: %s\n", file_name);
+//	printf(" - file_name: %s\n", file_name);
 
 	return TRUE;
 }
