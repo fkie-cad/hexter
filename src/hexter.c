@@ -85,20 +85,17 @@ uint8_t keepLengthInFile();
 
 // TODO:
 // - highlight found part
+//	 + hex
+//	 - ascii
 // + continuouse find typing 'n'
 // - reversed payload, endianess option for hex and word payload
 // + align offset to 0x10, print spaces to fill col up
-// - view processes
-//   - windows
-//   - linux
+// + view processes
+//   + windows
+//   + linux
+//	 - windows offset bug +0x1000 from -s when printing
 int main(int argc, char** argv)
 {
-//	char* file_name = NULL;
-//	uint32_t pid = 0;
-//	unsigned char* payload = NULL;
-//	uint32_t payload_ln = 0;
-//	int s;
-
 	if ( argc < 2 )
 	{
 		printUsage();
