@@ -17,5 +17,6 @@ int writeProcessMemory(uint32_t pid, unsigned char* _payload, uint32_t _payload_
 BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln);
 //BOOL printProcessModules(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln);
 BOOL stackTrace(uint32_t pid);
+bool listRunningProcesses();
 
 #endif

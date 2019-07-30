@@ -17,3 +17,5 @@ add_executable(${TEST_HEXTER_LIB}
 	${CMAKE_CURRENT_SOURCE_DIR}/tests/test_hexter_dll.c)
 target_link_libraries(${TEST_HEXTER_LIB}
 	${HEXTER_LIB})
+add_dependencies(${TEST_HEXTER_LIB}
+	${HEXTER_SHARED_LIB})

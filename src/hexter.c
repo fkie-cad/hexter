@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>
+#if defined(__linux__) || defined(__linux) || defined(linux)
+	#include <unistd.h>
+#endif
 #include <errno.h>
 
 #define HEXTER_EXPORTS
@@ -47,6 +49,7 @@ bool list_process_memory_f;
 bool list_process_modules_f;
 bool list_process_threads_f;
 int list_process_heaps_f;
+bool list_running_processes_f;
 
 const uint8_t TYPE_FILE = 1;
 const uint8_t TYPE_PID = 2;
@@ -194,6 +197,8 @@ int run(const char payload_format, const char* raw_payload)
 			listProcessThreads(pid);
 		if ( list_process_heaps_f )
 			listProcessHeaps(pid, list_process_heaps_f);
+		if ( list_running_processes_f )
+			listRunningProcesses();
 		printProcessRegions(pid, start, skip_bytes, payload, payload_ln);
 	}
 
@@ -221,6 +226,7 @@ void initParameters()
 	list_process_modules_f = false;
 	list_process_threads_f = false;
 	list_process_heaps_f = 0;
+	list_running_processes_f = false;
 
 	clean_printing = 0;
 
@@ -263,6 +269,7 @@ void printHelp()
 		   " * * -lpt List all process threads.\n"
 		   " * * -lph List all process heaps.\n"
 		   " * * -lphb List all process heaps and its blocks.\n"
+		   " * * -lrp List all running process.\n"
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
@@ -343,6 +350,10 @@ void parseArgs(int argc, char** argv)
 		else if ( isArgOfType(argv[i], "-lphb") )
 		{
 			list_process_heaps_f = 2;
+		}
+		else if ( isArgOfType(argv[i], "-lrp") )
+		{
+			list_running_processes_f = true;
 		}
 		else if ( isArgOfType(argv[i], "-s") )
 		{
@@ -651,6 +662,7 @@ HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, in
 	list_process_modules_f = _lpm;
 	list_process_heaps_f = _lph;
 	list_process_threads_f = _lpt;
+//	list_running_processes_f = _lrp;
 
 //	print_col_mask = print_col_mask | print_hex_mask;
 
@@ -658,3 +670,58 @@ HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, in
 
 	return 0;
 }
+
+/**
+ * Intended to be called by rundll32.
+ * Usage: rundll32 hexter.dll,runHexter hexter params
+ * The hexter is a dummy and the rest of the params should be used as explained in normal usage:
+ * filename [options] or [options] filename.
+ * With the hexter dummy param, the splitted arguments may be passed to the main function.
+ * Otherwise it had to be added internally.
+ *
+ * @param hwnd
+ * @param hinst
+ * @param lpszCmdLine
+ * @param nCmdShow
+ */
+#ifdef _WIN32
+HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
+{
+//	FILE* fp=NULL;
+//	char path[1024];
+//	sprintf(path, "%s%s", getenv("USERPROFILE"), "\\AppData\\Local\\Temp\\hexter.printValue.log");
+//	fp = fopen(path, "a+");
+//	if ( !fp )
+//	{
+//		printf("Could not open file: %s\n", path);
+//		return;
+//	}
+//	printf("file opened\n");
+//	fprintf(fp, "the value: %s\n", lpszCmdLine);
+//	fclose(fp);
+
+	AllocConsole();
+//	AttachConsole(GetCurrentProcessId());
+//	AttachConsole(-1);
+//	AttachConsole(_getpid());
+	freopen("conin$", "r", stdin);
+	freopen("conout$", "w", stdout);
+	freopen("conout$", "w", stderr);
+
+	printf("the param cmd line: %s\n", lpszCmdLine);
+
+	int i;
+	uint8_t argv_max = 20;
+	uint8_t argc;
+	char* argv[20];
+	argc = split(lpszCmdLine, " ", argv, argv_max);
+
+	printf("argc: %u\n", argc);
+	for ( i = 0; i < argc; i++ )
+		printf("arg%d: %s\n", i, argv[i]);
+
+	main(argc, argv);
+	getchar();
+//	system("pause");
+}
+#endif

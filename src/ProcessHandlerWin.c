@@ -431,7 +431,7 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name)
 {
 //	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
-	printf("%s (%p - %p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
+	printf("%s (%p - %p):\n", (file_name)?file_name:"", (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
 }
 
 BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect)
@@ -482,8 +482,6 @@ BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_I
 
 	while ( s )
 	{
-//		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
-
 		if ( !isAccessibleRegion(info) )
 			s = queryNextRegion(process, p, info);
 		else
@@ -502,8 +500,6 @@ BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BAS
 
 	while ( s )
 	{
-//		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
-
 		if ( old_base == info->AllocationBase || !isAccessibleRegion(info) )
 			s = queryNextRegion(process, p, info);
 		else
@@ -533,12 +529,13 @@ BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION
 
 BOOL getRegionName(HANDLE process, PVOID base, char** file_name)
 {
-	const DWORD f_path_size = 512;
-	char f_path[512];
+	const DWORD f_path_size = PATH_MAX;
+	char f_path[PATH_MAX+1];
 
-	memset(f_path, 0, 512);
+	memset(f_path, 0, PATH_MAX);
 //	GetModuleBaseNameA(process, base, f_path, f_path_size);
 	GetMappedFileNameA(process, base, f_path, f_path_size);
+	f_path[PATH_MAX] = 0;
 	getFileNameL(f_path, file_name);
 
 	return TRUE;
@@ -804,7 +801,7 @@ BOOL openSnap(HANDLE* snap, uint32_t pid, DWORD dwFlags)
 	(*snap) = CreateToolhelp32Snapshot(dwFlags, pid);
 	if ( (*snap) == INVALID_HANDLE_VALUE)
 	{
-		printf("Error (%lu): CreateToolhelp32Snapshot (of modules)\n", GetLastError());
+		printf("Error (%lu): CreateToolhelp32Snapshot\n", GetLastError());
 		return FALSE;
 	}
 	return TRUE;
@@ -908,9 +905,9 @@ bool listProcessMemory(uint32_t pid)
 int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 {
 //	uint64_t usage = 0;
-	char f_path[512];
+	char f_path[PATH_MAX+1];
 	char* file_name;
-	DWORD f_path_size = 512;
+	DWORD f_path_size = PATH_MAX;
 	const char* SEPARATOR = " | ";
 	int guard = 0, nocache = 0;
 
@@ -942,6 +939,7 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 //	if ( GetModuleBaseNameA(process, info->AllocationBase, f_path, f_path_size) )
 	if ( GetMappedFileNameA(process, info->AllocationBase, f_path, f_path_size) )
 	{
+		f_path[PATH_MAX] = 0;
 		getFileNameL(f_path, &file_name);
 		printf("%s", file_name);
 	}
@@ -969,7 +967,8 @@ BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 {
-	return	!( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS )
+//	return	!( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS )
+	return	info->Protect != PAGE_NOACCESS
 			&&
 			!( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
 }
@@ -1088,7 +1087,7 @@ void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base)
 		do
 		{
 			heap_size += he.dwBlockSize;
-			printf(" - 0x%p | 0x%p | 0x%lx | %s |  %lu |  %lu |  %lu | 0x%llx \n",
+			printf(" - 0x%p | 0x%llx | 0x%lx | %s |  %lu |  %lu |  %lu | 0x%llx \n",
 				   he.hHandle, he.dwAddress, he.dwBlockSize, getHEFlagString(he.dwFlags), he.dwLockCount, he.dwResvd,
 				   he.th32ProcessID, he.th32HeapID);
 
@@ -1129,4 +1128,52 @@ char* getHEFlagString(DWORD flag)
 		default:
 			return "NONE";
 	}
+}
+
+bool listRunningProcesses()
+{
+	HANDLE snap;
+	HANDLE process;
+	PROCESSENTRY32 pe32;
+	DWORD dwPriorityClass;
+	bool readable;
+
+	if ( !openSnap(&snap, 0, TH32CS_SNAPPROCESS) )
+		return false;
+
+	pe32.dwSize = sizeof( PROCESSENTRY32 );
+	if( !Process32First(snap, &pe32))
+	{
+		printf("ERROR: Process32First\n");
+		CloseHandle(snap);
+		return false;
+	}
+
+	printf("List of processes\n");
+	printf("%-10s | %-10s | %s | %s | %s |  %s | %s\n", "pid", "ppid", "threads", "pcPriClassBase", "dwPriorityClass", "readable", "name");
+	do
+	{
+		dwPriorityClass = 0;
+		readable = false;
+		process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
+		if ( process )
+		{
+			dwPriorityClass = GetPriorityClass(process);
+//			if ( !dwPriorityClass )
+//				printf("ERROR: GetPriorityClass\n");
+			CloseHandle(process);
+			readable = true;
+		}
+//		else
+//			printf("ERROR: OpenProcess\n");
+
+		printf("0x%08lx | 0x%08lx | %7lu | %14lu | %15lu | %8s | %s\n",
+				pe32.th32ProcessID, pe32.th32ParentProcessID, pe32.cntThreads, pe32.pcPriClassBase,
+				dwPriorityClass, (readable)?"true":"false", pe32.szExeFile);
+	}
+	while (Process32Next(snap, &pe32));
+	printf("\n");
+
+	CloseHandle(snap);
+	return true;
 }
