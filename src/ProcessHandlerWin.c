@@ -426,7 +426,7 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name)
 {
 //	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
-	printf("%s (%p - %p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
+	printf("%s (%p - %p):\n", (file_name)?file_name:"", (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
 }
 
 BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect)
@@ -477,8 +477,6 @@ BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_I
 
 	while ( s )
 	{
-//		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
-
 		if ( !isAccessibleRegion(info) )
 			s = queryNextRegion(process, p, info);
 		else
@@ -497,8 +495,6 @@ BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BAS
 
 	while ( s )
 	{
-//		printf("protect: %lu : %s\n", info->Protect, getProtectString(info->Protect));
-
 		if ( old_base == info->AllocationBase || !isAccessibleRegion(info) )
 			s = queryNextRegion(process, p, info);
 		else
@@ -528,12 +524,13 @@ BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION
 
 BOOL getRegionName(HANDLE process, PVOID base, char** file_name)
 {
-	const DWORD f_path_size = 512;
-	char f_path[512];
+	const DWORD f_path_size = PATH_MAX;
+	char f_path[PATH_MAX+1];
 
-	memset(f_path, 0, 512);
+	memset(f_path, 0, PATH_MAX);
 //	GetModuleBaseNameA(process, base, f_path, f_path_size);
 	GetMappedFileNameA(process, base, f_path, f_path_size);
+	f_path[PATH_MAX] = 0;
 	getFileNameL(f_path, file_name);
 
 	return TRUE;
@@ -900,9 +897,9 @@ bool listProcessMemory(uint32_t pid)
 int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 {
 //	uint64_t usage = 0;
-	char f_path[512];
+	char f_path[PATH_MAX+1];
 	char* file_name;
-	DWORD f_path_size = 512;
+	DWORD f_path_size = PATH_MAX;
 	const char* SEPARATOR = " | ";
 	int guard = 0, nocache = 0;
 
@@ -942,6 +939,7 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 //	if ( GetModuleBaseNameA(process, info->AllocationBase, f_path, f_path_size) )
 	if ( GetMappedFileNameA(process, info->AllocationBase, f_path, f_path_size) )
 	{
+		f_path[PATH_MAX] = 0;
 		getFileNameL(f_path, &file_name);
 		printf("%s", file_name);
 	}
@@ -969,7 +967,8 @@ BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 {
-	return	!( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS )
+//	return	!( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS )
+	return	info->Protect != PAGE_NOACCESS
 			&&
 			!( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
 }

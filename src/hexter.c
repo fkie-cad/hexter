@@ -195,7 +195,7 @@ int run(const char payload_format, const char* raw_payload)
 			listProcessModules(pid);
 		if ( list_process_threads_f )
 			listProcessThreads(pid);
-		if ( list_process_heaps_f );
+		if ( list_process_heaps_f )
 			listProcessHeaps(pid, list_process_heaps_f);
 		if ( list_running_processes_f )
 			listRunningProcesses();
