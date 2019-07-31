@@ -21,7 +21,8 @@ typedef int (*MemInfoCallback)(HANDLE, MEMORY_BASIC_INFORMATION*);
 
 //int printModuleProcessMemory(HANDLE process, MODULEENTRY32* me32, uint64_t base_off, uint64_t found);
 size_t readProcessBlock(BYTE* base_addr, DWORD base_size, uint64_t base_off, HANDLE process, unsigned char* block);
-BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char** file_name, int print_s, PVOID last_base);
+BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char* file_name,
+							int print_s, PVOID last_base);
 BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
 BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
 BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
@@ -48,7 +49,7 @@ char* getMemoryStateString(DWORD state);
 char* getMemoryTypeString(DWORD type);
 int printRegionProcessMemory(HANDLE process, BYTE* base_addr, uint64_t base_off, SIZE_T size, uint64_t found, char* reg_name);
 BOOL getRegion(uint64_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info);
-BOOL getRegionName(HANDLE process, PVOID base, char** file_name);
+BOOL getRegionName(HANDLE process, PVOID base, char* file_name);
 BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect);
@@ -60,7 +61,7 @@ static uint32_t p_needle_ln;
 
 static HANDLE hStdout;
 static WORD wOldColorAttrs;
-static hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+static HANDLE hStdout;
 static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
 
 uint64_t getSizeOfProcess(uint32_t pid)
@@ -175,14 +176,14 @@ BOOL listProcessModules(uint32_t pid)
 		return FALSE;
 
 	printf("List of modules:\n");
-	printf("[Process ID | Ref count (g) | Ref count (p) | Base address | Base size]\n");
+	printf("[Process ID | g count | p count | Base address | Base size]\n");
 	do
 	{
 		i++;
 
-		printf("%u. Module: %s\n", i, me32.szModule);
-		printf(" - Path = %s\n", me32.szExePath);
-		printf(" - 0x%08lX |", me32.th32ProcessID);
+		printf("%2u. Module: %s\n", i, me32.szModule);
+		printf("    - Path = %s\n", me32.szExePath);
+		printf("    - 0x%08lX |", me32.th32ProcessID);
 		printf(" 0x%04lX |", me32.GlblcntUsage);
 		printf(" 0x%04lX |", me32.ProccntUsage);
 		printf(" 0x%p |", me32.modBaseAddr);
@@ -323,7 +324,7 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 	uint64_t base_off;
 	uint64_t found = FIND_FAILURE;
 
-	char* file_name = NULL;
+	char file_name[PATH_MAX];
 
 	p_needle = needle;
 	p_needle_ln = needle_ln;
@@ -342,7 +343,8 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 	if ( find_f )
 		Finder_initFailure(p_needle, p_needle_ln);
 
-	getRegionName(process, info.AllocationBase, &file_name);
+	getRegionName(process, info.AllocationBase, file_name);
+	printf(" - file_name: %s\n", file_name);
 	p = info.BaseAddress;
 	last_base = info.AllocationBase;
 	base_off = start - (uint64_t) info.AllocationBase; // ?? not address ??
@@ -350,24 +352,17 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 
 	while ( s )
 	{
-//		printf("protect: %lu : %s\n", info.Protect, getProtectString(info.Protect));
-
 		setUnflagedRegionProtection(process, &info, PAGE_READONLY, &old_protect);
 
 		if ( find_f )
 		{
-//			printf("Region Start Find\n");
 			found = findNeedleInProcessMemoryBlock(info.BaseAddress, info.RegionSize, base_off, process, p_needle,
 												   p_needle_ln);
 			if ( found == FIND_FAILURE )
 			{
-//				printf(" - Region Start Find: not found\n");
-
-				if ( !getNextPrintableRegion(process, &info, &p, &file_name, print_s, last_base) )
+				if ( !getNextPrintableRegion(process, &info, &p, file_name, print_s, last_base) )
 					break;
-//				s = queryNextAccessibleRegion(process, &p, &info);
-//				if ( !s )
-//					break;
+
 				last_base = info.AllocationBase;
 				continue;
 			}
@@ -385,36 +380,9 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 		print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found, file_name);
 
 		setUnflagedRegionProtection(process, &info, old_protect, &old_protect);
-//		if ( strncmp(getProtectString(info.Protect), "None", 20) == 0 )
-//		{
-//			s = VirtualProtectEx(process, info.BaseAddress, info.RegionSize, old_protect, &old_protect);
-//			if ( !s )
-//			{
-//				printf(" - Error (%lu): VirtualProtect at 0x%llx\n", GetLastError(), (uint64_t) info.BaseAddress);
-//				printError("VirtualProtect", GetLastError());
-//			}
-//		}
 
-		if ( !getNextPrintableRegion(process, &info, &p, &file_name, print_s, last_base) )
+		if ( !getNextPrintableRegion(process, &info, &p, file_name, print_s, last_base) )
 			break;
-//		if ( print_s == 0 )
-//			s = queryNextAccessibleRegion(process, &p, &info);
-//		else
-//			s = queryNextAccessibleBaseRegion(process, &p, &info);
-//
-//		if ( !s )
-//			break;
-//
-//		printf("last_base: %p\n", last_base);
-//		printf("info.AllocationBase: %p\n", info.AllocationBase);
-//
-//		getRegionName(process, info.AllocationBase, &file_name);
-//		printf("file_name: %s\n", file_name);
-//		if ( last_base != info.AllocationBase )
-//		{
-//			if ( !confirmContinueWithNextRegion(file_name) )
-//				break;
-//		}
 
 		if ( print_s == 1 )
 			printRegionInfo(&info, file_name);
@@ -430,8 +398,7 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 
 void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name)
 {
-//	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
-	printf("%s (%p - %p):\n", (file_name)?file_name:"", (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
+	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
 }
 
 BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect)
@@ -450,7 +417,8 @@ BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info,
 	return TRUE;
 }
 
-BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char** file_name, int print_s, PVOID last_base)
+BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char* file_name,
+							int print_s, PVOID last_base)
 {
 	BOOL s;
 
@@ -469,7 +437,7 @@ BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsi
 //	printf("file_name: %s\n", *file_name);
 	if ( last_base != info->AllocationBase )
 	{
-		if ( !confirmContinueWithNextRegion(*file_name, info->AllocationBase) )
+		if ( !confirmContinueWithNextRegion(file_name, info->AllocationBase) )
 			return FALSE;
 	}
 	return TRUE;
@@ -519,7 +487,7 @@ BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION
 
 	if ( query_size != sizeof(*info) )
 	{
-		printf("ERROR (%lu) VirtualQueryEx: could not query info!\n", GetLastError());
+		printf("ERROR (0x%08lx) VirtualQueryEx: could not query info!\n", GetLastError());
 		printError("queryNextRegion", GetLastError());
 		return FALSE;
 	}
@@ -527,16 +495,26 @@ BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION
 	return TRUE;
 }
 
-BOOL getRegionName(HANDLE process, PVOID base, char** file_name)
+BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 {
 	const DWORD f_path_size = PATH_MAX;
-	char f_path[PATH_MAX+1];
+	char f_path[PATH_MAX];
+	DWORD s;
+//	printf("getRegionName()\n");
 
-	memset(f_path, 0, PATH_MAX);
 //	GetModuleBaseNameA(process, base, f_path, f_path_size);
-	GetMappedFileNameA(process, base, f_path, f_path_size);
-	f_path[PATH_MAX] = 0;
-	getFileNameL(f_path, file_name);
+	s = GetMappedFileNameA(process, base, f_path, f_path_size);
+//	printf(" - s: %lu\n", s);
+	if ( s == 0 )
+	{
+		*file_name = NULL;
+		return FALSE;
+	}
+//	printf(" - f_path: %s\n", f_path);
+	f_path[f_path_size-1] = 0;
+//	printf(" - f_path: %s\n", f_path);
+	getFileName(f_path, file_name);
+//	printf(" - file_name: %s\n", file_name);
 
 	return TRUE;
 }
@@ -890,6 +868,7 @@ bool listProcessMemory(uint32_t pid)
 	if ( !openProcess(&process, pid) )
 		return false;
 
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	wOldColorAttrs = csbiInfo.wAttributes;
 
@@ -935,7 +914,7 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 	info->AllocationProtect &= ~(PAGE_GUARD | PAGE_NOCACHE);
 	printf("%-18s%s", getProtectString(info->AllocationProtect), SEPARATOR);
 
-	memset(f_path, 0, 512);
+	memset(f_path, 0, MAX_PATH);
 //	if ( GetModuleBaseNameA(process, info->AllocationBase, f_path, f_path_size) )
 	if ( GetMappedFileNameA(process, info->AllocationBase, f_path, f_path_size) )
 	{
@@ -1083,11 +1062,12 @@ void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base)
 
 	if ( Heap32First(&he, pid, base) )
 	{
-		printf(" - [hHandle | dwAddress | dwBlockSize | dwFlags | fwLockCount | dwResvd | th32ProcessId | th32HeapId]\n");
+		printf(" - [%17s | %-18s | %11s | %8s | %s | %s | %11s | %18s]\n",
+			"hHandle", "Address", "BlockSize", "Flags", "#locks", "Resvd", "processId", "HeapId");
 		do
 		{
 			heap_size += he.dwBlockSize;
-			printf(" - 0x%p | 0x%llx | 0x%lx | %s |  %lu |  %lu |  %lu | 0x%llx \n",
+			printf(" - 0x%p | 0x%016llx | 0x%9lx | %8s |  %5lu |  %4lu |  0x%8lx | 0x%llx \n",
 				   he.hHandle, he.dwAddress, he.dwBlockSize, getHEFlagString(he.dwFlags), he.dwLockCount, he.dwResvd,
 				   he.th32ProcessID, he.th32HeapID);
 
@@ -1120,11 +1100,11 @@ char* getHEFlagString(DWORD flag)
 	switch ( flag )
 	{
 		case LF32_FIXED:
-			return "LF32_FIXED";
+			return "FIXED";
 		case LF32_FREE:
-			return "LF32_FREE";
+			return "FREE";
 		case LF32_MOVEABLE:
-			return "LF32_MOVEABLE";
+			return "MOVEABLE";
 		default:
 			return "NONE";
 	}
