@@ -910,7 +910,9 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 }
 
 bool listRunningProcesses()
-{}
+{
+	return 0;
+}
 
 // find first region hitting start
 //bool getRegion(uint64_t start, FILE* fp, ProcMapsEntry* entry)
