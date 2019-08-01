@@ -27,7 +27,7 @@ $ cmake --build . [--config Release] --target hexter
 "Release" will build with -Ofast.  
 
 ### CMake on Windows and bitness ###
-Since keeping control off the bitness of the built program seems to be complicated on Windows, using the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX" is advised, if you plan to build for a different bitness than you actual OS.  
+Since keeping control off the bitness of the built program seems to be complicated on Windows, using the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX" is advised, if you plan to build for a different bitness than your actual OS.  
 Alternatively running
 ```bash
 "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsXX.bat"
@@ -47,7 +47,14 @@ Running
 ```bash
 buildWin.bat [/h]
 ```
-will do this in one rush.
+will do all this in one rush.  
+This script expects the build tools to be found in  
+C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\   
+if not, change the line
+```bash
+set build_tools=...
+```
+to the appropriate path.
 
 ### MSBUILD & Windows commandline ###
 Run the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX".
@@ -59,6 +66,7 @@ $ cd build
 $ cmake .. -G "Visual Studio 16 2019 Win64"  
 $ msbuild /p:PlatformToolset=v160 /p:Platform=x64 /p:Configuration=Release hexter.vcxproj
 ```
+The version of VisualStudio and the PlatformToolset should be adjusted to your installation.  
 For a 32-bit (x86) build, delete the "Win64" part and change to x32 in the fourth line.  
 Change "Release" to "Debug" in the fourth line for a debug build.  
 On some systems this did nonetheless only support the creation of 64-bit binaries.
@@ -92,6 +100,7 @@ Optional Parameters:
    * -lpt List all process threads.
    * -lph List all process heaps.
    * -lphb List all process heaps and its blocks.
+   * -lrp List all running processes.
  * -b Force breaking, not continuous mode and print just one block.
  * -p For a plain, not styled text output. 
  * -h Print this.

@@ -267,7 +267,7 @@ void printHelp()
 		   " * * -lpt List all process threads.\n"
 		   " * * -lph List all process heaps.\n"
 		   " * * -lphb List all process heaps and its blocks.\n"
-		   " * * -lrp List all running process.\n"
+		   " * * -lrp List all running processes.\n"
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
