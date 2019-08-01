@@ -93,7 +93,8 @@ uint8_t keepLengthInFile();
 // + view processes
 //   + windows
 //   + linux
-//	 - windows offset bug +0x1000 from -s when printing
+//	 - windows: offset bug +0x1000 from -s when printing
+//	 - 			get size of whole module, the region belongs to at length check
 int main(int argc, char** argv)
 {
 	if ( argc < 2 )
