@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting reading, writing and searching in files
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.5.0  
-Last changed: 2019.07.26
+1.5.1  
+Last changed: 2019.08.01
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  
