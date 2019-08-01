@@ -521,7 +521,7 @@ void sanitizeParams(uint32_t pid)
 		info_line_break = makeStartAndLengthHitAccessableMemory(pid, &start);
 
 	// normalize start offset to block size
-	if ( !find_f )
+	if ( !find_f && !delete_f )
 	{
 		start = normalizeOffset(start, &skip_bytes);
 		if ( !continuous_f )
