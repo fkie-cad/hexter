@@ -28,7 +28,7 @@ BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_I
 BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
 size_t printMemoryBlock(HANDLE process, BYTE* base_addr, uint64_t base_off, DWORD base_size, unsigned char* buffer);
 void printError(LPTSTR lpszFunction, DWORD last_error);
-BOOL getModule(uint64_t address, HANDLE snap, MODULEENTRY32* me32);
+//BOOL getModule(uint64_t address, HANDLE snap, MODULEENTRY32* me32);
 uint64_t findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, uint64_t offset, HANDLE process, const unsigned char* needle, uint32_t needle_ln);
 BOOL openSnapAndME(HANDLE* snap, MODULEENTRY32* me32, uint32_t pid, DWORD dwFlags);
 BOOL openSnap(HANDLE* snap, uint32_t pid, DWORD dwFlags);
@@ -55,6 +55,7 @@ BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect);
 BOOL keepLengthInModule(MEMORY_BASIC_INFORMATION* info, uint64_t start, uint64_t *length);
 void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name);
+void printRunningProcessInfo(HANDLE process, PROCESSENTRY32* pe32);
 
 static unsigned char* p_needle = NULL;
 static uint32_t p_needle_ln;
@@ -155,7 +156,6 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t* start)
 
 BOOL keepLengthInModule(MEMORY_BASIC_INFORMATION* info, uint64_t start, uint64_t *length)
 {
-	printf("TODO: get size of whole module, the region belongs to.\n");
 	DWORD base_off = start - (uint64_t) info->BaseAddress;
 	if ( base_off + *length > info->RegionSize )
 	{
@@ -344,7 +344,6 @@ BOOL printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 		Finder_initFailure(p_needle, p_needle_ln);
 
 	getRegionName(process, info.AllocationBase, file_name);
-	printf(" - file_name: %s\n", file_name);
 	p = info.BaseAddress;
 	last_base = info.AllocationBase;
 	base_off = start - (uint64_t) info.AllocationBase; // ?? not address ??
@@ -487,8 +486,8 @@ BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION
 
 	if ( query_size != sizeof(*info) )
 	{
-		printf("ERROR (0x%08lx) VirtualQueryEx: could not query info!\n", GetLastError());
-		printError("queryNextRegion", GetLastError());
+//		printf("ERROR (0x%08lx) VirtualQueryEx: could not query info!\n", GetLastError());
+//		printError("queryNextRegion", GetLastError());
 		return FALSE;
 	}
 
@@ -644,39 +643,41 @@ BOOL getRegion(uint64_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info)
 		  VirtualQueryEx(process, p, info, sizeof(*info)) == sizeof(*info);
 		  p += info->RegionSize )
 	{
-		if ( info->Protect == PAGE_NOACCESS )
-//		if ( !isAccessibleRegion(info) )
+//		printf(" - check: 0x%p, 0x%p, \n", info->BaseAddress, info->RegionSize);
+		if ( !isAccessibleRegion(info) )
 			continue;
 
-		if ( addressIsInRegionRange(address, (uint64_t) info->AllocationBase, info->RegionSize) )
+//		printf(" - - is accessable: 0x%p, 0x%p, 0x%p, \n", address, info->BaseAddress, info->RegionSize);
+		if ( addressIsInRegionRange(address, (uint64_t) info->BaseAddress, info->RegionSize) )
 			return TRUE;
 	}
 	return FALSE;
 }
 
-/**
- * Get module hit by address.
- *
- * @param address
- * @param snap
- * @param me32
- * @return
- */
-BOOL getModule(uint64_t address, HANDLE snap, MODULEENTRY32* me32)
-{
-	do
-	{
-		if ( addressIsInRegionRange(address, (uint64_t) me32->modBaseAddr, me32->modBaseSize))
-			return TRUE;
-	}
-	while ( Module32Next(snap, me32) );
-	return FALSE;
-}
+///**
+// * Get module hit by address.
+// *
+// * @param address
+// * @param snap
+// * @param me32
+// * @return
+// */
+//BOOL getModule(uint64_t address, HANDLE snap, MODULEENTRY32* me32)
+//{
+//	do
+//	{
+//		if ( addressIsInRegionRange(address, (uint64_t) me32->modBaseAddr, me32->modBaseSize))
+//			return TRUE;
+//	}
+//	while ( Module32Next(snap, me32) );
+//	return FALSE;
+//}
 
 BOOL addressIsInRegionRange(uint64_t address, uint64_t base, DWORD size)
 {
 	uint64_t end = base + size;
-	return base <= address && address <= end;
+//	printf(" - - - addressIsInRegionRange: 0x%p, 0x%p, 0x%p, \n", address, base, end);
+	return base <= address && address < end;
 }
 
 /**
@@ -930,7 +931,6 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 
 	printf("\n");
 
-//	if ( notAccessibleRegion(info) )
 	if ( !isAccessibleRegion(info) )
 		SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 
@@ -939,7 +939,6 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 
 BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 {
-//	info->State == MEM_RESERVE
 	return ( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS ) ||
 			( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
 }
@@ -949,7 +948,10 @@ BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 //	return	!( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS )
 	return	info->Protect != PAGE_NOACCESS
 			&&
-			!( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
+			!( info->State == MEM_RESERVE && (info->Type == MEM_PRIVATE||info->Type == MEM_MAPPED) && info->Protect == 0 )
+//			&&
+//			!( info->State == MEM_RESERVE && info->Type == MEM_MAPPED && info->Protect == 0 )
+			;
 }
 
 char* getMemoryStateString(DWORD state)
@@ -1115,8 +1117,6 @@ bool listRunningProcesses()
 	HANDLE snap;
 	HANDLE process;
 	PROCESSENTRY32 pe32;
-	DWORD dwPriorityClass;
-	bool readable;
 
 	if ( !openSnap(&snap, 0, TH32CS_SNAPPROCESS) )
 		return false;
@@ -1129,31 +1129,45 @@ bool listRunningProcesses()
 		return false;
 	}
 
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
+	wOldColorAttrs = csbiInfo.wAttributes;
+
 	printf("List of processes\n");
-	printf("%-10s | %-10s | %s | %s | %s |  %s | %s\n", "pid", "ppid", "threads", "pcPriClassBase", "dwPriorityClass", "readable", "name");
+	printf("%-10s | %-10s | %s | %s | %s |  %s | %s\n", "pid", "ppid", "threads", "base priority", "priority", "readable", "name");
+	printf("----------------------------------------------------------------------------------------\n");
 	do
 	{
-		dwPriorityClass = 0;
-		readable = false;
-		process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
-		if ( process )
-		{
-			dwPriorityClass = GetPriorityClass(process);
-//			if ( !dwPriorityClass )
-//				printf("ERROR: GetPriorityClass\n");
-			CloseHandle(process);
-			readable = true;
-		}
-//		else
-//			printf("ERROR: OpenProcess\n");
-
-		printf("0x%08lx | 0x%08lx | %7lu | %14lu | %15lu | %8s | %s\n",
-				pe32.th32ProcessID, pe32.th32ParentProcessID, pe32.cntThreads, pe32.pcPriClassBase,
-				dwPriorityClass, (readable)?"true":"false", pe32.szExeFile);
+		printRunningProcessInfo(process, &pe32);
 	}
 	while (Process32Next(snap, &pe32));
 	printf("\n");
 
 	CloseHandle(snap);
 	return true;
+}
+
+void printRunningProcessInfo(HANDLE process, PROCESSENTRY32* pe32)
+{
+	DWORD priorityClass = 0;
+	bool readable = false;
+	process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (*pe32).th32ProcessID);
+	if ( process )
+	{
+		priorityClass = GetPriorityClass(process);
+//			if ( !priorityClass )
+//				printf("ERROR: GetPriorityClass\n");
+		CloseHandle(process);
+		readable = true;
+	}
+//		else
+//			printf("ERROR: OpenProcess\n");
+
+	if ( !readable )
+		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
+	printf("0x%08lx | 0x%08lx | %7lu | %13lu | %8lu | %9s | %s\n",
+		   (*pe32).th32ProcessID, (*pe32).th32ParentProcessID, (*pe32).cntThreads, (*pe32).pcPriClassBase,
+		   priorityClass, (readable) ? "true" : "false", (*pe32).szExeFile);
+	if ( !readable )
+		SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 }
