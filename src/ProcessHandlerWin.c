@@ -55,6 +55,7 @@ BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect);
 BOOL keepLengthInModule(MEMORY_BASIC_INFORMATION* info, uint64_t start, uint64_t *length);
 void printRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name);
+void printRunningProcessInfo(HANDLE process, PROCESSENTRY32* pe32);
 
 static unsigned char* p_needle = NULL;
 static uint32_t p_needle_ln;
@@ -930,7 +931,6 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 
 	printf("\n");
 
-//	if ( notAccessibleRegion(info) )
 	if ( !isAccessibleRegion(info) )
 		SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 
@@ -939,7 +939,6 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 
 BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 {
-//	info->State == MEM_RESERVE
 	return ( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS ) ||
 			( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
 }
@@ -1115,8 +1114,6 @@ bool listRunningProcesses()
 	HANDLE snap;
 	HANDLE process;
 	PROCESSENTRY32 pe32;
-	DWORD dwPriorityClass;
-	bool readable;
 
 	if ( !openSnap(&snap, 0, TH32CS_SNAPPROCESS) )
 		return false;
@@ -1129,31 +1126,45 @@ bool listRunningProcesses()
 		return false;
 	}
 
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
+	wOldColorAttrs = csbiInfo.wAttributes;
+
 	printf("List of processes\n");
-	printf("%-10s | %-10s | %s | %s | %s |  %s | %s\n", "pid", "ppid", "threads", "pcPriClassBase", "dwPriorityClass", "readable", "name");
+	printf("%-10s | %-10s | %s | %s | %s |  %s | %s\n", "pid", "ppid", "threads", "base priority", "priority", "readable", "name");
+	printf("----------------------------------------------------------------------------------------\n");
 	do
 	{
-		dwPriorityClass = 0;
-		readable = false;
-		process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
-		if ( process )
-		{
-			dwPriorityClass = GetPriorityClass(process);
-//			if ( !dwPriorityClass )
-//				printf("ERROR: GetPriorityClass\n");
-			CloseHandle(process);
-			readable = true;
-		}
-//		else
-//			printf("ERROR: OpenProcess\n");
-
-		printf("0x%08lx | 0x%08lx | %7lu | %14lu | %15lu | %8s | %s\n",
-				pe32.th32ProcessID, pe32.th32ParentProcessID, pe32.cntThreads, pe32.pcPriClassBase,
-				dwPriorityClass, (readable)?"true":"false", pe32.szExeFile);
+		printRunningProcessInfo(process, &pe32);
 	}
 	while (Process32Next(snap, &pe32));
 	printf("\n");
 
 	CloseHandle(snap);
 	return true;
+}
+
+void printRunningProcessInfo(HANDLE process, PROCESSENTRY32* pe32)
+{
+	DWORD priorityClass = 0;
+	bool readable = false;
+	process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (*pe32).th32ProcessID);
+	if ( process )
+	{
+		priorityClass = GetPriorityClass(process);
+//			if ( !priorityClass )
+//				printf("ERROR: GetPriorityClass\n");
+		CloseHandle(process);
+		readable = true;
+	}
+//		else
+//			printf("ERROR: OpenProcess\n");
+
+	if ( !readable )
+		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
+	printf("0x%08lx | 0x%08lx | %7lu | %13lu | %8lu | %9s | %s\n",
+		   (*pe32).th32ProcessID, (*pe32).th32ParentProcessID, (*pe32).cntThreads, (*pe32).pcPriClassBase,
+		   priorityClass, (readable) ? "true" : "false", (*pe32).szExeFile);
+	if ( !readable )
+		SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 }
