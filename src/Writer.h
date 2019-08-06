@@ -2,6 +2,7 @@
 #define HEXTER_SRC_WRITER_H
 
 uint32_t payloadParseByte(const char* arg, unsigned char** payload);
+uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, uint64_t length);
 uint32_t payloadParseWord(const char* arg, unsigned char** payload);
 uint32_t payloadParseDWord(const char* arg, unsigned char** payload);
 uint32_t payloadParseQWord(const char* arg, unsigned char** payload);

@@ -15,6 +15,13 @@
 #include "utils/Converter.h"
 #include "utils/Helper.h"
 
+/**
+ * Parse the arg as a byte.
+ *
+ * @param arg
+ * @param payload
+ * @return
+ */
 uint32_t payloadParseByte(const char* arg, unsigned char** payload)
 {
 	int s;
@@ -42,6 +49,48 @@ uint32_t payloadParseByte(const char* arg, unsigned char** payload)
 	return arg_ln;
 }
 
+/**
+ * Parse the fill byte and fill the payload buffer of the passed length with the fill byte.
+ *
+ * @param arg
+ * @param payload
+ * @param length
+ * @return
+ */
+uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, uint64_t length)
+{
+	int s;
+	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	uint8_t fill_byte = 0;
+	if ( arg_ln < 1 )
+	{
+		printf("Error: Fill byte has no value!\n");
+		return 0;
+	}
+	if ( arg_ln > 2 )
+	{
+		printf("Error: Fill byte is too big!\n");
+		return 0;
+	}
+	arg_ln = length;
+	unsigned char* p = (unsigned char*) malloc(arg_ln);
+
+	s = parseUint8(&arg[0], &fill_byte, 16);
+	if ( s != 0 )
+		return 0;
+	memset(p, fill_byte, arg_ln);
+
+	*payload = p;
+	return arg_ln;
+}
+
+/**
+ * Parse the arg as a word/uint16_t
+ *
+ * @param arg
+ * @param payload
+ * @return
+ */
 uint32_t payloadParseWord(const char* arg, unsigned char** payload)
 {
 	int s;
@@ -71,6 +120,13 @@ uint32_t payloadParseWord(const char* arg, unsigned char** payload)
 	return arg_ln;
 }
 
+/**
+ * Parse the arg as a dword/uint32_t
+ *
+ * @param arg
+ * @param payload
+ * @return
+ */
 uint32_t payloadParseDWord(const char* arg, unsigned char** payload)
 {
 	int s;
@@ -100,6 +156,13 @@ uint32_t payloadParseDWord(const char* arg, unsigned char** payload)
 	return arg_ln;
 }
 
+/**
+ * Parse the arg as a qword/uint64_t
+ *
+ * @param arg
+ * @param payload
+ * @return
+ */
 uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 {
 	int s;
@@ -129,6 +192,13 @@ uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 	return arg_ln;
 }
 
+/**
+ * Parse the arg as a ascii string.
+ *
+ * @param arg
+ * @param payload
+ * @return
+ */
 uint32_t payloadParseString(const char* arg, unsigned char** payload)
 {
 	uint32_t i;
@@ -149,6 +219,13 @@ uint32_t payloadParseString(const char* arg, unsigned char** payload)
 	return arg_ln;
 }
 
+/**
+ * Parse the arg plain bytes and reverse them.
+ *
+ * @param arg
+ * @param payload
+ * @return
+ */
 uint32_t payloadParseReversedPlainBytes(const char* arg, unsigned char** payload)
 {
 	uint32_t i, j;
@@ -168,6 +245,13 @@ uint32_t payloadParseReversedPlainBytes(const char* arg, unsigned char** payload
 	return payload_ln;
 }
 
+/**
+ * Parse the arg as plain bytes.
+ *
+ * @param arg
+ * @param payload
+ * @return
+ */
 uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
 {
 	uint32_t i, j;
@@ -204,6 +288,14 @@ uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
 	return payload_ln;
 }
 
+/**
+ * Insert payload into file.
+ *
+ * @param file_path
+ * @param payload
+ * @param payload_ln
+ * @param offset
+ */
 void insert(char* file_path, unsigned char* payload, uint32_t payload_ln, uint64_t offset)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
@@ -307,6 +399,13 @@ void overwrite(char* file_path, unsigned char* payload, uint32_t payload_ln, uin
 	fclose(fp);
 }
 
+/**
+ * Delete bytes in file of the passed length.
+ *
+ * @param file_path
+ * @param start uint64_t start offset of the deletion.
+ * @param length uint64_t length of the bytes to delete.
+ */
 void deleteBytes(char* file_path, uint64_t start, uint64_t length)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];

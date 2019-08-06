@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
+#include <fnmatch.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 #include "ProcessHandlerLinux.h"
 #include "utils/common_fileio.h"
@@ -31,38 +34,42 @@ typedef struct ProcMapsEntry
 
 typedef int (*MapsInfoCallback)(ProcMapsEntry* entry, uint32_t last_module_inode, size_t line_nr);
 
-static bool fopenProcessFile(uint32_t pid, FILE **fp, char *type, const char* mode);
-static bool fopenProcessMemory(uint32_t pid, FILE **fp, const char* mode);
-static bool fopenProcessMaps(uint32_t pid, FILE **fp);
+static Bool fopenProcessFile(uint32_t pid, FILE **fp, char *type, const char* mode);
+static Bool fopenProcessMemory(uint32_t pid, FILE **fp, const char* mode);
+static Bool fopenProcessMaps(uint32_t pid, FILE **fp);
 
-static bool parseProcMapsLine(char* line, ProcMapsEntry* entry);
+static Bool parseProcMapsLine(char* line, ProcMapsEntry* entry);
 
-void printProcessMemoryTableHeader();
+static void printProcessMemoryTableHeader();
 static int printProcMapEntry(ProcMapsEntry* entry, uint32_t last_module_inode, size_t line_nr);
 
-static bool parseProcessMaps(uint32_t pid, MapsInfoCallback cb);
+static Bool parseProcessMaps(uint32_t pid, MapsInfoCallback cb);
 static void printProcessModulesTableHeader(const uint8_t map_entry_col_width[6]);
 static int printProcModule(ProcMapsEntry* entry, size_t module_nr);
 
-void printProcessHeapsTableHeader();
+static void printProcessHeapsTableHeader();
 static int printProcessHeap(ProcMapsEntry* entry, uint32_t last_module_inode, size_t module_nr);
 
-static bool getProcName(uint32_t pid, char* name, size_t name_size);
+static Bool getProcName(uint32_t pid, char* name, size_t name_size);
 
-static bool isModule(ProcMapsEntry* entry);
-static bool isReadableRegion(ProcMapsEntry *entry);
+static Bool isModule(ProcMapsEntry* entry);
+static Bool isReadableRegion(ProcMapsEntry *entry);
 
-static bool addressIsInRegionRange(uint64_t address, uint64_t base, uint64_t size);
-void setModuleEndAddress(ProcMapsEntry *entry, FILE *fp);
+static Bool addressIsInRegionRange(uint64_t address, uint64_t base, uint64_t size);
+static void setModuleEndAddress(ProcMapsEntry *entry, FILE *fp);
 static uint64_t getModuleEndAddress(ProcMapsEntry *module, FILE* fp);
-static bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length);
+static Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length);
 
-void printRegionInfo(ProcMapsEntry* entry, const char* file_name);
-bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t printed_module_base);
-bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base);
-bool queryNextRegion(FILE* fp, ProcMapsEntry* entry);
-int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s);
-uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const unsigned char* needle, uint32_t needle_ln);
+static void printRegionInfo(ProcMapsEntry* entry, const char* file_name);
+static Bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t printed_module_base);
+static Bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base);
+static Bool queryNextRegion(FILE* fp, ProcMapsEntry* entry);
+static int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s);
+static uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const unsigned char* needle, uint32_t needle_ln);
+
+static int filter(const struct dirent *dir);
+static void processdir(const struct dirent *dir);
+static void listFilesOfDir(char* path);
 
 static const uint8_t map_entry_col_width[6] = { 16, 5, 8, 5, 8, 8 };
 #define LINE_BUFFER_SPACE 513
@@ -79,7 +86,7 @@ static uint32_t p_needle_ln;
  * @param	tpye char* the proc file to open
  * @param	flag int the access flag: O_RDONLY, O_RDWR, O_WRONLY
  */
-bool fopenProcessFile(uint32_t pid, FILE **fp, char *type, const char* mode)
+Bool fopenProcessFile(uint32_t pid, FILE **fp, char *type, const char* mode)
 {
 	char file[64];
 	sprintf(file, "/proc/%u/%s", pid, type);
@@ -94,7 +101,7 @@ bool fopenProcessFile(uint32_t pid, FILE **fp, char *type, const char* mode)
 /**
  * -rw------- ... mem
  */
-bool fopenProcessMemory(uint32_t pid, FILE **fp, const char* mode)
+Bool fopenProcessMemory(uint32_t pid, FILE **fp, const char* mode)
 {
 	return fopenProcessFile(pid, fp, "mem", mode);
 }
@@ -102,7 +109,7 @@ bool fopenProcessMemory(uint32_t pid, FILE **fp, const char* mode)
 /**
  * -r--r--r-- ... maps
  */
-bool fopenProcessMaps(uint32_t pid, FILE **fp)
+Bool fopenProcessMaps(uint32_t pid, FILE **fp)
 {
 	return fopenProcessFile(pid, fp, "maps", "r");
 }
@@ -118,13 +125,13 @@ bool fopenProcessMaps(uint32_t pid, FILE **fp)
  * 	s = shared
  * 	p = private (copy on write)
  */
-bool parseProcessMaps(uint32_t pid, MapsInfoCallback cb)
+Bool parseProcessMaps(uint32_t pid, MapsInfoCallback cb)
 {
 	FILE* fp = NULL;
 	const uint16_t line_size = 512;
 	char line[513];
 	size_t line_nr = 0;
-	bool last_module_inode = 0;
+	Bool last_module_inode = 0;
 	ProcMapsEntry entry;
 
 	if ( !fopenProcessMaps(pid, &fp) )
@@ -148,7 +155,7 @@ bool parseProcessMaps(uint32_t pid, MapsInfoCallback cb)
 	return true;
 }
 
-bool parseProcMapsLine(char* line, ProcMapsEntry* entry)
+Bool parseProcMapsLine(char* line, ProcMapsEntry* entry)
 {
 	const uint16_t bucket_max = 8;
 	uint16_t bucket_ln = 0;
@@ -273,12 +280,12 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t *start)
 	return info_line_break;
 }
 
-bool isReadableRegion(ProcMapsEntry *entry)
+Bool isReadableRegion(ProcMapsEntry *entry)
 {
 	return entry->perms[0] == 'r';
 }
 
-bool addressIsInRegionRange(uint64_t address, uint64_t base, uint64_t size)
+Bool addressIsInRegionRange(uint64_t address, uint64_t base, uint64_t size)
 {
 	uint64_t end = base + size;
 	return base <= address && address < end;
@@ -319,7 +326,7 @@ uint64_t getModuleEndAddress(ProcMapsEntry *module, FILE* fp)
 	return end_address;
 }
 
-bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length)
+Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length)
 {
 	uint64_t base_off = start - entry->address;
 	if ( base_off + *length > entry->size )
@@ -347,7 +354,7 @@ uint64_t getSizeOfProcess(uint32_t pid)
 	uint64_t start_address;
 
 	char* module_name = NULL;
-	bool proc_module_started = false;
+	Bool proc_module_started = false;
 
 	char proc_name[513] = {0};
 	if ( !getProcName(pid, proc_name, 512) )
@@ -394,7 +401,7 @@ uint64_t getSizeOfProcess(uint32_t pid)
  * @param	name char* allocated space for the name
  * @param	name_size size_t
  */
-bool getProcName(uint32_t pid, char* name, size_t name_size)
+Bool getProcName(uint32_t pid, char* name, size_t name_size)
 {
 	FILE *fp = NULL;
 	char line[LINE_BUFFER_SPACE];
@@ -429,10 +436,10 @@ bool getProcName(uint32_t pid, char* name, size_t name_size)
  * @param	pid uint32_t the target fp pid
  * @return	bool success state
  */
-bool listProcessModules(uint32_t pid)
+Bool listProcessModules(uint32_t pid)
 {
 	FILE *fp = NULL;
-	char line[LINE_BUFFER_SPACE];
+//	char line[LINE_BUFFER_SPACE];
 
 	uint32_t last_module_inode = 0;
 	uint64_t module_size = 0;
@@ -495,7 +502,7 @@ bool listProcessModules(uint32_t pid)
 	return true;
 }
 
-bool isModule(ProcMapsEntry* entry)
+Bool isModule(ProcMapsEntry* entry)
 {
 	return entry->pathname && entry->pathname[0] != 0 && entry->pathname[0] != '[' && entry->inode != 0;
 }
@@ -523,7 +530,7 @@ int printProcModule(ProcMapsEntry* entry, size_t module_nr)
 	return 0;
 }
 
-bool listProcessThreads(uint64_t pid)
+Bool listProcessThreads(uint64_t pid)
 {
 	printf("List of threads:\n");
 	printf("Not yet implemented!\n");
@@ -532,9 +539,9 @@ bool listProcessThreads(uint64_t pid)
 	return true;
 }
 
-bool listProcessMemory(uint32_t pid)
+Bool listProcessMemory(uint32_t pid)
 {
-	bool s;
+	Bool s;
 
 	printProcessMemoryTableHeader();
 	s = parseProcessMaps(pid, &printProcMapEntry);
@@ -575,9 +582,9 @@ int printProcMapEntry(ProcMapsEntry* entry, uint32_t last_module_inode, size_t l
 	return 0;
 }
 
-bool listProcessHeaps(uint32_t pid, int type)
+Bool listProcessHeaps(uint32_t pid, int type)
 {
-	bool s;
+	Bool s;
 
 	printProcessHeapsTableHeader();
 	s = parseProcessMaps(pid, &printProcessHeap);
@@ -632,11 +639,11 @@ int writeProcessMemory(uint32_t pid, unsigned char *payload, uint32_t payload_ln
  * @param needle_ln
  * @return
  */
-bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln)
+Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln)
 {
 	FILE* fp;
 	ProcMapsEntry entry;
-//	bool s;
+//	Bool s;
 	int print_s = 0;
 
 	uint64_t base_off = 0;
@@ -749,7 +756,7 @@ bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 	return true;
 }
 
-bool queryNextRegion(FILE* fp, ProcMapsEntry* entry)
+Bool queryNextRegion(FILE* fp, ProcMapsEntry* entry)
 {
 	char line[LINE_BUFFER_SPACE];
 
@@ -778,12 +785,12 @@ void printRegionInfo(ProcMapsEntry* entry, const char* file_name)
  * print_s == 1 => quit printing last entry (module) has been chosen
  * printed_module_base == entry.base => still in actual module
  */
-bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t printed_module_base)
+Bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t printed_module_base)
 {
 	return print_s == 1 && printed_module_base == entry->base;
 }
 
-bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base)
+Bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base)
 {
 	return printed_module_base != entry_base;
 }
@@ -909,82 +916,78 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 	return s;
 }
 
-bool listRunningProcesses()
+Bool listRunningProcesses()
 {
+	struct dirent **namelist;
+	int n;
+
+	printf("List of processes\n");
+	printf("%-10s | %-10s | %s | %s | %s |  %s | %s\n", "pid", "ppid", "threads", "base priority", "priority", "readable", "name");
+	printf("----------------------------------------------------------------------------------------\n");
+
+	n = scandir("/proc", &namelist, filter, 0);
+	if ( n < 0 )
+		perror("Not enough memory.");
+	else
+	{
+		while(n--)
+		{
+			processdir(namelist[n]);
+			free(namelist[n]);
+		}
+		free(namelist);
+	}
+
+	printf("\n");
+
 	return 0;
 }
 
-// find first region hitting start
-//bool getRegion(uint64_t start, FILE* fp, ProcMapsEntry* entry)
-//{
-//	char line[LINE_BUFFER_SPACE];
-//	while ( fgets(line, line_size, fp) )
-//	{
-//		line[line_size] = 0;
-//
-//		if ( !parseProcMapsLine(line, entry) )
-//			return -1;
-//
-//		if ( addressIsInRegionRange(start, entry->address, entry->size) )
-//			return 1;
-//	}
-//	return 0;
-//}
+int filter(const struct dirent *dir)
+{
+	uid_t user;
+	struct stat dirinfo;
+	size_t len = strlen(dir->d_name) + 7;
+	char path[len];
 
-//bool getNextPrintableRegion(FILE* fp, ProcMapsEntry* entry, char** file_name, int print_s, uint64_t last_base)
-//{
-//	bool s;
-//
-//	if ( print_s == 0 )
-//		s = queryNextAccessibleRegion(fp, entry, file_name);
-//	else
-//		s = queryNextAccessibleBaseRegion(fp, entry, file_name);
-//
-//	if ( !s )
-//		return false;
-//
-////	printf("last_base: %p\n", last_base);
-////	printf("entry.AllocationBase: %p\n", entry->AllocationBase);
-//
-//	getFileNameL(entry->pathname, file_name);
-////	printf("file_name: %s\n", *file_name);
-//	if ( last_base != entry->base )
-//	{
-//		if ( !confirmContinueWithNextRegion(*file_name) )
-//			return false;
-//	}
-//	return true;
-//}
+	strcpy(path, "/proc/");
+	strcat(path, dir->d_name);
+	user = getuid();
+	if (stat(path, &dirinfo) < 0)
+	{
+		perror("processdir() ==> stat()");
+		exit(EXIT_FAILURE);
+	}
+	return !fnmatch("[1-9]*", dir->d_name, 0) && user == dirinfo.st_uid;
+}
 
-//bool queryNextAccessibleRegion(FILE* fp, ProcMapsEntry* entry, char** file_name)
-//{
-//	bool s;
-//	s = queryNextRegion(fp, entry);
-//
-//	while ( s )
-//	{
-//		if ( !isReadableRegion(entry) )
-//			s = queryNextRegion(fp, entry);
-//		else
-//			break;
-//	}
-//	return s;
-//}
+void processdir(const struct dirent *dir)
+{
+	uint32_t pid;
+	size_t len = strlen(dir->d_name) + 7;
+	char path[len];
+	strcpy(path, "/proc/");
+	strcat(path, dir->d_name);
 
-//bool queryNextAccessibleBaseRegion(FILE* fp, ProcMapsEntry* entry, char** file_name)
-//{
-//	bool s;
-//	uint64_t old_base;
-//
-//	old_base = entry->base;
-//	s = queryNextRegion(fp, entry);
-//
-//	while ( s )
-//	{
-//		if ( old_base == entry->base || !isReadableRegion(entry) )
-//			s = queryNextRegion(fp, entry);
-//		else
-//			break;
-//	}
-//	return s;
-//}
+//	listFilesOfDir(path);
+	parseUint32(dir->d_name, &pid, 10);
+
+	printf("0x%08x |\n", pid);
+}
+
+void listFilesOfDir(char* path)
+{
+	DIR *d;
+	struct dirent *dir;
+	d = opendir(path);
+	if ( d )
+	{
+		while ( (dir = readdir(d)) != NULL )
+		{
+			if ( dir->d_type == DT_REG )
+				printf("%s, ", dir->d_name);
+		}
+		closedir(d);
+	}
+	printf("\n");
+}

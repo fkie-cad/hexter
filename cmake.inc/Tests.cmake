@@ -33,6 +33,7 @@ if ( ${GTEST_FOUND} )
 		CXX_EXTENSIONS NO
 		LANGUAGES CXX
 		COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Werror=return-type -fsanitize=address -fno-omit-frame-pointer"
+		LINK_FLAGS "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address"
 		)
 
 	target_link_libraries(${UNIT_TEST_SUITE} PRIVATE

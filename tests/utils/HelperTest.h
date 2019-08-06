@@ -14,7 +14,7 @@
 #include <gtest/gtest.h>
 
 #include "../../src/Globals.h"
-#include "../../src/utils/Helper.h"
+//#include "../../src/utils/Helper.c"
 
 using namespace std;
 
@@ -122,7 +122,12 @@ void HelperTest::testGetFileNameA(vector<PNP> pathes)
 
 TEST_F(HelperTest, testSplit)
 {
-	cout << "testSplit()"<<endl;
+	cerr << "HelperTest::testSplit()"<<endl;
+}
+
+TEST_F(HelperTest, testSplitArgs)
+{
+	cerr << "HelperTest::testSplitArgs()"<<endl;
 }
 
 #endif

@@ -6,7 +6,6 @@
 #if defined(__linux__) || defined(__linux) || defined(linux)
 	#include <unistd.h>
 #endif
-#include <errno.h>
 
 #define HEXTER_EXPORTS
 
@@ -29,34 +28,35 @@
 
 uint64_t file_size;
 char file_path[PATH_MAX];
-uint64_t start;
+static uint64_t start;
 uint64_t length;
 uint8_t clean_printing;
-uint8_t skip_bytes;
+static uint8_t skip_bytes;
 
 uint8_t print_col_mask;
 uint8_t print_offset_mask;
 uint8_t print_hex_mask;
 uint8_t print_ascii_mask;
 
-uint8_t insert_f;
-uint8_t overwrite_f;
+static uint8_t insert_f;
+static uint8_t overwrite_f;
 uint8_t find_f;
-uint8_t delete_f;
+static uint8_t delete_f;
 uint8_t continuous_f;
 
-bool list_process_memory_f;
-bool list_process_modules_f;
-bool list_process_threads_f;
+Bool list_process_memory_f;
+Bool list_process_modules_f;
+Bool list_process_threads_f;
 int list_process_heaps_f;
-bool list_running_processes_f;
+Bool list_running_processes_f;
 
 const uint8_t TYPE_FILE = 1;
 const uint8_t TYPE_PID = 2;
-uint8_t type;
+static uint8_t type;
 
-int payload_arg_id;
-const char* vs = "1.5.0";
+static int payload_arg_id;
+
+static const char* vs = "1.5.2";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -64,36 +64,40 @@ const char* vs = "1.5.0";
 #define FORMAT_D_WORD 'd'
 #define FORMAT_Q_WORD 'q'
 #define FORMAT_PLAIN_HEX 'h'
+#define FORMAT_FILL_BYTE 'f'
 
-const char format_types[6] = { FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
-int format_types_ln = 6;
+static const char format_types[7] = { FORMAT_ASCII, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
+static int format_types_ln = 7;
 
-void printUsage();
-void initParameters();
-void parseArgs(int argc, char** argv);
-uint8_t isArgOfType(char* arg, char* type);
-uint8_t isFormatArgOfType(char* arg, char* type);
-uint8_t hasValue(char* type, int i, int end_i);
-void sanitizeParams(uint32_t pid);
-uint32_t parsePayload(const char format, const char* value, unsigned char** payload);
-uint8_t parseType(const char* arg);
+static void printUsage();
+static void initParameters();
+static void parseArgs(int argc, char** argv);
+static uint8_t isArgOfType(char* arg, char* type);
+static uint8_t isFormatArgOfType(char* arg, char* type);
+static uint8_t hasValue(char* type, int i, int end_i);
+static void sanitizeParams(uint32_t pid);
+static uint32_t parsePayload(const char format, const char* value, unsigned char** payload);
+static uint8_t parseType(const char* arg);
 
-int run(const char payload_format, const char* raw_payload);
+static int run(const char payload_format, const char* raw_payload);
 
-uint8_t keepStartInFile();
-uint8_t keepLengthInFile();
+static uint8_t keepStartInFile();
+static uint8_t keepLengthInFile();
 
 // TODO:
 // - highlight found part
 //	 + hex
 //	 - ascii
-// + continuouse find typing 'n'
+// + continuous find typing 'n'
+// - find and replace
+// - overwrite with a number of fill bytes
 // - reversed payload, endianess option for hex and word payload
 // + align offset to 0x10, print spaces to fill col up
 // + view processes
 //   + windows
 //   + linux
-//	 - windows: offset bug +0x1000 from -s when printing
+//		- list running processes
+//	 - windows: offset bug +0x1000 from -s when printing ??
 //	 - 			get size of whole module, the region belongs to at length check
 int main(int argc, char** argv)
 {
@@ -256,8 +260,9 @@ void printHelp()
 		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)\n"
 		   " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -fx Find hex byte sequence. Where x is an format option.\n"
-		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte, %c: word, %c: double word, %c: quad word.\n"
+		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte, %c: fill byte, %c: word, %c: double word, %c: quad word.\n"
 		   "     Expect for the ascii string, all values have to be passed as hex values.\n"
+		   "     A fill byte has the length of -l.\n"
 //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
 		   " * -d Delete -l bytes from offset -s. (File mode only.)\n"
 		   " * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'a/file/name'.\n"
@@ -271,7 +276,7 @@ void printHelp()
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
-		   FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
+		   FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
 	);
 	printf("\n");
 	printf("Example: ./%s path/to/a.file -s 100 -l 128 -x\n", BINARYNAME);
@@ -371,11 +376,6 @@ void parseArgs(int argc, char** argv)
 			if ( hasValue("-l", i, end_i) )
 			{
 				s = parseUint64Auto(argv[i + 1], &length);
-#ifdef _WIN32
-				printf("length: %llx\n", length);
-#else
-				printf("length: %lx\n", length);
-#endif
 				if ( s != 0 )
 				{
 					printf("INFO: Could not parse length. Setting it to %u!\n", DEFAULT_LENGTH);
@@ -593,6 +593,15 @@ uint32_t parsePayload(const char format, const char* value, unsigned char** payl
 
 	if ( format == FORMAT_BYTE )
 		ln = payloadParseByte(value, payload);
+	else if ( format == FORMAT_FILL_BYTE )
+	{
+		if ( length > MAX_PAYLOAD_LN )
+		{
+			printf("INFO: Fill byte length is greater than %u. Setting to %u!\n", MAX_PAYLOAD_LN, MAX_PAYLOAD_LN);
+			length = MAX_PAYLOAD_LN;
+		}
+		ln = payloadParseFillBytes(value, payload, length);
+	}
 	else if ( format == FORMAT_WORD )
 		ln = payloadParseWord(value, payload);
 	else if ( format == FORMAT_D_WORD )

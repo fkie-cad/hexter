@@ -29,7 +29,7 @@ class HexterTest :public testing::Test
 		const string prog_dir = "./";
 		const string prog = "hexter";
 		static string temp_dir;
-		const string vs = "1.4.3";
+		const string vs = "1.5.2";
 
 		static Misc misc;
 
@@ -132,7 +132,7 @@ class HexterTest :public testing::Test
 			return lines;
 		}
 
-		void callApp(const vector<string>& argv, const vector<string>& expected_lines, bool resize = false)
+		void callApp(const vector<string>& argv, const vector<string>& expected_lines, Bool resize = false)
 		{
 			string args;
 			for ( const string& a : argv ) args = args.append(a).append(" ");
@@ -570,7 +570,6 @@ TEST_F(HexterTest, testFind)
 	string name = "testFind.bla";
 	string src = temp_dir + "/" + name;
 
-
 	vector<uint8_t> bytes = {1, 1, 3, 4, 5, 6, 7, 8, 1, 2, 2, 4, 5, 6, 7, 8,
 							 1, 2, 3, 3, 5, 6, 7, 8, 1, 2, 3, 4, 4, 6, 7, 8,
 							 1, 2, 3, 4, 5, 5, 7, 8, 1, 2, 3, 4, 5, 6, 6, 8,
@@ -581,10 +580,11 @@ TEST_F(HexterTest, testFind)
 
 	uint32_t length = 0x10;
 	uint32_t needle_ln = 8;
-	uint64_t expected_idx = 56;
-	vector<uint8_t> needle(bytes.begin() + expected_idx, bytes.end() + expected_idx + needle_ln);
+	uint64_t needle_idx = 0x38;
+	uint64_t expected_idx = 0x30; // sanitized
+	vector<uint8_t> needle(bytes.begin() + needle_idx, bytes.begin() + needle_idx + needle_ln);
 	stringstream needle_ss;
-	for ( int i = 0; i < needle_ln; i++ )
+	for ( uint32_t i = 0; i < needle_ln; i++ )
 	{
 		needle_ss << hex << setw(2) << setfill('0') << +needle[i];
 	}

@@ -294,7 +294,7 @@ size_t splitArgs(char *buffer, char *argv[], size_t argv_size)
 	return argc;
 }
 
-bool confirmContinueWithNextRegion(char* name, uint64_t address)
+Bool confirmContinueWithNextRegion(char* name, uint64_t address)
 {
 	char input;
 	int counter = 0;

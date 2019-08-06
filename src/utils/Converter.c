@@ -130,6 +130,13 @@ int parseUint8Auto(const char* arg, uint8_t* value)
 	return 0;
 }
 
+/**
+ * Parse arg as uint8 into value
+ *
+ * @param	arg const char* the raw arg
+ * @param	value uint8_t* the parsed value container
+ * @param	base uint8_t the base of the number conversion
+ */
 int parseUint8(const char* arg, uint8_t* value, uint8_t base)
 {
 	uint64_t result;

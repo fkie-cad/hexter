@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "../src/utils/TerminalUtil.c"
+//#include "../src/utils/TerminalUtil.c"
 
 using namespace std;
 
@@ -17,7 +17,6 @@ class KeyStrokeTest : public testing::Test
 
 	public:
 };
-
 
 TEST_F(KeyStrokeTest, testFGetC)
 {

@@ -5,11 +5,11 @@
 
 #include "Finder.h"
 #include "Globals.h"
-#include "utils/Helper.h"
-#include "utils/common_fileio.h"
-#include "Printer.h"
+//#include "utils/Helper.h"
+//#include "utils/common_fileio.h"
+//#include "Printer.h"
 
-uint16_t* failure = NULL;
+static uint16_t* failure = NULL;
 
 void Finder_initFailure(unsigned char* needle, uint32_t needle_ln)
 {

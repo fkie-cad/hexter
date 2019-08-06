@@ -14,6 +14,8 @@ if (UNIX)
 
 	set(CMAKE_FLAGS_DEBUG "${CMAKE_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
 	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
+
+	set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif (UNIX)
 
 message("CMAKE_FLAGS_DEBUG is ${CMAKE_FLAGS_DEBUG}")
@@ -26,7 +28,7 @@ include(cmake.inc/Sources.cmake)
 include(cmake.inc/Main.cmake)
 
 # tests
-#if ( ${GTEST_FOUND} )
-#	enable_language(CXX)
-#	include(cmake.inc/Tests.cmake)
-#endif()
+if ( ${GTEST_FOUND} )
+	enable_language(CXX)
+	include(cmake.inc/Tests.cmake)
+endif()
