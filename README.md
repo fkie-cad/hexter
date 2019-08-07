@@ -85,7 +85,7 @@ Optional Parameters:
    * w: word, 
    * d: double word, 
    * q: quad word.  
-   Expect for the ascii string, all values have to be passed as hex values.
+   Expect for the ascii string, all values have to be passed as hex values.  
  * -d Delete -l bytes from offset -s. (File mode only.)
  * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'a/file/name'.
  * -pid only.

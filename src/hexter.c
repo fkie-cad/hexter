@@ -17,6 +17,7 @@
 #include "Writer.h"
 #include "utils/Converter.h"
 #include "utils/Helper.h"
+#include "utils/Strings.h"
 #if defined(__linux__) || defined(__linux) || defined(linux)
 	#include "ProcessHandlerLinux.h"
 #elif defined(_WIN32)
@@ -601,6 +602,7 @@ uint32_t parsePayload(const char format, const char* value, unsigned char** payl
 			length = MAX_PAYLOAD_LN;
 		}
 		ln = payloadParseFillBytes(value, payload, length);
+		length = DEFAULT_LENGTH;
 	}
 	else if ( format == FORMAT_WORD )
 		ln = payloadParseWord(value, payload);
@@ -741,7 +743,7 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
 	uint8_t argv_max = 20;
 	uint8_t argc;
 	char* argv[20];
-	argc = split(lpszCmdLine, " ", argv, argv_max);
+	argc = splitArgs(lpszCmdLine, " ", argv, argv_max);
 
 	printf("argc: %u\n", argc);
 	for ( i = 0; i < argc; i++ )
@@ -751,4 +753,5 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
 	getchar();
 //	system("pause");
 }
+
 #endif

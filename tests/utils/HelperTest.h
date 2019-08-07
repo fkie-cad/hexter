@@ -120,14 +120,4 @@ void HelperTest::testGetFileNameA(vector<PNP> pathes)
 	}
 }
 
-TEST_F(HelperTest, testSplit)
-{
-	cerr << "HelperTest::testSplit()"<<endl;
-}
-
-TEST_F(HelperTest, testSplitArgs)
-{
-	cerr << "HelperTest::testSplitArgs()"<<endl;
-}
-
 #endif

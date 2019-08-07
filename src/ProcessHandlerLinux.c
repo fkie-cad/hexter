@@ -13,6 +13,7 @@
 #include "ProcessHandlerLinux.h"
 #include "utils/common_fileio.h"
 #include "utils/Converter.h"
+#include "utils/Strings.h"
 #include "utils/TerminalUtil.h"
 #include "Globals.h"
 #include "Printer.h"
@@ -31,6 +32,66 @@ typedef struct ProcMapsEntry
 	uint32_t inode;
 	char pathname[1024];
 } ProcMapsEntry;
+
+/**
+ * Structure to hold parsed /proc/pid/stat values.
+ * Only the needed ones are defined here.
+ */
+typedef struct ProcStat
+{
+//	uint32_t pid; // The process ID.
+//	char comm[16];  // The filename of the executable, in parentheses. This is visible whether or not the executable is swapped out.
+	char state; // process state: R  Running, S  Sleeping in an interruptible wait, D  Waiting in uninterruptible disk sleep, Z  Zombie, T  Stopped, t  Tracing stop , W  Paging, X  Dead, x  Dead, K  Wakekill, W  Waking, P  Parked
+	uint32_t ppid; // The PID of the parent of this process.
+//	uint32_t pgrp; // The process group ID of the process.
+//	int session; // %d The session ID of the process.
+//	int tty_nr; // %d The controlling terminal of the process.  (The minor device number is contained in the combination of bits 31 to 20 and 7 to 0; the major device number is in bits 15 to 8.)
+//	int tpgid; // %d The ID of the foreground process group of the controlling terminal of the process.
+	uint16_t flags; // %u The kernel flags word of the process.  For bit meanings, see the PF_* defines in the Linux kernel source file include/linux/sched.h. Details depend on the kernel version.The format for this field was %lu before Linux 2.6.
+//	uint32_t minflt; // %lu The number of minor faults the process has made which have not required loading a memory page from disk.
+//	uint32_t cminflt; // %lu The number of minor faults that the process's waited-for children have made.
+//	uint32_t majflt; // %lu The number of major faults the process has made which have required loading a memory page from disk.
+//	uint32_t cmajflt; // %lu The number of major faults that the process's waited-for children have made.
+//	uint32_t utime; // %lu Amount of time that this process has been scheduled in user mode, measured in clock ticks (divide by sysconf(_SC_CLK_TCK)). This includes guest time, guest_time (time spent running a virtual CPU, see below), so that applications that are not aware of the guest time field do not lose that time from their calculations.
+//	uint32_t stime; // %lu Amount of time that this process has been scheduled in kernel mode, measured in clock ticks (divide by sysconf(_SC_CLK_TCK)).
+//	int32_t cutime; // %ld Amount of time that this process's waited for children have been scheduled in user mode, measured in clock ticks (divide by sysconf(_SC_CLK_TCK)).  (See also times(2).)  This includes guest time, cguest_time (time spent running a virtual CPU, see below).
+//	int32_t cstime; // %ld Amount of time that this process's waited for children have been scheduled in kernel mode, measured in clock ticks (divide by sysconf(_SC_CLK_TCK)).
+//	int32_t priority; // %ld (Explanation for Linux 2.6) For processes running a real-time scheduling policy (policy below; see sched_setscheduler(2)), this is the negated scheduling priority, minus one; that is, a number in the range -2 to -100, corresponding to real-time priorities 1 to 99.  For processes running under a non-real-time scheduling policy, this is the raw nice value (setpriority(2)) as represented in the kernel. The kernel stores nice values as numbers in the range 0 (high) to 39 (low), corresponding to the user-visible nice range of -20 to 19. Before Linux 2.6, this was a scaled value based on the scheduler weighting given to this process.
+//	int32_t nice; // %ld The nice value (see setpriorityint32_t), a value in the range 19 (low priority) to -20 (high priority).
+	int32_t num_threads; // %ld Number of threads in this process (since Linux 2.6). Before kernel 2.6, this field was hard coded to 0 as a placeholder for an earlier removed field.
+//	int32_t itrealvalue; // %ld The time in jiffies before the next SIGALRM is sent to the process due to an interval timer.  Since kernel 2.6.17, this field is no longer maintained, and is hard coded as 0.
+//	uint64_t starttime; // %llu The time the process started after system boot. In kernels before Linux 2.6, this value was expressed in jiffies.  Since Linux 2.6, the value is expressed in clock ticks (divide by sysconf(_SC_CLK_TCK)). The format for this field was %lu before Linux 2.6.
+	uint32_t vsize; // %lu Virtual memory size in bytes.
+	int32_t rss; // %ld Resident Set Size: number of pages the process has in real memory.  This is just the pages which count toward text, data, or stack space.  This does not include pages which have not been demand-loaded in, or which are swapped out.
+//	uint32_t rsslim; // %lu Current soft limit in bytes on the rss of the process; see the description of RLIMIT_RSS in getrlimituint32_t.
+//	uint32_t startcode; // %lu  [PT] The address above which program text can run.
+//	uint32_t endcode; // %lu  [PT] The address below which program text can run.
+//	uint32_t startstack; // %lu  [PT]	The address of the start (i.e., bottom) of the stack.
+	uint32_t kstkesp; // %lu  [PT] The current value of ESP (stack pointer), as found in the kernel stack page for the process.
+	uint32_t kstkeip; // %lu  [PT] The current EIP (instruction pointer).
+//	uint32_t signal; // %lu The bitmap of pending signals, displayed as a decimal number.  Obsolete, because it does not provide information on real-time signals; use /proc/[pid]/status instead.
+//	uint32_t blocked; // %lu The bitmap of blocked signals, displayed as a decimal number.  Obsolete, because it does not provide information on real-time signals; use /proc/[pid]/status instead.
+//	uint32_t sigignore; // %lu The bitmap of ignored signals, displayed as a decimal number.  Obsolete, because it does not provide information on real-time signals; use /proc/[pid]/status instead.
+//	uint32_t sigcatch; // %lu The bitmap of caught signals, displayed as a decimal number.  Obsolete, because it does not provide information on real-time signals; use /proc/[pid]/status instead.
+//	uint32_t wchan; // %lu  [PT] This is the "channel" in which the process is waiting.  It is the address of a location in the kernel where the process is sleeping.  The corresponding symbolic name can be found in /proc/[pid]/wchan.
+//	uint32_t nswap; // %lu Number of pages swapped (not maintained).
+//	uint32_t cnswap; // %lu Cumulative nswap for child processes (not maintained).
+//	int exit_signal; // %d  (since Linux 2.1.22) Signal to be sent to parent when we die.
+//	int processor; // %d  (since Linux 2.2.8) CPU number last executed on.
+//	uint16_t rt_priority; // %u  (since Linux 2.5.19) Real-time scheduling priority, a number in the range 1 to 99 for processes scheduled under a real-time policy, or 0, for non-real-time processes (see sched_setscheduler(2)).
+//	uint16_t policy; // %u  (since Linux 2.5.19) Scheduling policy (see sched_setscheduler(2)). Decode using the SCHED_* constants in linux/sched.h. The format for this field was %lu before Linux 2.6.22.
+//	uint64_t delayacct_blkio_ticks; // %llu  (since Linux 2.6.18) Aggregated block I/O delays, measured in clock ticks (centiseconds).
+//	uint32_t guest_time; // %lu Guest time of the process (time spent running a virtual CPU for a guest operating system), measured in clock ticks (divide by sysconf(_SC_CLK_TCK)).
+//	int32_t cguest_time; // %ld Guest time of the process's children, measured in clock ticks (divide by sysconf(_SC_CLK_TCK)).
+	uint32_t start_data; // %lu [PT] Address above which program initialized and uninitialized (BSS) data are placed.
+	uint32_t end_data; // %lu [PT] Address below which program initialized and uninitialized (BSS) data are placed.
+	uint32_t start_brk; // %lu [PT] Address above which program heap can be expanded with brk(2).
+	uint32_t arg_start; // %lu [PT] Address above which program command-line arguments (argv) are placed.
+//	uint32_t arg_end; // %lu [PT]	Address below program command-line arguments (argv)	are placed.
+//	uint32_t env_start; // %lu [PT] Address above which program environment is placed.
+//	uint32_t env_end; // %lu [PT]	Address below which program environment is placed.
+//	int exit_code; // %d [PT]The thread's exit status in the form reported by waitpid(2).
+} ProcStat;
 
 typedef int (*MapsInfoCallback)(ProcMapsEntry* entry, uint32_t last_module_inode, size_t line_nr);
 
@@ -51,6 +112,8 @@ static void printProcessHeapsTableHeader();
 static int printProcessHeap(ProcMapsEntry* entry, uint32_t last_module_inode, size_t module_nr);
 
 static Bool getProcName(uint32_t pid, char* name, size_t name_size);
+static Bool getProcStat(uint32_t pid, ProcStat* proc_stat);
+char* getStateString(char c);
 
 static Bool isModule(ProcMapsEntry* entry);
 static Bool isReadableRegion(ProcMapsEntry *entry);
@@ -69,7 +132,6 @@ static uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr,
 
 static int filter(const struct dirent *dir);
 static void processdir(const struct dirent *dir);
-static void listFilesOfDir(char* path);
 
 static const uint8_t map_entry_col_width[6] = { 16, 5, 8, 5, 8, 8 };
 #define LINE_BUFFER_SPACE 513
@@ -346,6 +408,7 @@ uint64_t getSizeOfProcess(uint32_t pid)
 	FILE *fp = NULL;
 	const uint16_t line_size = 512;
 	char line[513];
+	char proc_name[513] = {0};
 
 	ProcMapsEntry entry;
 	memset(&entry, 0, sizeof(entry));
@@ -356,7 +419,6 @@ uint64_t getSizeOfProcess(uint32_t pid)
 	char* module_name = NULL;
 	Bool proc_module_started = false;
 
-	char proc_name[513] = {0};
 	if ( !getProcName(pid, proc_name, 512) )
 		return 0;
 
@@ -426,6 +488,49 @@ Bool getProcName(uint32_t pid, char* name, size_t name_size)
 	getFileNameL(bucket[0], &tmp_name);
 
 	memcpy(name, tmp_name, strnlen(tmp_name, name_size));
+
+	return true;
+}
+
+/**
+ * Get proc pid stats
+ *
+ * @param	pid uint32_t
+ * @param	proc_stats ProcStat* structure to fill
+ */
+Bool getProcStat(uint32_t pid, ProcStat* proc_stat)
+{
+	FILE* fp = NULL;
+	char line[LINE_BUFFER_SPACE];
+	const uint8_t bucket_max = 53;
+	char* bucket[53]; // one more space to mark uncommon value of comm
+	size_t bucket_ln;
+
+	if ( !fopenProcessFile(pid, &fp, "stat", "r") )
+	{
+		printf("ERROR: failed to open /proc/%u/stat\n", pid);
+		return false;
+	}
+	fgets(line, line_size, fp);
+	line[line_size] = 0;
+	fclose(fp);
+
+	bucket_ln = splitArgsCSM(line, bucket, bucket_max, '(', ')');
+	if ( bucket_ln == 0 || bucket_ln >= bucket_max )
+	{
+//		printf("bucket_ln: %llu\n", bucket_ln);
+//		int i = 0;
+//		for ( i = 0; i < bucket_ln; i++ )
+//			printf("%d: %s\n", i, bucket[i]);
+		return false;
+	}
+
+	parseUint32(bucket[3], &proc_stat->ppid, 10);
+	proc_stat->state = bucket[2][0];
+	parseUint16(bucket[8], &proc_stat->flags, 10);
+	parseUint32(bucket[19], &proc_stat->num_threads, 10);
+	parseUint32(bucket[22], &proc_stat->vsize, 10);
+	parseUint32(bucket[23], &proc_stat->rss, 10);
 
 	return true;
 }
@@ -922,15 +1027,15 @@ Bool listRunningProcesses()
 	int n;
 
 	printf("List of processes\n");
-	printf("%-10s | %-10s | %s | %s | %s |  %s | %s\n", "pid", "ppid", "threads", "base priority", "priority", "readable", "name");
-	printf("----------------------------------------------------------------------------------------\n");
+	printf("%-10s | %-10s | %8s | %10s | %10s |  %7s | %s\n", "pid", "ppid", "threads", "vsize", "rss", "state", "name");
+	printf("-----------+------------+----------+------------+------------+----------+---------------\n");
 
 	n = scandir("/proc", &namelist, filter, 0);
 	if ( n < 0 )
-		perror("Not enough memory.");
+		perror("listRunningProcesses: scandir failed.");
 	else
 	{
-		while(n--)
+		while ( n-- )
 		{
 			processdir(namelist[n]);
 			free(namelist[n]);
@@ -953,11 +1058,12 @@ int filter(const struct dirent *dir)
 	strcpy(path, "/proc/");
 	strcat(path, dir->d_name);
 	user = getuid();
-	if (stat(path, &dirinfo) < 0)
+	if ( stat(path, &dirinfo) < 0 )
 	{
 		perror("processdir() ==> stat()");
 		exit(EXIT_FAILURE);
 	}
+//	return !fnmatch("[1-9]*", dir->d_name, 0);
 	return !fnmatch("[1-9]*", dir->d_name, 0) && user == dirinfo.st_uid;
 }
 
@@ -966,28 +1072,40 @@ void processdir(const struct dirent *dir)
 	uint32_t pid;
 	size_t len = strlen(dir->d_name) + 7;
 	char path[len];
+	char proc_name[513] = {0};
+	ProcStat proc_stat;
+
 	strcpy(path, "/proc/");
 	strcat(path, dir->d_name);
 
 //	listFilesOfDir(path);
-	parseUint32(dir->d_name, &pid, 10);
 
-	printf("0x%08x |\n", pid);
+	parseUint32(dir->d_name, &pid, 10);
+	getProcName(pid, proc_name, 512);
+	if ( !getProcStat(pid, &proc_stat) )
+		printf("Failed to parse /proc/pid/stat");
+
+	printf("0x%08x | 0x%08x | %8lu | 0x%08x | 0x%08x | %8s | %s\n",
+			pid, proc_stat.ppid, proc_stat.num_threads, proc_stat.vsize, proc_stat.rss, getStateString(proc_stat.state), proc_name);
 }
 
-void listFilesOfDir(char* path)
+char* getStateString(char c)
 {
-	DIR *d;
-	struct dirent *dir;
-	d = opendir(path);
-	if ( d )
+	switch ( c )
 	{
-		while ( (dir = readdir(d)) != NULL )
-		{
-			if ( dir->d_type == DT_REG )
-				printf("%s, ", dir->d_name);
-		}
-		closedir(d);
+		case 'R': return "Running";
+		case 'S': return "Sleeping";
+		case 'D': return "Waiting";
+		case 'Z': return "Zombie";
+		case 'T': return "Stopped";
+		case 't': return "Tracing";
+		case 'X': return "Dead";
+		case 'x': return "Dead";
+		case 'K': return "Wakekill";
+//		case 'W': return "Paging"; // before Linux 2.6.0
+		case 'W': return "Waking";
+		case 'P': return "Parked";
+		default:
+			return "None";
 	}
-	printf("\n");
 }

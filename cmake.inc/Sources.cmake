@@ -5,6 +5,8 @@ set(UTILS_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Converter.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Helper.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Helper.c
+	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Strings.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Strings.c
 	)
 if (UNIX)
     set(UTILS_FILES

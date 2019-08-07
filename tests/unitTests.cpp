@@ -4,6 +4,7 @@
 #include "../src/utils/Converter.c"
 #include "../src/utils/TerminalUtil.c"
 #include "../src/utils/Helper.c"
+#include "../src/utils/Strings.c"
 //#include "../src/Globals.h"
 //#include "../src/Writer.h"
 #include "../src/Finder.c"
@@ -11,6 +12,7 @@
 
 #include "utils/ConverterTest.h"
 #include "utils/HelperTest.h"
+#include "utils/StringsTest.h"
 #include "FinderTest.h"
 #include "KeyStrokeTest.h"
 #include "WriterTest.h"
