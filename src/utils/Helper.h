@@ -1,7 +1,7 @@
 #ifndef HEXTER_SRC_UTILS_HELPER_H
 #define HEXTER_SRC_UTILS_HELPER_H
 
-#include "../bool.h"
+#include "../Bool.h"
 
 void expandFilePath(const char* src, char* dest);
 int getTempFile(char* buf, const char* prefix);

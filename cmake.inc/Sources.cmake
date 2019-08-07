@@ -15,7 +15,7 @@ if (UNIX)
 endif (UNIX)
 
 set(HEXTER_FILES
-	${CMAKE_CURRENT_SOURCE_DIR}/src/bool.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Bool.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Globals.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Finder.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Finder.c

@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <limits.h>
 
-#include "bool.h"
+#include "Bool.h"
 
 #if defined(__linux__) || defined(__linux) || defined(linux)
 	#define ENTER 10 // aka \n

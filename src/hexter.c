@@ -50,13 +50,13 @@ Bool list_process_threads_f;
 int list_process_heaps_f;
 Bool list_running_processes_f;
 
-const uint8_t TYPE_FILE = 1;
-const uint8_t TYPE_PID = 2;
+static const uint8_t TYPE_FILE = 1;
+static const uint8_t TYPE_PID = 2;
 static uint8_t type;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.2";
+static const char* vs = "1.5.3";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -90,7 +90,7 @@ static uint8_t keepLengthInFile();
 //	 - ascii
 // + continuous find typing 'n'
 // - find and replace
-// - overwrite with a number of fill bytes
+// + overwrite with a number of fill bytes
 // - reversed payload, endianess option for hex and word payload
 // + align offset to 0x10, print spaces to fill col up
 // + view processes
@@ -636,6 +636,14 @@ uint8_t parseType(const char* arg)
 	}
 }
 
+/**
+ * Library function to print a file (-t file).
+ *
+ * @param _file_name
+ * @param _start
+ * @param _length
+ * @return int status info
+ */
 HEXTER_API int printFile(char* _file_name, uint64_t _start, uint64_t _length)
 {
 	initParameters();
@@ -652,6 +660,18 @@ HEXTER_API int printFile(char* _file_name, uint64_t _start, uint64_t _length)
 	return 0;
 }
 
+/**
+ * Library function to print a process (-t pid).
+ *
+ * @param _pid
+ * @param _start
+ * @param _length
+ * @param _lpm
+ * @param _lpx
+ * @param _lph
+ * @param _lpt
+ * @return int status info
+ */
 HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, int _lpm, int _lpx, int _lph, int _lpt)
 {
 	initParameters();
