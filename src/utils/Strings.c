@@ -19,6 +19,7 @@ size_t split(char* str, const char* delimiter, char** bucket, const size_t bucke
 	char* token;
 
 	token = strtok(str, delimiter);
+//	token = strtok_s(str, delimiter);
 	size_t token_id = 0;
 
 	while ( token != NULL)

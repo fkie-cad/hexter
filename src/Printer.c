@@ -150,6 +150,7 @@ void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 	while ( 1 )
 	{
 		input = getch();
+//		input = _getch();
 
 		if ( input == ENTER )
 			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);

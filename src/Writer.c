@@ -410,7 +410,7 @@ void deleteBytes(char* file_path, uint64_t start, uint64_t length)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
-	int n = buf_ln;
+	size_t n = buf_ln;
 	FILE* fp;
 	uint64_t offset;
 

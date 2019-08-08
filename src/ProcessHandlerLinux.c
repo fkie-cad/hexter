@@ -539,7 +539,7 @@ Bool getProcStat(uint32_t pid, ProcStat* proc_stat)
  * List all fp modules.
  *
  * @param	pid uint32_t the target fp pid
- * @return	bool success state
+ * @return	Bool success state
  */
 Bool listProcessModules(uint32_t pid)
 {

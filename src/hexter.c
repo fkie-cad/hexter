@@ -463,9 +463,9 @@ uint8_t isArgOfType(char* arg, char* type)
 
 uint8_t isFormatArgOfType(char* arg, char* type)
 {
-	int i, j;
-	int arg_ln = strnlen(arg, 10);
-	int type_ln = strnlen(type, 10);
+	uint8_t i, j;
+	uint8_t arg_ln = strnlen(arg, 10);
+	uint8_t type_ln = strnlen(type, 10);
 
 	if ( arg_ln <= type_ln )
 		return 0;
@@ -743,7 +743,7 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
 	uint8_t argv_max = 20;
 	uint8_t argc;
 	char* argv[20];
-	argc = splitArgs(lpszCmdLine, " ", argv, argv_max);
+	argc = splitArgs(lpszCmdLine, argv, argv_max);
 
 	printf("argc: %u\n", argc);
 	for ( i = 0; i < argc; i++ )

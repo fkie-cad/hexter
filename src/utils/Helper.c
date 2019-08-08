@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
 
 #if defined(__linux__) || defined(__linux) || defined(linux)
+	#include <dirent.h>
 	#include "TerminalUtil.h"
 #endif
 #if defined(_WIN32)
@@ -156,6 +156,7 @@ int64_t getFileNameOffset(const char* file_path)
  */
 void listFilesOfDir(char* path)
 {
+#if defined(__linux__) || defined(__linux) || defined(linux)
 	DIR *d;
 	struct dirent *dir;
 	d = opendir(path);
@@ -170,6 +171,7 @@ void listFilesOfDir(char* path)
 	}
 	closedir(d);
 	printf("\n");
+#endif
 }
 
 /**
