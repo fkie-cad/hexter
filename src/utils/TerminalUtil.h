@@ -10,6 +10,7 @@ void initTermios(int echo);
 void resetTermios();
 char getch_(int echo);
 char getch();
+char _getch();
 char getche();
 
 #endif

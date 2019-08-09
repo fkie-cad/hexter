@@ -149,8 +149,7 @@ void printBlockLoop(uint64_t nr_of_parts, unsigned char* block, FILE* fi, uint16
 
 	while ( 1 )
 	{
-		input = getch();
-//		input = _getch();
+		input = _getch();
 
 		if ( input == ENTER )
 			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
@@ -435,7 +434,7 @@ void printAsciiByte(const unsigned char c)
 void Printer_setHiglightBytes(int16_t v)
 {
 	highlight_hex_bytes = v;
-	highlight_hex_bytes = v;
+	highlight_ascii_bytes = v;
 }
 
 void Printer_setHiglightWait(int16_t v)

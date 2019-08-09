@@ -114,7 +114,7 @@ uint64_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, uint64_
 
 	while ( n == buf_ln )
 	{
-//		printf("\r0x%lx, ", offset);
+//		printf("\r0x%lx", offset);
 		if ( offset + read_size > max_offset )
 			read_size = max_offset - offset;
 
@@ -176,9 +176,9 @@ uint64_t findNeedleInBlock(const unsigned char* needle, uint32_t needle_ln, cons
  * @param pattern_ln uint64_t
  * @param failure uint16_t
  */
-void computeFailure(const unsigned char* pattern, uint64_t pattern_ln, uint16_t* failure)
+void computeFailure(const unsigned char* pattern, uint32_t pattern_ln, uint16_t* failure)
 {
-	uint16_t i = 0, j = 0;
+	uint32_t i = 0, j = 0;
 
 	for ( i = 1; i < pattern_ln; i++ )
 	{
