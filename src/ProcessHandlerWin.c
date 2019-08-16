@@ -763,7 +763,7 @@ BOOL openProcess(HANDLE* process, uint32_t pid)
 	(*process) = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 	if ((*process) == NULL)
 	{
-		printf("ERROR (%lu): OpenProcess %u failed\n", GetLastError(), pid);
+		printf("ERROR (%lx): OpenProcess %u failed\n", GetLastError(), pid);
 		return FALSE;
 	}
 //	GetExitCodeProcess(process, &lpExitCode);
