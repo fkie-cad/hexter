@@ -276,7 +276,7 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error (%lu): VirtualProtect at 0x%llx\n", last_error, (uint64_t) base_addr);
+		printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", last_error, (uint64_t) base_addr);
 		printError("VirtualProtect", last_error);
 	}
 
@@ -285,7 +285,7 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error (%lu): WriteProcessMemory %llu bytes at 0x%p\n", last_error, bytes_written, base_addr);
+		printf(" - Error (0x%lx): WriteProcessMemory %lu bytes at 0x%p\n", last_error, bytes_written, base_addr);
 		printError("WriteProcessMemory", last_error);
 	}
 
@@ -293,7 +293,7 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error (%lu): VirtualProtect at 0x%llx\n", last_error, (uint64_t) base_addr);
+		printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", last_error, (uint64_t) base_addr);
 		printError("VirtualProtect", last_error);
 	}
 
@@ -408,7 +408,7 @@ BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info,
 		s = VirtualProtectEx(process, info->BaseAddress, info->RegionSize, new_protect, old_protect);
 		if ( !s )
 		{
-			printf(" - Error (%lu): VirtualProtect at 0x%llx\n", GetLastError(), (uint64_t) info->BaseAddress);
+			printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", GetLastError(), (uint64_t) info->BaseAddress);
 			printError("VirtualProtect", GetLastError());
 			return FALSE;
 		}
@@ -506,7 +506,6 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 //	printf(" - s: %lu\n", s);
 	if ( s == 0 )
 	{
-		*file_name = NULL;
 		return FALSE;
 	}
 //	printf(" - f_path: %s\n", f_path);
@@ -620,7 +619,7 @@ size_t readProcessBlock(BYTE* base_addr, DWORD base_size, uint64_t base_off, HAN
 
 	if ( !s )
 	{
-		printf(" - Error (%lu): ReadProcessMemory %llu bytes at 0x%llx\n", GetLastError(), bytes_read, (uint64_t)base_addr + base_off);
+		printf(" - Error (0x%lx): ReadProcessMemory %lu bytes at 0x%llx\n", GetLastError(), bytes_read, (uint64_t)base_addr + base_off);
 		return 0;
 	}
 
@@ -763,7 +762,7 @@ BOOL openProcess(HANDLE* process, uint32_t pid)
 	(*process) = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 	if ((*process) == NULL)
 	{
-		printf("ERROR (%lu): OpenProcess %u failed\n", GetLastError(), pid);
+		printf("ERROR (0x%lx): OpenProcess %u failed\n", GetLastError(), pid);
 		return FALSE;
 	}
 //	GetExitCodeProcess(process, &lpExitCode);
@@ -780,7 +779,7 @@ BOOL openSnap(HANDLE* snap, uint32_t pid, DWORD dwFlags)
 	(*snap) = CreateToolhelp32Snapshot(dwFlags, pid);
 	if ( (*snap) == INVALID_HANDLE_VALUE)
 	{
-		printf("Error (%lu): CreateToolhelp32Snapshot\n", GetLastError());
+		printf("ERROR (0x%lx): CreateToolhelp32Snapshot\n", GetLastError());
 		return FALSE;
 	}
 	return TRUE;
@@ -793,7 +792,7 @@ BOOL openME(HANDLE* snap, MODULEENTRY32* me32)
 	if ( !Module32First((*snap), me32))
 	{
 		last_error = GetLastError();
-		printf("Error (%lu): Module32First", last_error);
+		printf("ERROR (0x%lx): Module32First", last_error);
 		return FALSE;
 	}
 	return TRUE;
