@@ -44,7 +44,7 @@ cmake --build . --config Release --target hexter
 ```
 Running
 ```bash
-buildWin.bat [/h]
+winBuild.bat [/h]
 ```
 will do all this in one rush.
   

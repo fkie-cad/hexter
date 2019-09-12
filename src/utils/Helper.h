@@ -16,11 +16,12 @@ void listFilesOfDir(char* path);
 
 // Numbers
 uint8_t countHexWidth64(uint64_t value);
+uint8_t countHexWidth32(uint32_t value);
 
 // project specific => Helper
-uint64_t normalizeOffset(uint64_t offset, uint8_t* remainder);
+size_t normalizeOffset(size_t offset, uint8_t* remainder);
 uint8_t getColSize();
-Bool confirmContinueWithNextRegion(char* name, uint64_t address);
+Bool confirmContinueWithNextRegion(char* name, size_t address);
 
 // Terminal
 void setAnsiFormat(char* format);

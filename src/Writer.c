@@ -57,7 +57,7 @@ uint32_t payloadParseByte(const char* arg, unsigned char** payload)
  * @param length
  * @return
  */
-uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, uint64_t length)
+uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, size_t length)
 {
 	int s;
 	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
@@ -157,7 +157,7 @@ uint32_t payloadParseDWord(const char* arg, unsigned char** payload)
 }
 
 /**
- * Parse the arg as a qword/uint64_t
+ * Parse the arg as a qword/size_t
  *
  * @param arg
  * @param payload
@@ -180,7 +180,7 @@ uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 	arg_ln = 8;  // 8 bytes
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
 
-	uint64_t temp;
+	size_t temp;
 	s = parseUint64(&arg[0], &temp, 16);
 	if ( s != 0 )
 		return 0;
@@ -296,13 +296,13 @@ uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
  * @param payload_ln
  * @param offset
  */
-void insert(char* file_path, unsigned char* payload, uint32_t payload_ln, uint64_t offset)
+void insert(char* file_path, unsigned char* payload, uint32_t payload_ln, size_t offset)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
 	size_t n = buf_ln;
 	FILE* fp;
-	uint64_t i, j;
+	size_t i, j;
 
 	if ( offset > file_size )
 	{
@@ -357,9 +357,9 @@ void insert(char* file_path, unsigned char* payload, uint32_t payload_ln, uint64
  * @param	file_path char*
  * @param	payload unsigned char* the bytes to write
  * @param	payload_ln uint32_t the length of the bytes to write
- * @param	offset uint64_t the offset to write the bytes at
+ * @param	offset size_t the offset to write the bytes at
  */
-void overwrite(char* file_path, unsigned char* payload, uint32_t payload_ln, uint64_t offset)
+void overwrite(char* file_path, unsigned char* payload, uint32_t payload_ln, size_t offset)
 {
 	FILE* fp;
 	// backup
@@ -403,16 +403,16 @@ void overwrite(char* file_path, unsigned char* payload, uint32_t payload_ln, uin
  * Delete bytes in file of the passed length.
  *
  * @param file_path
- * @param start uint64_t start offset of the deletion.
- * @param length uint64_t length of the bytes to delete.
+ * @param start size_t start offset of the deletion.
+ * @param length size_t length of the bytes to delete.
  */
-void deleteBytes(char* file_path, uint64_t start, uint64_t length)
+void deleteBytes(char* file_path, size_t start, size_t length)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
 	size_t n = buf_ln;
 	FILE* fp;
-	uint64_t offset;
+	size_t offset;
 
 	if ( start > file_size )
 	{

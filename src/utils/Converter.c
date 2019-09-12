@@ -45,7 +45,7 @@ int parseUint64(const char* arg, uint64_t* value, uint8_t base)
 		fprintf(stderr, "Error: %s could not be converted to a number: Not a number!\n", arg);
 		return 3;
 	}
-	if ( result == UINT64_MAX && err_no == ERANGE)
+	if ( result == UINT64_MAX && err_no == ERANGE )
 	{
 		fprintf(stderr, "Error: %s could not be converted to a number: Out of range!\n", arg);
 		return 4;

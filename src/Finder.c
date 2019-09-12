@@ -36,19 +36,19 @@ void Finder_initFailure(unsigned char* needle, uint32_t needle_ln)
  *
  * @param	needle unsigned char*
  * @param	needle_ln uint32_t
- * @param	offset uint64_t
- * @return	uint64_t the offset of the found needle or FIND_FAILURE, if not found
+ * @param	offset size_t
+ * @return	size_t the offset of the found needle or FIND_FAILURE, if not found
  */
-uint64_t find(const char* file_path, const unsigned char* needle, uint32_t needle_ln, uint64_t offset, uint64_t max_offset)
+size_t find(const char* file_path, const unsigned char* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
 {
-//	uint64_t n_found;
+//	size_t n_found;
 
 	uint16_t* failure;
 	failure = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
 //	failure = (uint16_t*) malloc(needle_ln*sizeof(uint16_t));
 	computeFailure(needle, needle_ln, failure);
 
-	uint64_t found = findNeedleInFile(file_path, needle, needle_ln, offset, max_offset);
+	size_t found = findNeedleInFile(file_path, needle, needle_ln, offset, max_offset);
 //	uint8_t remainder = 0;
 
 //	n_found = normalizeOffset(found, &remainder);
@@ -67,14 +67,14 @@ uint64_t find(const char* file_path, const unsigned char* needle, uint32_t needl
  *
  * @param needle unsigned char*
  * @param needle_ln uint32_t
- * @param offset uint64_t
+ * @param offset size_t
  * @return
  */
-uint64_t findNeedleInFile(const char* file_path, const unsigned char* needle, uint32_t needle_ln, uint64_t offset, uint64_t max_offset)
+size_t findNeedleInFile(const char* file_path, const unsigned char* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
 {
 //	printf("BLOCKSIZE_LARGE: %u\n",BLOCKSIZE_LARGE);
 	FILE* fi;
-	uint64_t found;
+	size_t found;
 
 	fi = fopen(file_path, "rb");
 	if ( !fi )
@@ -98,16 +98,16 @@ uint64_t findNeedleInFile(const char* file_path, const unsigned char* needle, ui
  * @param offset
  * @param failure
  * @param fi
- * @return	uint64_t the found offset or FIND_FAILURE
+ * @return	size_t the found offset or FIND_FAILURE
  */
-uint64_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, uint64_t offset, FILE* fi, uint64_t max_offset)
+size_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, size_t offset, FILE* fi, size_t max_offset)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const uint16_t buf_ln = BLOCKSIZE_LARGE;
 	size_t n = buf_ln;
 	size_t read_size = buf_ln;
-	uint64_t block_i, j;
-	uint64_t found = FIND_FAILURE;
+	size_t block_i, j;
+	size_t found = FIND_FAILURE;
 //	printf("findNeedleInFP(0x%lx, 0x%lx)\n", offset, max_offset);
 
 	j = 0;
@@ -144,11 +144,11 @@ uint64_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, uint64_
  * @param j
  * @param failure
  * @param n
- * @return	uint64_t the last search offset in the block.
+ * @return	size_t the last search offset in the block.
  */
-uint64_t findNeedleInBlock(const unsigned char* needle, uint32_t needle_ln, const unsigned char* buf, uint64_t* j, size_t n)
+size_t findNeedleInBlock(const unsigned char* needle, uint32_t needle_ln, const unsigned char* buf, size_t* j, size_t n)
 {
-	uint64_t i;
+	size_t i;
 
 	for ( i = 0; i < n; i++ )
 	{
@@ -173,10 +173,10 @@ uint64_t findNeedleInBlock(const unsigned char* needle, uint32_t needle_ln, cons
  * where the pattern is matched against itself.
  *
  * @param pattern unsigned char*
- * @param pattern_ln uint64_t
+ * @param pattern_ln size_t
  * @param failure uint16_t
  */
-void computeFailure(const unsigned char* pattern, uint64_t pattern_ln, uint16_t* failure)
+void computeFailure(const unsigned char* pattern, size_t pattern_ln, uint16_t* failure)
 {
 	uint16_t i = 0, j = 0;
 

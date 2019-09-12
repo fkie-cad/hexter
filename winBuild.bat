@@ -25,7 +25,9 @@ echo build_dir=%build_dir%
 echo buildTools=%buildTools%
 
 :build
+    echo #define Win%bitness% 1 > src/env.h
     cmd /k "mkdir %build_dir% & cd %build_dir% & %buildTools%"\VC\Auxiliary\Build\vcvars%bitness%.bat" & cmake .. -DCMAKE_BUILD_TYPE=%mode% -G "CodeBlocks - NMake Makefiles" & cmake --build . --config %mode% --target %target% & exit & cd .."
+    break > src/env.h
     exit /B 0
 
 :usage

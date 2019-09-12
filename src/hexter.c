@@ -27,10 +27,10 @@
 
 #define BINARYNAME ("hexter")
 
-uint64_t file_size;
+size_t file_size;
 char file_path[PATH_MAX];
-static uint64_t start;
-uint64_t length;
+static size_t start;
+size_t length;
 uint8_t clean_printing;
 static uint8_t skip_bytes;
 
@@ -84,6 +84,7 @@ static int run(const char payload_format, const char* raw_payload);
 
 static uint8_t keepStartInFile();
 static uint8_t keepLengthInFile();
+
 
 // TODO:
 // - highlight found part
@@ -254,8 +255,8 @@ void printHelp()
 	printf("Usage: ./%s [options] filename\n", BINARYNAME);
 	printf("Version: %s\n", vs);
 	printf("Options:\n");
-	printf(" * -s:uint64_t Startoffset. Default = 0.\n"
-		   " * -l:uint64_t Length of the part to display. Default = 50.\n"
+	printf(" * -s:size_t Startoffset. Default = 0.\n"
+		   " * -l:size_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n"
 		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)\n"
@@ -484,7 +485,7 @@ uint8_t isFormatArgOfType(char* arg, char* type)
 
 uint8_t hasValue(char* type, int i, int end_i)
 {
-	if ( i >= end_i - 1 )
+	if ( i >= end_i )
 	{
 		printf("INFO: Arg \"%s\" has no value! Skipped!\n", type);
 		return 0;
@@ -646,7 +647,7 @@ uint8_t parseType(const char* arg)
  * @param _length
  * @return int status info
  */
-HEXTER_API int printFile(char* _file_name, uint64_t _start, uint64_t _length)
+HEXTER_API int printFile(char* _file_name, size_t _start, size_t _length)
 {
 	initParameters();
 	expandFilePath(_file_name, file_path);
@@ -674,7 +675,7 @@ HEXTER_API int printFile(char* _file_name, uint64_t _start, uint64_t _length)
  * @param _lpt
  * @return int status info
  */
-HEXTER_API int printProcess(uint32_t _pid, uint64_t _start, uint64_t _length, int _lpm, int _lpx, int _lph, int _lpt)
+HEXTER_API int printProcess(uint32_t _pid, size_t _start, size_t _length, int _lpm, int _lpx, int _lph, int _lpt)
 {
 	initParameters();
 #ifdef _WIN32

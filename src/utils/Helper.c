@@ -206,13 +206,37 @@ uint8_t countHexWidth64(uint64_t value)
 }
 
 /**
+ * Count the width (string length) of a hex value representation of an uint.
+ *
+ * @param	value uint32_t the value
+ * @return	uint8_t the width
+ */
+uint8_t countHexWidth32(uint32_t value)
+{
+	uint8_t width = 16;
+	uint8_t t8;
+	uint16_t t16 = (uint16_t) (value >> 16u);
+	if ( t16 == 0 )
+	{
+		width -= 4;
+		t16 = (uint16_t) value;
+	}
+	t8 = (uint8_t) (t16 >> 8u);
+	if ( t8 == 0 )
+	{
+		width -= 2;
+	}
+	return width;
+}
+
+/**
  * Normalize a match a colsize value and fill the remainder.
  *
- * @param	offset uint64_t the offset
+ * @param	offset size_t the offset
  * @param	remainder uint8_t the remainder
  * @return
  */
-uint64_t normalizeOffset(uint64_t offset, uint8_t* remainder)
+size_t normalizeOffset(size_t offset, uint8_t* remainder)
 {
 	uint8_t col_size = getColSize();
 	*remainder = (offset % col_size);
@@ -241,7 +265,7 @@ uint8_t getColSize()
 	return col_size;
 }
 
-Bool confirmContinueWithNextRegion(char* name, uint64_t address)
+Bool confirmContinueWithNextRegion(char* name, size_t address)
 {
 	char input;
 	int counter = 0;

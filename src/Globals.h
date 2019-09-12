@@ -5,16 +5,16 @@
 #include <stddef.h>
 #include <limits.h>
 
+#include "env.h"
 #include "Bool.h"
 
-#if defined(__linux__) || defined(__linux) || defined(linux)
-	#define ENTER 10 // aka \n
-#endif
 #if defined(_WIN32)
 	#define ENTER 13 // aka \r
+#else
+	#define ENTER 10 // aka \n
 #endif
 
-#if defined(_WIN64)
+#if defined(Win64)
 	#define fseek(f, o, t) _fseeki64(f, o, t)
 #endif
 
@@ -45,11 +45,11 @@
 #define MAX_PAYLOAD_LN 512
 #define FIND_FAILURE UINT64_MAX
 
-extern uint64_t file_size;
+extern size_t file_size;
 extern char file_path[PATH_MAX];
 
-//extern uint64_t start;
-extern uint64_t length;
+//extern size_t start;
+extern size_t length;
 //extern uint8_t skip_bytes;
 
 //extern uint8_t type;
