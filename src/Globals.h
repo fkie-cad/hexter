@@ -9,9 +9,9 @@
 #include "Bool.h"
 
 #if defined(_WIN32)
-	#define ENTER 13 // aka \r
+	#define ENTER 0xd // aka \r
 #else
-	#define ENTER 10 // aka \n
+	#define ENTER 0xa // aka \n
 #endif
 
 #if defined(Win64)
