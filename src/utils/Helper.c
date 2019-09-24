@@ -277,11 +277,12 @@ Bool confirmContinueWithNextRegion(char* name, size_t address)
 
 	while ( 1 )
 	{
-#if defined(_WIN32)
 		input = _getch();
-#else
-		input = getch();
-#endif
+//#if defined(_WIN32)
+//		input = _getch();
+//#else
+//		input = getch();
+//#endif
 		if ( input == 'c' )
 			return true;
 		else if ( input == 'q' )

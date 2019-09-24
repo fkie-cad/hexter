@@ -660,7 +660,7 @@ void printProcessMemoryTableHeader()
 	printf("%-*s | %-*s | %-*s | %*s | %*s | %*s | %-*s\n",
 		map_entry_col_width[0]+2, "address", map_entry_col_width[0]+2, "size", map_entry_col_width[1], "perms", map_entry_col_width[2]+2, "offset",
 		map_entry_col_width[3], "dev", map_entry_col_width[4], "inode", map_entry_col_width[5], "name");
-	printf("-------------------------------------------------------------------------------------------\n");
+	printf("-------------------+--------------------+-------+------------+-------+----------+----------\n");
 }
 
 int printProcMapEntry(ProcMapsEntry* entry, uint32_t last_module_inode, size_t line_nr)
@@ -674,7 +674,7 @@ int printProcMapEntry(ProcMapsEntry* entry, uint32_t last_module_inode, size_t l
 			map_entry_col_width[0], entry->address, map_entry_col_width[0], entry->size, map_entry_col_width[1], entry->perms,
 			map_entry_col_width[2], entry->offset, map_entry_col_width[3], entry->dev, map_entry_col_width[4], entry->inode);
 
-	if ( entry->pathname && entry->pathname[0] != 0 )
+	if ( entry->pathname[0] != 0 )
 	{
 		getFileNameL(entry->pathname, &name);
 		printf("%s", name);
@@ -829,7 +829,6 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 
 		if ( find_f )
 		{
-			printf("Region Start Find\n");
 			found = findNeedleInProcessMemoryBlock(pid, entry.address, entry.size, base_off, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
 			{

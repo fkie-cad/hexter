@@ -48,6 +48,14 @@ char getch()
 }
 
 /**
+ * Read 1 character without echo.
+ */
+char _getch()
+{
+	return getch_(0);
+}
+
+/**
  * Read 1 character with echo.
  */
 char getche()

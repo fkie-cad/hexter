@@ -91,16 +91,16 @@ static uint8_t keepLengthInFile();
 //	 + hex
 //	 - ascii
 // + continuous find typing 'n'
-// - find and replace
+// - find and replace -fh ... -rh ..-
 // + overwrite with a number of fill bytes
 // - reversed payload, endianess option for hex and word payload
 // + align offset to 0x10, print spaces to fill col up
+// - improve search performance
 // + view processes
-//   + windows
 //   + linux
-//		- list running processes
+//		+ list running processes
 //	 - windows: offset bug +0x1000 from -s when printing ??
-//	 - 			get size of whole module, the region belongs to at length check
+//	 	- get size of whole module, the region belongs to at length check
 int main(int argc, char** argv)
 {
 	if ( argc < 2 )

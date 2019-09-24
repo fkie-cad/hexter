@@ -16,7 +16,7 @@ size_t getSize(const char* finame)
 
 	if ( !fi )
 	{
-		printf("File %s does not exist.\n", finame);
+		printf("File \"%s\" does not exist.\n", finame);
 		return 0;
 	}
 
