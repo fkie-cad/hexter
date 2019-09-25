@@ -87,7 +87,7 @@ void getFileNameL(char* file_path, char** file_name)
 /**
  * Extract the file_name out of a file_path.
  * Copying the found name into file_name.
- * Make sure, char[] has a capacity of PATH_MAX!
+ * Make sure, file_name char[] has a capacity of PATH_MAX!
  *
  * @param file_path char*
  * @param file_name char*
@@ -98,10 +98,15 @@ void getFileName(const char* file_path, char* file_name)
 	size_t file_name_ln;
 	size_t file_path_ln = strnlen(file_path, PATH_MAX);
 
-	if ( file_path_ln == 0 ) return;
+	if ( file_path_ln == 0 )
+	{
+		file_name[0] = 0;
+		return;
+	}
 
 	offset = getFileNameOffset(file_path);
 	file_name_ln = file_path_ln - offset;
+	if ( file_path_ln < offset ) file_name_ln = 0;
 	memcpy(file_name, &file_path[offset], file_name_ln);
 	file_name[file_name_ln] = 0;
 }
