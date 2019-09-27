@@ -2,6 +2,12 @@
 #define COMMON_FILEIO_H
 
 #include <stdint.h>
+#include "../env.h"
+
+#if defined(Win64)
+    #define fseek(f, o, t) _fseeki64(f, o, t)
+#endif
+//#define _chsize(fp, s) _chsize64(fp, s)
 
 size_t getSize(const char* finame);
 //size_t readBlock(const char* finame, size_t begin);
