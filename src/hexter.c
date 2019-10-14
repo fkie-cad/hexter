@@ -56,7 +56,7 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.3";
+static const char* vs = "1.5.4";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'

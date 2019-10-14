@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(Hexter VERSION 1.0.2 DESCRIPTION "A command line hex viewer." LANGUAGES C)
+project(Hexter VERSION 1.5.4 DESCRIPTION "A command line hex viewer." LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_FLAGS_DEBUG "${CMAKE_FLAGS_DEBUG} -Wall")
