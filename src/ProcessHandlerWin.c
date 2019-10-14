@@ -27,7 +27,7 @@ BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION
 BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
 BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
 size_t printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD base_size, unsigned char* buffer);
-void printError(LPTSTR lpszFunction, DWORD last_error);
+//void printError(LPTSTR lpszFunction, DWORD last_error);
 //BOOL getModule(size_t address, HANDLE snap, MODULEENTRY32* me32);
 size_t findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, const unsigned char* needle, uint32_t needle_ln);
 BOOL openSnapAndME(HANDLE* snap, MODULEENTRY32* me32, uint32_t pid, DWORD dwFlags);
@@ -276,8 +276,8 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", last_error, (size_t) base_addr);
-		printError("VirtualProtect", last_error);
+		printf(" - Error (0x%lx): VirtualProtect at 0x%p\n", last_error, base_addr);
+//		printError("VirtualProtect", last_error);
 	}
 
 	s = WriteProcessMemory(process, base_addr, payload, payload_ln, &bytes_written);
@@ -286,15 +286,15 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	{
 		last_error = GetLastError();
 		printf(" - Error (0x%lx): WriteProcessMemory %lu bytes at 0x%p\n", last_error, bytes_written, base_addr);
-		printError("WriteProcessMemory", last_error);
+//		printError("WriteProcessMemory", last_error);
 	}
 
 	s = VirtualProtectEx(process, base_addr, payload_ln, old_protect, &old_protect);
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", last_error, (size_t) base_addr);
-		printError("VirtualProtect", last_error);
+		printf(" - Error (0x%lx): VirtualProtect at 0x%p\n", last_error, base_addr);
+//		printError("VirtualProtect", last_error);
 	}
 
 	CloseHandle(process);
@@ -324,7 +324,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 	size_t base_off;
 	size_t found = FIND_FAILURE;
 
-	char file_name[PATH_MAX];
+	char file_name[PATH_MAX] = {0};
 
 	p_needle = needle;
 	p_needle_ln = needle_ln;
@@ -409,7 +409,7 @@ BOOL setUnflagedRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info,
 		if ( !s )
 		{
 			printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", GetLastError(), (size_t) info->BaseAddress);
-			printError("VirtualProtect", GetLastError());
+//			printError("VirtualProtect", GetLastError());
 			return FALSE;
 		}
 	}
@@ -497,7 +497,7 @@ BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION
 BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 {
 	const DWORD f_path_size = PATH_MAX;
-	char f_path[PATH_MAX];
+	char f_path[PATH_MAX] = {0};
 	DWORD s;
 //	printf("getRegionName()\n");
 
@@ -506,6 +506,7 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 //	printf(" - s: %lu\n", s);
 	if ( s == 0 )
 	{
+		file_name[0] = 0;
 		return FALSE;
 	}
 //	printf(" - f_path: %s\n", f_path);
@@ -813,35 +814,35 @@ void ProcessHandler_cleanUp(HANDLE snap, HANDLE process)
 #include <strsafe.h>
 #include <minwinbase.h>
 
-void printError(LPTSTR lpszFunction, DWORD last_error)
-{
-	// Retrieve the system error message for the last-error code
-
-	LPVOID lpMsgBuf;
-	LPVOID lpDisplayBuf;
-
-	FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_FROM_SYSTEM |
-			FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL,
-			last_error,
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			(LPTSTR) &lpMsgBuf,
-			0, NULL);
-
-	lpDisplayBuf = (LPVOID) LocalAlloc(LMEM_ZEROINIT,
-									   (lstrlen((LPCTSTR) lpMsgBuf) + lstrlen((LPCTSTR) lpszFunction) + 40) *
-									   sizeof(TCHAR));
-	StringCchPrintf((LPTSTR) lpDisplayBuf,
-					LocalSize(lpDisplayBuf) / sizeof(TCHAR),
-					TEXT("%s failed with error %d: %s"),
-					lpszFunction, last_error, lpMsgBuf);
-	printf("ERROR: %s\n", (LPCTSTR) lpDisplayBuf);
-
-	LocalFree(lpMsgBuf);
-	LocalFree(lpDisplayBuf);
-}
+//void printError(LPTSTR lpszFunction, DWORD last_error)
+//{
+//	// Retrieve the system error message for the last-error code
+//
+//	LPVOID lpMsgBuf;
+//	LPVOID lpDisplayBuf;
+//
+//	FormatMessage(
+//			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+//			FORMAT_MESSAGE_FROM_SYSTEM |
+//			FORMAT_MESSAGE_IGNORE_INSERTS,
+//			NULL,
+//			last_error,
+//			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+//			(LPTSTR) &lpMsgBuf,
+//			0, NULL);
+//
+//	lpDisplayBuf = (LPVOID) LocalAlloc(LMEM_ZEROINIT,
+//									   (lstrlen((LPCTSTR) lpMsgBuf) + lstrlen((LPCTSTR) lpszFunction) + 40) *
+//									   sizeof(TCHAR));
+//	StringCchPrintf((LPTSTR) lpDisplayBuf,
+//					LocalSize(lpDisplayBuf) / sizeof(TCHAR),
+//					TEXT("%s failed with error %d: %s"),
+//					lpszFunction, last_error, lpMsgBuf);
+//	printf("ERROR: %s\n", (LPCTSTR) lpDisplayBuf);
+//
+//	LocalFree(lpMsgBuf);
+//	LocalFree(lpDisplayBuf);
+//}
 
 int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb)
 {
@@ -864,6 +865,7 @@ Bool listProcessMemory(uint32_t pid)
 {
 	HANDLE process = NULL;
 	MEMORY_BASIC_INFORMATION info;
+	int w_rs = (sizeof(size_t) * 2) + 2;
 
 	if ( !openProcess(&process, pid) )
 		return false;
@@ -872,8 +874,8 @@ Bool listProcessMemory(uint32_t pid)
 	GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	wOldColorAttrs = csbiInfo.wAttributes;
 
-	printf("%-18s | %-18s | %10s | %-9s | %-11s | %-18s | %-18s | %s [| %s]\n",
-			"BaseAddress", "AllocationBase", "RegionSize", "State", "Type", "Protect", "AllocationProtect", "Name", "info");
+	printf("%-18s | %-18s | %*s | %-9s | %-11s | %-18s | %-18s | %s [| %s]\n",
+		   "BaseAddress", "AllocationBase", w_rs, "RegionSize", "State", "Type", "Protect", "AllocationProtect", "Name", "info");
 	printf("----------------------------------------------------------------------------------------------------------------------------------------\n");
 	iterateProcessMemory(process, &info, &printMemoryInfo);
 	printf("\n");
@@ -889,11 +891,12 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 	DWORD f_path_size = PATH_MAX;
 	const char* SEPARATOR = " | ";
 	int guard = 0, nocache = 0;
+	int w_rs = sizeof(size_t) * 2;
 
 	if ( !isAccessibleRegion(info) )
 		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
 
-	printf("0x%p | 0x%p | 0x%8llx | ", info->BaseAddress, info->AllocationBase, info->RegionSize);
+	printf("0x%p | 0x%p | 0x%*lx | ", info->BaseAddress, info->AllocationBase, w_rs, info->RegionSize);
 
 	printf("%-9s%s", getMemoryStateString(info->State), SEPARATOR);
 

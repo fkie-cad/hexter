@@ -1,6 +1,7 @@
 #ifndef HEXTER_SRC_GLOBALS_H
 #define HEXTER_SRC_GLOBALS_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <limits.h>
@@ -14,9 +15,10 @@
 	#define ENTER 0xa // aka \n
 #endif
 
-#if defined(Win64)
-	#define fseek(f, o, t) _fseeki64(f, o, t)
-#endif
+//#if defined(Win64)
+//	#define fseek(f, o, t) _fseeki64(f, o, t)
+//#endif
+//#define _chsize(fp, s) _chsize64(fp, s)
 
 #define DEBUG_PRINT_INFO 0
 #define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
