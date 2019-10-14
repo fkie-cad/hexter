@@ -1,14 +1,9 @@
-build32
-build64
-cmake-build-debug
-cmake-build-release
-build
+build*
+cmake-build-*
 venv/
 .idea
 tests/sources
-headerParser
 *.7z
-tests/compareResultToObjDump.c
 .cproject
 .project
 .settings/

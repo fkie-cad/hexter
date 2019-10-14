@@ -53,8 +53,8 @@ extern size_t length;
 //extern uint8_t skip_bytes;
 
 //extern uint8_t type;
-//extern const uint8_t TYPE_FILE;
-//extern const uint8_t TYPE_PID;
+//extern const uint8_t RUN_MODE_FILE;
+//extern const uint8_t RUN_MODE_PID;
 
 extern uint8_t print_col_mask;
 extern uint8_t print_offset_mask;

@@ -16,7 +16,7 @@ if not [%2]==[] set bitness=%2
 if not [%3]==[] set mode=%3
 if not [%4]==[] set buildTools=%4
 
-set build_dir=build%bitness%
+set build_dir=build\%bitness%
 
 echo target=%target%
 echo bitness=%bitness%
@@ -26,11 +26,11 @@ echo buildTools=%buildTools%
 
 :build
     echo #define Win%bitness% 1 > src/env.h
-    cmd /k "mkdir %build_dir% & cd %build_dir% & %buildTools%"\VC\Auxiliary\Build\vcvars%bitness%.bat" & cmake .. -DCMAKE_BUILD_TYPE=%mode% -G "CodeBlocks - NMake Makefiles" & cmake --build . --config %mode% --target %target% & exit & cd .."
+    cmd /k "mkdir %build_dir% & %buildTools%"\VC\Auxiliary\Build\vcvars%bitness%.bat" & cmake . -B%build_dir% -DCMAKE_BUILD_TYPE=%mode% -G "CodeBlocks - NMake Makefiles" & cmake --build %build_dir% --config %mode% --target %target% & exit"
     break > src/env.h
     exit /B 0
 
 :usage
-    @echo Usage: %0 [hexter/hexter_shared [32/64 [Debug/Release [buildTools]]]
+    @echo Usage: %0 [%target%/%target%_shared [32/64 [Debug/Release [buildTools]]]
     @echo Default: %0 [%target% %bitness% %mode% %buildTools%]
     exit /B 1

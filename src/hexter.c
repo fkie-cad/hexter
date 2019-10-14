@@ -51,9 +51,8 @@ Bool list_process_threads_f;
 int list_process_heaps_f;
 Bool list_running_processes_f;
 
-static const uint8_t TYPE_FILE = 1;
-static const uint8_t TYPE_PID = 2;
-static uint8_t type;
+typedef enum RunMode { RUN_MODE_NONE,  RUN_MODE_FILE, RUN_MODE_PID } RunMode;
+static RunMode run_mode;
 
 static int payload_arg_id;
 
@@ -87,9 +86,10 @@ static uint8_t keepLengthInFile();
 
 
 // TODO:
+// - unbind -lrp from dependencies
 // - highlight found part
 //	 + hex
-//	 - ascii
+//	 + ascii
 // + continuous find typing 'n'
 // - find and replace -fh ... -rh ..-
 // + overwrite with a number of fill bytes
@@ -128,13 +128,13 @@ int run(const char payload_format, const char* raw_payload)
 	uint32_t payload_ln = 0;
 	char* file_name = NULL;
 
-	if ( type == TYPE_FILE )
+	if ( run_mode == RUN_MODE_FILE )
 	{
 		file_size = getSize(file_path);
 		if ( file_size == 0 )
 			return 0;
 	}
-	else if ( type == TYPE_PID )
+	else if ( run_mode == RUN_MODE_PID )
 	{
 		s = parseUint32Auto(file_path, &pid);
 		if ( s != 0 )
@@ -170,9 +170,9 @@ int run(const char payload_format, const char* raw_payload)
 
 	if ( insert_f )
 		insert(file_path, payload, payload_ln, start);
-	else if ( overwrite_f && type == TYPE_FILE )
+	else if ( overwrite_f && run_mode == RUN_MODE_FILE )
 		overwrite(file_path, payload, payload_ln, start);
-	else if ( overwrite_f && type == TYPE_PID )
+	else if ( overwrite_f && run_mode == RUN_MODE_PID )
 		writeProcessMemory(pid, payload, payload_ln, start);
 
 	sanitizeParams(pid);
@@ -184,13 +184,13 @@ int run(const char payload_format, const char* raw_payload)
 	}
 
 	setPrintingStyle();
-	if ( type == TYPE_FILE )
+	if ( run_mode == RUN_MODE_FILE )
 	{
 		getFileNameL(file_path, &file_name);
 		printf("file: %s\n", file_name);
 		print(start, skip_bytes, payload, payload_ln);
 	}
-	else if ( type == TYPE_PID )
+	else if ( run_mode == RUN_MODE_PID )
 	{
 		printf("pid: %u\n", pid);
 		if ( list_process_memory_f )
@@ -239,23 +239,23 @@ void initParameters()
 	print_hex_mask = 2;
 	print_ascii_mask = 1;
 
-	type = TYPE_FILE;
+	run_mode = RUN_MODE_NONE;
 }
 
 void printUsage()
 {
-	printf("Usage: ./%s filename [options]\n", BINARYNAME);
-	printf("Usage: ./%s [options] filename\n", BINARYNAME);
+	printf("Usage: ./%s -file a/file [options]\n", BINARYNAME);
+	printf("Usage: ./%s [options] -pid 123\n", BINARYNAME);
 	printf("Version: %s\n", vs);
 }
 
 void printHelp()
 {
-	printf("Usage: ./%s filename [options]\n", BINARYNAME);
-	printf("Usage: ./%s [options] filename\n", BINARYNAME);
-	printf("Version: %s\n", vs);
+	printUsage();
 	printf("Options:\n");
-	printf(" * -s:size_t Startoffset. Default = 0.\n"
+	printf(" * -file:string A file name to show the hex source of.\n"
+		   " * -pid:size_t A process id (in hex or dec) to show the hex source of. Pass 0 for your own process.\n"
+		   " * -s:size_t Startoffset. Default = 0.\n"
 		   " * -l:size_t Length of the part to display. Default = 50.\n"
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n"
@@ -267,8 +267,7 @@ void printHelp()
 		   "     A fill byte has the length of -l.\n"
 //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
 		   " * -d Delete -l bytes from offset -s. (File mode only.)\n"
-		   " * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'a/file/name'.\n"
-		   " * -pid only.\n"
+		   " * -pid only options:\n"
 		   " * * -lpx List whole process memory layout.\n"
 		   " * * -lpm List all process modules.\n"
 		   " * * -lpt List all process threads.\n"
@@ -281,11 +280,12 @@ void printHelp()
 		   FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
 	);
 	printf("\n");
-	printf("Example: ./%s path/to/a.file -s 100 -l 128 -x\n", BINARYNAME);
-	printf("Example: ./%s path/to/a.file -ih dead -s 0x100\n", BINARYNAME);
-	printf("Example: ./%s path/to/a.file -oh 0bea -s 0x100\n", BINARYNAME);
-	printf("Example: ./%s path/to/a.file -fh f001 -s 0x100\n", BINARYNAME);
-	printf("Example: ./%s path/to/a.file -d -s 0x100 -l 0x8\n", BINARYNAME);
+	printf("Example: ./%s -file path/to/a.file -s 100 -l 128 -x\n", BINARYNAME);
+	printf("Example: ./%s -file path/to/a.file -ih dead -s 0x100\n", BINARYNAME);
+	printf("Example: ./%s -file path/to/a.file -oh 0bea -s 0x100\n", BINARYNAME);
+	printf("Example: ./%s -file path/to/a.file -fh f001 -s 0x100\n", BINARYNAME);
+	printf("Example: ./%s -file path/to/a.file -d -s 0x100 -l 0x8\n", BINARYNAME);
+	printf("Example: ./%s -pid 1234 -s 0x5000 -lpm\n", BINARYNAME);
 	printf("\n");
 	printf("In continuous mode press ENTER to continue, 'n' to find next or 'q' to quit.\n");
 }
@@ -293,7 +293,7 @@ void printHelp()
 void parseArgs(int argc, char** argv)
 {
 	int start_i = 1;
-	int end_i = argc - 1;
+	int end_i = argc;
 	int i, s;
 	uint8_t length_found = 0;
 	const char* source = NULL;
@@ -304,15 +304,16 @@ void parseArgs(int argc, char** argv)
 		exit(0);
 	}
 
-	if ( argv[1][0] != '-' )
-	{
-		source = argv[1];
-		start_i = 2;
-		end_i = argc;
-	}
+//	if ( argv[1][0] != '-' )
+//	{
+//		source = argv[1];
+//		start_i = 2;
+//		end_i = argc;
+//	}
 
 	for ( i = start_i; i < end_i; i++ )
 	{
+		printf("%d : %s\n", i, argv[i]);
 		if ( argv[i][0] != '-' )
 			break;
 
@@ -359,6 +360,24 @@ void parseArgs(int argc, char** argv)
 		else if ( isArgOfType(argv[i], "-lrp") )
 		{
 			list_running_processes_f = true;
+		}
+		else if ( isArgOfType(argv[i], "-file") )
+		{
+			if ( hasValue("-file", i, end_i) )
+			{
+				source = argv[i + 1];
+				run_mode = RUN_MODE_FILE;
+				i++;
+			}
+		}
+		else if ( isArgOfType(argv[i], "-pid") )
+		{
+			if ( hasValue("-pid", i, end_i) )
+			{
+				source = argv[i + 1];
+				run_mode = RUN_MODE_PID;
+				i++;
+			}
 		}
 		else if ( isArgOfType(argv[i], "-s") )
 		{
@@ -419,7 +438,7 @@ void parseArgs(int argc, char** argv)
 		{
 			if ( hasValue("-t", i, end_i) )
 			{
-				type = parseType(argv[i+1]);
+				run_mode = parseType(argv[i + 1]);
 				i++;
 			}
 		}
@@ -427,6 +446,13 @@ void parseArgs(int argc, char** argv)
 		{
 			printf("INFO: Unknown arg type \"%s\"\n", argv[i]);
 		}
+	}
+
+	if ( run_mode == RUN_MODE_NONE )
+	{
+//		printf("ERROR: You have to specify either a -file or a -pid!\n");
+		printUsage();
+		exit(0);
 	}
 
 	if ( (find_f + overwrite_f + insert_f + delete_f) > 1 )
@@ -441,16 +467,16 @@ void parseArgs(int argc, char** argv)
 		exit(0);
 	}
 
-	if ( type == TYPE_PID && (insert_f + delete_f) > 0 )
+	if ( run_mode == RUN_MODE_PID && (insert_f + delete_f) > 0 )
 	{
 		printf("ERROR: Inserting or deleting is not supported in process mode!\n");
 		exit(0);
 	}
 
-	if ( start_i == 1 )
-		source = argv[i];
+//	if ( start_i == 1 )
+//		source = argv[i];
 
-	if ( type == TYPE_FILE )
+	if ( run_mode == RUN_MODE_FILE )
 		expandFilePath(source, file_path);
 	else
 		snprintf(file_path, PATH_MAX, "%s", source);
@@ -517,9 +543,9 @@ void sanitizeParams(uint32_t pid)
 
 	uint8_t info_line_break = 0;
 	// check start offset
-	if ( type == TYPE_FILE )
+	if ( run_mode == RUN_MODE_FILE )
 		info_line_break = keepStartInFile();
-	else if ( type == TYPE_PID )
+	else if ( run_mode == RUN_MODE_PID )
 		info_line_break = makeStartAndLengthHitAccessableMemory(pid, &start);
 
 	// normalize start offset to block size
@@ -531,9 +557,9 @@ void sanitizeParams(uint32_t pid)
 	}
 
 	// check length
-	if ( type == TYPE_FILE )
+	if ( run_mode == RUN_MODE_FILE )
 		info_line_break = keepLengthInFile();
-//	else if ( type == TYPE_PID )
+//	else if ( type == RUN_MODE_PID )
 //		info_line_break = keepLengthInModule(pid);
 
 	if ( length == 0 )
@@ -629,13 +655,13 @@ uint32_t parsePayload(const char format, const char* value, unsigned char** payl
 uint8_t parseType(const char* arg)
 {
 	if ( strncmp(arg, "file", 10) == 0 )
-		return TYPE_FILE;
+		return RUN_MODE_FILE;
 	else if ( strncmp(arg, "pid", 10) == 0 )
-		return TYPE_PID;
+		return RUN_MODE_PID;
 	else
 	{
 		printf("INFO: Could not parse type. Setting it to 'file'!\n");
-		return TYPE_FILE;
+		return RUN_MODE_FILE;
 	}
 }
 
@@ -652,7 +678,7 @@ HEXTER_API int printFile(char* _file_name, size_t _start, size_t _length)
 	initParameters();
 	expandFilePath(_file_name, file_path);
 
-	type = TYPE_FILE;
+	run_mode = RUN_MODE_FILE;
 	start = _start;
 	length = _length;
 
@@ -684,7 +710,7 @@ HEXTER_API int printProcess(uint32_t _pid, size_t _start, size_t _length, int _l
 	snprintf(file_path, PATH_MAX, "%lu", _pid);
 #endif
 
-	type = TYPE_PID;
+	run_mode = RUN_MODE_PID;
 	start = _start;
 	length = _length;
 
