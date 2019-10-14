@@ -26,6 +26,12 @@ $ cmake --build . [--config Release] --target hexter
 "-DCMAKE_BUILD_TYPE=Release" on the other hand is only meaningful to Linux.  
 "Release" will build with -Ofast.  
 
+Running
+```bash
+./linuxBuild.bat [-h]
+```
+will do all this in one rush.
+
 ### CMake on Windows and bitness using NMake ###
 Since keeping control of the bitness of the built program seems to be complicated on Windows, using the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX" is advised, if you plan to build for a different bitness than your actual OS.  
 Alternatively running
@@ -66,8 +72,8 @@ On some systems this did nonetheless build 64-bit binaries, even though the 32 b
 
 ## USAGE ##
 ```bash
-$ ./hexter a/file/name [options]
-$ ./hexter [options] a/file/name
+$ ./hexter [options] -file a/file/name [options]
+$ ./hexter [options] -pid xx [options] 
 ```
 Optional Parameters:
  * -s:uint64_t Start offset in hex or dec. Default = 0x00.
@@ -108,27 +114,32 @@ The length value will be padded to fit a block size in continuous mode.
 Examples:  
 Print 100 bytes from offset 20 in hex only style.
 ```bash
-$ ./hexter a/file/name -s 20 -l 100 -x
+$ ./hexter -file a/file/name -s 20 -l 100 -x
 ```
 
 Insert bytes at offset 0x20 with 0xdead0bea
 ```bash
-$ ./hexter a/file/name -s 0x20 -ih dead0bea
+$ ./hexter -file a/file/name -s 0x20 -ih dead0bea
 ```
 
 Overwrite dword at offset 0x20 with 0xdead0bea
 ```bash
-$ ./hexter a/file/name -s 0x20 -od dead0bea
+$ ./hexter -file a/file/name -s 0x20 -od dead0bea
 ```
 
 Find ascii string "PE"
 ```bash
-$ ./hexter a/file/name -fa PE
+$ ./hexter -file a/file/name -fa PE
 ```
 
 Delete 16 bytes from offset 16
 ```bash
-$ ./hexter a/file/name -d -s 16 -l 16
+$ ./hexter -file a/file/name -d -s 16 -l 16
+```
+
+Print my process (0) and a list of its modules
+```bash
+$ ./hexter -pid 0 -lpm
 ```
 
 ## TESTS ##
