@@ -5,7 +5,7 @@ Compilable under Linux and Windows.
 
 ## Version ##
 1.5.4  
-Last changed: 2019.10.14
+Last changed: 2019.10.16
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  
@@ -100,7 +100,7 @@ Optional Parameters:
    * -lpt List all process threads.
    * -lph List all process heaps.
    * -lphb List all process heaps and its blocks.
-   * -lrp List all running processes.
+   * -lrp List all running processes. Pass any pid or zero to get it running.
  * -b Force breaking, not continuous mode and print just one block.
  * -p For a plain, not styled text output. 
  * -h Print this.
@@ -111,7 +111,7 @@ Quit with "q".
 If searching something in continuous mode, type "n" to find next occurrence.  
 The length value will be padded to fit a block size in continuous mode.
 
-Examples:  
+### EXAMPLES ###
 Print 100 bytes from offset 20 in hex only style.
 ```bash
 $ ./hexter -file a/file/name -s 20 -l 100 -x

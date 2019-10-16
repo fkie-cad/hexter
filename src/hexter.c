@@ -80,6 +80,7 @@ static uint32_t parsePayload(const char format, const char* value, unsigned char
 static uint8_t parseType(const char* arg);
 
 static int run(const char payload_format, const char* raw_payload);
+void cleanUp(unsigned char* payload);
 
 static uint8_t keepStartInFile();
 static uint8_t keepLengthInFile();
@@ -193,6 +194,12 @@ int run(const char payload_format, const char* raw_payload)
 	else if ( run_mode == RUN_MODE_PID )
 	{
 		printf("pid: %u\n", pid);
+		if ( list_running_processes_f )
+		{
+			listRunningProcesses();
+			cleanUp(payload);
+			return 0;
+		}
 		if ( list_process_memory_f )
 			listProcessMemory(pid);
 		if ( list_process_modules_f )
@@ -201,15 +208,18 @@ int run(const char payload_format, const char* raw_payload)
 			listProcessThreads(pid);
 		if ( list_process_heaps_f )
 			listProcessHeaps(pid, list_process_heaps_f);
-		if ( list_running_processes_f )
-			listRunningProcesses();
 		printProcessRegions(pid, start, skip_bytes, payload, payload_ln);
 	}
 
-	if ( payload != NULL )
-		free(payload);
+	cleanUp(payload);
 
 	return 0;
+}
+
+void cleanUp(unsigned char* payload)
+{
+	if ( payload != NULL )
+		free(payload);
 }
 
 void initParameters()
@@ -273,7 +283,7 @@ void printHelp()
 		   " * * -lpt List all process threads.\n"
 		   " * * -lph List all process heaps.\n"
 		   " * * -lphb List all process heaps and its blocks.\n"
-		   " * * -lrp List all running processes.\n"
+		   " * * -lrp List all running processes. Pass any pid or zero to get it running.\n"
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
@@ -313,7 +323,6 @@ void parseArgs(int argc, char** argv)
 
 	for ( i = start_i; i < end_i; i++ )
 	{
-		printf("%d : %s\n", i, argv[i]);
 		if ( argv[i][0] != '-' )
 			break;
 
