@@ -2,14 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 project(Hexter VERSION 1.5.4 DESCRIPTION "A command line hex viewer." LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_FLAGS_DEBUG "${CMAKE_FLAGS_DEBUG} -Wall")
-set(CMAKE_FLAGS_RELEASE "${CMAKE_FLAGS_RELEASE}")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 if (UNIX)
-	set(CMAKE_FLAGS_DEBUG "${CMAKE_FLAGS_DEBUG} -pedantic -Werror=return-type")
+	set(CMAKE_FLAGS_DEBUG "${CMAKE_FLAGS_DEBUG} -Wall -pedantic -Werror=return-type")
 	set(CMAKE_FLAGS_RELEASE "${CMAKE_FLAGS_RELEASE} -fno-builtin -Werror=return-type")
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pedantic -Werror=return-type")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -pedantic -Werror=return-type")
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fno-builtin -Werror=return-type")
 
 	set(CMAKE_FLAGS_DEBUG "${CMAKE_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
@@ -27,10 +23,11 @@ if (WIN32)
 	IF (CMAKE_CL_32)
 		SET(CMAKE_EXE_LINKER_FLAGS "/SAFESEH ${CMAKE_EXE_LINKER_FLAGS}")
 	ENDIF (CMAKE_CL_32)
-
+	
 	message("CMAKE_C_FLAGS is ${CMAKE_C_FLAGS_RELEASE}")
 	message("CMAKE_EXE_LINKER_FLAGS is ${CMAKE_EXE_LINKER_FLAGS}")
 endif (WIN32)
+
 
 message("CMAKE_FLAGS_DEBUG : ${CMAKE_FLAGS_DEBUG}")
 message("CMAKE_C_FLAGS_DEBUG} : ${CMAKE_C_FLAGS_DEBUG}")
