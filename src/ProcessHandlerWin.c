@@ -1026,7 +1026,7 @@ Bool listProcessHeaps(uint32_t pid, int type)
 	printf(" : [flags | heap id | pid]\n");
 	do
 	{
-		printf("Heap: %s | 0x%llx | %lu\n", getHLFlagString(hl.dwFlags), hl.th32HeapID, hl.th32ProcessID);
+		printf("Heap: %s | 0x%p | %lu\n", getHLFlagString(hl.dwFlags), (void*)hl.th32HeapID, hl.th32ProcessID);
 
 		if ( type == 2 )
 			listProcessHeapBlocks(pid, hl.th32HeapID);
