@@ -1021,12 +1021,13 @@ Bool listProcessHeaps(uint32_t pid, int type)
 	{
 		return false;
 	}
-
+	
 	printf("List of Heaps:\n");
-	printf(" : [flags | heap id | pid]\n");
+	printf("%-13s | %-*s | %-s\n",  "flags", (sizeof(SIZE_T)*2+2), "heap id", "pid");
+	printf("------------------------------------------------\n");
 	do
 	{
-		printf("Heap: %s | 0x%p | %lu\n", getHLFlagString(hl.dwFlags), (void*)hl.th32HeapID, hl.th32ProcessID);
+		printf("%-13s | 0x%p | %lu\n", getHLFlagString(hl.dwFlags), (void*)hl.th32HeapID, hl.th32ProcessID);
 
 		if ( type == 2 )
 			listProcessHeapBlocks(pid, hl.th32HeapID);
