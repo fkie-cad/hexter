@@ -285,7 +285,7 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error (0x%lx): WriteProcessMemory %lu bytes at 0x%p\n", last_error, bytes_written, base_addr);
+		printf(" - Error (0x%lx): WriteProcessMemory %llu bytes at 0x%p\n", last_error, bytes_written, base_addr);
 //		printError("WriteProcessMemory", last_error);
 	}
 
@@ -436,7 +436,7 @@ BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsi
 //	printf("file_name: %s\n", *file_name);
 	if ( last_base != info->AllocationBase )
 	{
-		if ( !confirmContinueWithNextRegion(file_name, info->AllocationBase) )
+		if ( !confirmContinueWithNextRegion(file_name, (uintptr_t) info->AllocationBase) )
 			return FALSE;
 	}
 	return TRUE;
@@ -525,8 +525,7 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
  * @param base_off uint32_t base offset in module to start at printing
  * @return 0 if end of block is reached, 1 if forced to quit
  */
-int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T size, size_t found,
-							 char* reg_name)
+int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T size, size_t found, char* reg_name)
 {
 	size_t n_size = length;
 	unsigned char buffer[BLOCKSIZE_LARGE] = {0};
@@ -620,7 +619,7 @@ size_t readProcessBlock(BYTE* base_addr, DWORD base_size, size_t base_off, HANDL
 
 	if ( !s )
 	{
-		printf(" - Error (0x%lx): ReadProcessMemory %lu bytes at 0x%llx\n", GetLastError(), bytes_read, (size_t)base_addr + base_off);
+		printf(" - Error (0x%lx): ReadProcessMemory %llu bytes at 0x%llx\n", GetLastError(), bytes_read, (size_t)base_addr + base_off);
 		return 0;
 	}
 
