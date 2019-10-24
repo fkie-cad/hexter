@@ -3,24 +3,28 @@
 target=hexter
 mode=Release
 
-if [[ ! -z "$1" && $1 == "-h" ]]
+if [[ -n "$1" && $1 == "-h" ]]
 then
 	echo "Usage: $0 [${target} [Debug/Release]]"
-  echo "Default: $0 [${target} ${mode}]"
-  exit
+	echo "Default: $0 [${target} ${mode}]"
+	exit
 fi
 
-if [ ! -z "$1" ]
+if [ -n "$1" ]
 then
     target=$1
 fi
 
-if [ ! -z "$2" ]
+if [ -n "$2" ]
 then
     mode=$2
 fi
 
 build_dir=build
+if [[ ${mode} == "Debug" ]]
+then
+	build_dir=build/debug
+fi
 
 echo "target: "${target}
 echo "mode: "${mode}
