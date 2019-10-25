@@ -13,62 +13,22 @@ Last changed: 2019.10.16
 
 ## BUILD ##
 
-### Building with cmake (Cross OS) ###
-Using a build directory for a clean layout:
-
-```bash
-$ mkdir build
-$ cd build
-$ cmake .. -DCMAKE_BUILD_TYPE=Release
-$ cmake --build . [--config Release] --target hexter
-```
-"--config Release" (without the enclosing "[]") is needed just for Windows to build in Release mode. It seems not to bother the Linux build if left there.  
-"-DCMAKE_BUILD_TYPE=Release" on the other hand is only meaningful to Linux.  
-"Release" will build with -Ofast.  
-
+### Linux ###
 Running
 ```bash
-./linuxBuild.bat [-h]
+$ ./linuxBuild.sh [-h]
 ```
-will do all this in one rush.
 
-### CMake on Windows and bitness using NMake ###
-Since keeping control of the bitness of the built program seems to be complicated on Windows, using the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX" is advised, if you plan to build for a different bitness than your actual OS.  
-Alternatively running
+### MsBuild & Windows & cmake ###
 ```bash
-"C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsXX.bat"
+$ winBuild.bat [/h]
 ```
-in a normal terminal, where the XX (in vcvarsXX.bat) is 32 or 64, should do the same trick.
-Either way will set the necessary environment variables correctly.
+The correct path to your build tools may be passed as a parameter or just changed in the script itself.
 
-Then you may simply run:
+### DLL : MsBuild & Windows & cmake ### 
 ```bash
-$ mkdir build
-$ cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - NMake Makefiles"
-cmake --build . --config Release --target hexter
+$ winBuild.bat hexter_shared [64 Release]
 ```
-Running
-```bash
-winBuild.bat [/h]
-```
-will do all this in one rush.
-  
-
-### CMake & msbuild mix using vcxproj files ###
-Run the appropriate "x86/x64 Native Tools Command Prompt for VS XXXX".
-
-Use cmake for creating .vcxproj without Visual Studio:
-```bash
-$ mkdir build
-$ cd build
-$ cmake .. -G "Visual Studio 16 2019 Win64"  
-$ msbuild /p:PlatformToolset=v160 /p:Platform=x64 /p:Configuration=Release hexter.vcxproj
-```
-The version of VisualStudio and the PlatformToolset should be adjusted to your installation.  
-For a 32-bit (x86) build, delete the "Win64" part in the third line and change to x32 in the fourth line.  
-Change "Release" to "Debug" in the fourth line for a debug build.  
-On some systems this did nonetheless build 64-bit binaries, even though the 32 bit flags were set.
 
 ## USAGE ##
 ```bash
