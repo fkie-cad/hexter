@@ -873,8 +873,8 @@ Bool listProcessMemory(uint32_t pid)
 	GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	wOldColorAttrs = csbiInfo.wAttributes;
 
-	printf("%-18s | %-18s | %*s | %-9s | %-11s | %-18s | %-18s | %s [| %s]\n",
-		   "BaseAddress", "AllocationBase", w_rs, "RegionSize", "State", "Type", "Protect", "AllocationProtect", "Name", "info");
+	printf("%-*s | %-*s | %*s | %-9s | %-11s | %-18s | %-18s | %s [| %s]\n",
+		   w_rs, "Address", w_rs, "Base", w_rs, "Size", "State", "Type", "Protect", "AllocationProtect", "Name", "info");
 	printf("----------------------------------------------------------------------------------------------------------------------------------------\n");
 	iterateProcessMemory(process, &info, &printMemoryInfo);
 	printf("\n");
