@@ -17,6 +17,7 @@ if not [%3]==[] set mode=%3
 if not [%4]==[] set buildTools=%4
 
 set build_dir=build\%bitness%
+if [%mode%]==[Debug] set build_dir=build\debug\%bitness%
 
 echo target=%target%
 echo bitness=%bitness%

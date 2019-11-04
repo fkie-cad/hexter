@@ -7,3 +7,4 @@ tests/sources
 .cproject
 .project
 .settings/
+updateBin.bat
