@@ -303,7 +303,7 @@ void printHelp()
 void parseArgs(int argc, char** argv)
 {
 	int start_i = 1;
-	int end_i = argc;
+	int end_i = argc - 1;
 	int i, s;
 	uint8_t length_found = 0;
 	const char* source = NULL;
@@ -314,14 +314,7 @@ void parseArgs(int argc, char** argv)
 		exit(0);
 	}
 
-//	if ( argv[1][0] != '-' )
-//	{
-//		source = argv[1];
-//		start_i = 2;
-//		end_i = argc;
-//	}
-
-	for ( i = start_i; i < end_i; i++ )
+	for ( i = start_i; i < argc; i++ )
 	{
 		if ( argv[i][0] != '-' )
 			break;
@@ -440,14 +433,6 @@ void parseArgs(int argc, char** argv)
 			{
 				find_f = 1;
 				payload_arg_id = i;
-				i++;
-			}
-		}
-		else if ( isArgOfType(argv[i], "-t") )
-		{
-			if ( hasValue("-t", i, end_i) )
-			{
-				run_mode = parseType(argv[i + 1]);
 				i++;
 			}
 		}

@@ -18,7 +18,7 @@
 
 typedef int (*MemInfoCallback)(HANDLE, MEMORY_BASIC_INFORMATION*);
 
-size_t getModuleSize(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process);
+size_t getModuleSize(unsigned char* p, MEMORY_BASIC_INFORMATION info, HANDLE process);
 size_t readProcessBlock(BYTE* base_addr, DWORD base_size, size_t base_off, HANDLE process, unsigned char* block);
 BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char* file_name, int print_s, PVOID last_base);
 BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
@@ -154,7 +154,9 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, size_t* start)
 BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length)
 {
 	DWORD base_off = start - (size_t) info->BaseAddress;
-	size_t module_size = getModuleSize(p, info, process);
+	size_t module_size = getModuleSize(p, *info, process);
+	if ( module_size == 0 )
+		return FALSE;
 	
 	if ( base_off + *length > module_size )
 	{
@@ -173,22 +175,22 @@ BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE
  * @param process 
  * @return 
  */
-size_t getModuleSize(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process)
+size_t getModuleSize(unsigned char* p, MEMORY_BASIC_INFORMATION info, HANDLE process)
 {
-	size_t module_size = info->RegionSize;
-	size_t module_base = (uintptr_t) info->AllocationBase;
+	size_t module_size = info.RegionSize;
+	size_t module_base = (uintptr_t) info.AllocationBase;
 
-	for ( p += info->RegionSize; // skip one region, cause it's already handled
-		  VirtualQueryEx(process, p, info, sizeof(*info)) == sizeof(*info);
-		  p += info->RegionSize )
+	for ( p += info.RegionSize; // skip one region, cause it's already handled
+		  VirtualQueryEx(process, p, &info, sizeof(info)) == sizeof(info);
+		  p += info.RegionSize )
 	{
-		if ( info->Protect == PAGE_NOACCESS || info->Protect == 0 )
+		if ( info.Protect == PAGE_NOACCESS || info.Protect == 0 )
 			continue;
 
-		if ( module_base != (uintptr_t) info->AllocationBase )
+		if ( module_base != (uintptr_t) info.AllocationBase )
 			break;
 
-		module_size += info->RegionSize;
+		module_size += info.RegionSize;
 	}
 
 	return module_size;
@@ -373,6 +375,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 
 	while ( s )
 	{
+		old_protect = 0;
 		setRegionProtection(process, &info, PAGE_READONLY, &old_protect);
 
 		if ( find_f )
@@ -406,7 +409,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 			break;
 
 		if ( print_s == 1 )
-			printModuleRegionInfo(&info, file_name, NULL, NULL);
+			printModuleRegionInfo(&info, file_name, info_p, process);
 		last_base = info.AllocationBase;
 		base_off = 0;
 	}
@@ -419,7 +422,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 
 void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name, unsigned char* p, HANDLE process)
 {
-	size_t module_size = getModuleSize(p, info, process);
+	size_t module_size = getModuleSize(p, *info, process);
 	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) ((uintptr_t) info->AllocationBase + module_size));
 //	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
 }
@@ -427,6 +430,16 @@ void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name
 BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect)
 {
 	BOOL s;
+	
+//	if ( info->Protect == new_protect || *old_protect == new_protect )
+//	{
+//		*old_protect = new_protect;
+//		return TRUE;
+//	}
+	
+//	if ( info->Type == MEM_PRIVATE )
+//		return TRUE;
+	
 //	if ( strncmp(getProtectString(info->Protect), "None", 6) == 0 )
 	{
 		s = VirtualProtectEx(process, info->BaseAddress, info->RegionSize, new_protect, old_protect);
