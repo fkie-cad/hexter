@@ -19,12 +19,13 @@
 typedef int (*MemInfoCallback)(HANDLE, MEMORY_BASIC_INFORMATION*);
 
 size_t getModuleSize(unsigned char* p, MEMORY_BASIC_INFORMATION info, HANDLE process);
-size_t readProcessBlock(BYTE* base_addr, DWORD base_size, size_t base_off, HANDLE process, unsigned char* block);
+size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, size_t n_size, HANDLE process,
+						unsigned char* block);
 BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char* file_name, int print_s, PVOID last_base);
 BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
 BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
 BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
-size_t printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD base_size, unsigned char* buffer);
+size_t printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_size, unsigned char* buffer);
 size_t findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, const unsigned char* needle, uint32_t needle_ln);
 BOOL openSnapAndME(HANDLE* snap, MODULEENTRY32* me32, uint32_t pid, DWORD dwFlags);
 BOOL openSnap(HANDLE* snap, uint32_t pid, DWORD dwFlags);
@@ -43,7 +44,7 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info);
 int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb);
 char* getMemoryStateString(DWORD state);
 char* getMemoryTypeString(DWORD type);
-int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T size, size_t found, char* reg_name);
+int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, char* reg_name);
 BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char* info_p);
 BOOL getRegionName(HANDLE process, PVOID base, char* file_name);
 BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
@@ -562,15 +563,15 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
  * @param base_off uint32_t base offset in module to start at printing
  * @return 0 if end of block is reached, 1 if forced to quit
  */
-int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T size, size_t found, char* reg_name)
+int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, char* reg_name)
 {
-	size_t n_size = length;
+	size_t n_size = 0;
 	unsigned char buffer[BLOCKSIZE_LARGE] = {0};
 	char input;
 	uint8_t skip_bytes;
 	int s = 0;
 
-	n_size = printMemoryBlock(process, base_addr, base_off, size, buffer);
+	n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
 	base_off += n_size;
 
 	if ( !continuous_f )
@@ -581,10 +582,10 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 		input = _getch();
 
 		if ( input == ENTER )
-			n_size = printMemoryBlock(process, base_addr, base_off, size, buffer);
+			n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
 		else if ( find_f && input == 'n' )
 		{
-			found = findNeedleInProcessMemoryBlock(base_addr, size, found + p_needle_ln, process, p_needle, p_needle_ln);
+			found = findNeedleInProcessMemoryBlock(base_addr, region_size, found + p_needle_ln, process, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
 			{
 				s = 0;
@@ -597,7 +598,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 			skip_bytes = 0;
 
 			printf("\n");
-			n_size = printMemoryBlock(process, base_addr, base_off, size, buffer);
+			n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
 		}
 		else if ( input == 'q' )
 		{
@@ -621,14 +622,35 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
  * @return
  */
 size_t
-printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD base_size, unsigned char* buffer)
+printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_size, unsigned char* buffer)
 {
-	size_t n_size = readProcessBlock(base_addr, base_size, base_off, process, buffer);
-	uint8_t offset_width = countHexWidth64((size_t)base_addr+base_size);
-	if ( n_size )
-		printLine(buffer, (size_t)base_addr + base_off, n_size, offset_width);
+//	size_t n_size = 0;
+	size_t n_read = 0;
+	size_t read_size = 0;
+	size_t block_start = base_off;
+	size_t end = block_start + length;
+	size_t p;
+	size_t nr_of_parts = length / BLOCKSIZE_LARGE;
+	if ( length % BLOCKSIZE_LARGE != 0 ) nr_of_parts++;
+	
+	for ( p = 0; p < nr_of_parts; p++ )
+	{
+		debug_info("%llu / %llu\n", (p + 1), nr_of_parts);
+		read_size = BLOCKSIZE_LARGE;
+		if ( block_start + read_size > end ) read_size = end - block_start;
+		debug_info(" - read_size: %llu\n", read_size);
 
-	return n_size;
+		memset(buffer, 0, BLOCKSIZE_LARGE);
+	
+		n_read = readProcessBlock(base_addr, block_start, region_size, read_size, process, buffer);
+		uint8_t offset_col_width = countHexWidth64((size_t) base_addr + region_size);
+		if ( n_read )
+			printLine(buffer, (size_t) base_addr + block_start, n_read, offset_col_width);
+		
+//		n_size += n_read;
+		block_start += n_read;
+	}
+	return block_start - base_off;
 }
 
 /**
@@ -639,15 +661,16 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD base_si
  * @param block char*
  * @return
  */
-size_t readProcessBlock(BYTE* base_addr, DWORD base_size, size_t base_off, HANDLE process, unsigned char* block)
+size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, size_t n_size, HANDLE process,
+						unsigned char* block)
 {
 	SIZE_T bytes_read = 0;
-	size_t n_size = length;
 	BOOL s;
 
-	if ( base_off + n_size > base_size )
+	// adjust read size if it exceeds region size
+	if ( base_off + n_size > region_size )
 	{
-		n_size = base_size - base_off;
+		n_size = region_size - base_off;
 		if ( n_size == 0 )
 			return 0;
 	}
@@ -741,7 +764,7 @@ findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, 
 
 	while ( n_size && n_size == length )
 	{
-		n_size = readProcessBlock(base_addr, base_size, base_off, process, buf);
+		n_size = readProcessBlock(base_addr, base_off, base_size, length, process, buf);
 		block_i = findNeedleInBlock(needle, needle_ln, buf, &j, n_size);
 
 		if ( j == needle_ln )
