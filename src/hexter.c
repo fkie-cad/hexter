@@ -68,7 +68,7 @@ static const char* vs = "1.5.4";
 #define FORMAT_FILL_BYTE 'f'
 
 static const char format_types[7] = { FORMAT_ASCII, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
-static int format_types_ln = 7;
+static uint8_t format_types_ln = 7;
 
 static void printUsage();
 static void initParameters();
@@ -268,7 +268,7 @@ void printUsage()
 	printf("Usage: ./%s -file a/file [options]\n", BINARYNAME);
 	printf("Usage: ./%s [options] -pid 123\n", BINARYNAME);
 	printf("Version: %s\n", vs);
-	printf("Last Chaned: %s\n", f_time);
+	printf("Last changed: %s\n", f_time);
 }
 
 void printHelp()
@@ -544,6 +544,7 @@ void sanitizeParams(uint32_t pid)
 		if ( length % col_size != 0 )
 		{
 			length = length + col_size - (length % col_size);
+			printf("INFO: Normalized length to 0x%llx\n", length);
 		}
 	}
 
