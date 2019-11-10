@@ -18,4 +18,7 @@ uint64_t swapUint64(uint64_t value);
 
 uint8_t isHexChar(const char c);
 
+void formatTimeStampD(time_t t, char* res, size_t res_size);
+int formatTimeStamp(time_t t, char* res, size_t res_size, const char* format);
+
 #endif

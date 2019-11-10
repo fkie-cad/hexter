@@ -22,7 +22,8 @@
 	#include "ProcessHandlerLinux.h"
 #elif defined(_WIN32)
 	#include <process.h>
-	#include "ProcessHandlerWin.h"
+#include <time.h>
+#include "ProcessHandlerWin.h"
 #endif
 
 #define BINARYNAME ("hexter")
@@ -87,7 +88,11 @@ static uint8_t keepLengthInFile();
 
 
 // TODO:
-// - unbind -lrp from dependencies
+// - Debug lenght bug if > 0x400
+//		- pid
+//			- Windows
+//			- Linux ??
+// + unbind -lrp from dependencies
 // - highlight found part
 //	 + hex
 //	 + ascii
@@ -254,9 +259,16 @@ void initParameters()
 
 void printUsage()
 {
+	char f_time[16];
+	time_t r_time;
+
+	time(&r_time);
+	formatTimeStamp(r_time, f_time, 16, "%d.%m.%Y");
+	
 	printf("Usage: ./%s -file a/file [options]\n", BINARYNAME);
 	printf("Usage: ./%s [options] -pid 123\n", BINARYNAME);
 	printf("Version: %s\n", vs);
+	printf("Last Chaned: %s\n", f_time);
 }
 
 void printHelp()

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "Converter.h"
 
@@ -183,4 +184,37 @@ uint64_t swapUint64(uint64_t value)
 			((value & 0x0000FF0000000000) >> 24) |
 			((value & 0x00FF000000000000) >> 40) |
 			((value & 0xFF00000000000000) >> 56));
+}
+
+void formatTimeStampD(time_t t, char* res, size_t res_size)
+{
+	static const char format[] = "%a %d %b %Y";
+
+	formatTimeStamp(t, res, res_size, format);
+}
+
+/**
+ * Format a given timestamp.
+ * The format is a string like "%a %d %b %Y".
+ * a: short weekday, d: day, b: short month, y: short Year
+ * A: long weekday, Y: full year, B: full month
+ *
+ * @param t
+ * @param res
+ * @param res_size
+ * @param format
+ */
+int formatTimeStamp(time_t t, char* res, size_t res_size, const char* format)
+{
+	struct tm* ts;
+	ts = localtime(&t);
+
+	if ( strftime(res, res_size, format, ts) == 0 )
+	{
+//		printf( "strftime(3): cannot format supplied date/time into buffer of size %lu using: '%s'\n",
+//					res_size, format);
+		return -1;
+	}
+	
+	return 0;
 }
