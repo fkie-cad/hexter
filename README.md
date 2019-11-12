@@ -5,7 +5,7 @@ Compilable under Linux and Windows.
 
 ## Version ##
 1.5.4  
-Last changed: 2019.10.16
+Last changed: 12.11.2019
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc, msbuild) is required.  
@@ -14,7 +14,6 @@ Last changed: 2019.10.16
 ## BUILD ##
 
 ### Linux ###
-Running
 ```bash
 $ ./linuxBuild.sh [-h]
 ```
@@ -23,7 +22,7 @@ $ ./linuxBuild.sh [-h]
 ```bash
 $ winBuild.bat [/h]
 ```
-The correct path to your build tools may be passed as a parameter or just changed in the script itself.
+The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.sh](winBuild.sh) itself.
 
 ### DLL : MsBuild & Windows & cmake ### 
 ```bash

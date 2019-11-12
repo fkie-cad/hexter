@@ -259,16 +259,10 @@ void initParameters()
 
 void printUsage()
 {
-	char f_time[16];
-	time_t r_time;
-
-	time(&r_time);
-	formatTimeStamp(r_time, f_time, 16, "%d.%m.%Y");
-	
 	printf("Usage: ./%s -file a/file [options]\n", BINARYNAME);
 	printf("Usage: ./%s [options] -pid 123\n", BINARYNAME);
 	printf("Version: %s\n", vs);
-	printf("Last changed: %s\n", f_time);
+	printf("Last changed: 12.11.2019\n");
 }
 
 void printHelp()
