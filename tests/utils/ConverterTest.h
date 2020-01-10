@@ -237,7 +237,7 @@ TEST_F(ConverterTest, testParseUint32)
 
 TEST_F(ConverterTest, test)
 {
-	time_t t = default_time;
+	time_t t = 1230681600;
 	char res_default[32];
 	size_t res_size = sizeof(res_default);
 	formatTimeStampD(t, res_default, res_size);
@@ -263,7 +263,7 @@ TEST_F(ConverterTest, testTimeConversion2)
 	time(&now);
 	ts = *localtime(&now);
 	strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &ts);
-	int year_pr = ts.tm_year;
+//	int year_pr = ts.tm_year;
 	printf("Local Time %s\n", buf);
 	
 	//UTC time

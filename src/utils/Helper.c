@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -278,7 +277,7 @@ Bool confirmContinueWithNextRegion(char* name, size_t address)
 	printf("\n");
 	printf("Continue with next region");
 	if ( name != NULL ) printf(": %s ", name);
-	printf(" (0x%p) (c/q)?\n", address);
+	printf(" (0x%p) (c/q)?\n", (void*)address);
 
 	while ( 1 )
 	{

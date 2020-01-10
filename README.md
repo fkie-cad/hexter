@@ -22,7 +22,7 @@ $ ./linuxBuild.sh [-h]
 ```bash
 $ winBuild.bat [/h]
 ```
-The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.sh](winBuild.sh) itself.
+The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.
 
 ### DLL : MsBuild & Windows & cmake ### 
 ```bash

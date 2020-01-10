@@ -77,7 +77,7 @@ TEST_F(FinderTest, testFindInFile)
 
 TEST_F(FinderTest, testFindWithFailure)
 {
-	uint64_t binary_size = 64;
+//	uint64_t binary_size = 64;
 	string src = temp_dir+"/testFindInFile.rand";
 
 	snprintf(file_path, PATH_MAX, "%s", &src[0]);

@@ -47,4 +47,3 @@ if ( ${GTEST_FOUND} )
 	)
 
 endif()
-

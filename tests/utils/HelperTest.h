@@ -23,9 +23,9 @@ class HelperTest : public testing::Test
 	protected:
 		using PNP = pair<char*, const char*>;
 
-		void testGetFileNameP(vector<PNP> pathes);
-		void testGetFileNameL(vector<PNP> pathes);
-		void testGetFileNameA(vector<PNP> pathes);
+		void testGetFileNameP(const vector<PNP>& pathes);
+		void testGetFileNameL(const vector<PNP>& pathes);
+		void testGetFileNameA(const vector<PNP>& pathes);
 
 	public:
 
@@ -81,9 +81,9 @@ TEST_F(HelperTest, testGetFileName)
 	testGetFileNameA(pathes);
 }
 
-void HelperTest::testGetFileNameP(vector<PNP> pathes)
+void HelperTest::testGetFileNameP(const vector<PNP>& pathes)
 {
-	for ( PNP& p : pathes )
+	for ( const PNP& p : pathes )
 	{
 		cout << p.first << " : "<<p.second << endl;
 		char* file_name = getFileNameP(p.first);
@@ -93,9 +93,9 @@ void HelperTest::testGetFileNameP(vector<PNP> pathes)
 	}
 }
 
-void HelperTest::testGetFileNameL(vector<PNP> pathes)
+void HelperTest::testGetFileNameL(const vector<PNP>& pathes)
 {
-	for ( PNP& p : pathes )
+	for ( const PNP& p : pathes )
 	{
 		cout << p.first << " : "<<p.second << endl;
 		char* file_name = NULL;
@@ -105,9 +105,9 @@ void HelperTest::testGetFileNameL(vector<PNP> pathes)
 	}
 }
 
-void HelperTest::testGetFileNameA(vector<PNP> pathes)
+void HelperTest::testGetFileNameA(const vector<PNP>& pathes)
 {
-	for ( PNP& p : pathes )
+	for ( const PNP& p : pathes )
 	{
 		cout << p.first << " : "<<p.second << endl;
 		char file_name[PATH_MAX] = {0};

@@ -7,13 +7,10 @@
 #elif defined(_WIN32)
 	#include <io.h>
 #endif
-#include <sys/types.h>
 
 #include "Writer.h"
 #include "Globals.h"
-#include "utils/common_fileio.h"
 #include "utils/Converter.h"
-#include "utils/Helper.h"
 
 /**
  * Parse the arg as a byte.

@@ -3,21 +3,19 @@ project(Hexter VERSION 1.5.4 DESCRIPTION "A command line hex viewer." LANGUAGES 
 
 set(CMAKE_C_STANDARD 99)
 if (UNIX)
-	set(CMAKE_FLAGS_DEBUG "${CMAKE_FLAGS_DEBUG} -Wall -pedantic -Werror=return-type")
-	set(CMAKE_FLAGS_RELEASE "${CMAKE_FLAGS_RELEASE} -fno-builtin -Werror=return-type")
 	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -pedantic -Werror=return-type")
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fno-builtin -Werror=return-type")
 
-	set(CMAKE_FLAGS_DEBUG "${CMAKE_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer")
 
-	set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+	set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined -fsanitize=address")
 endif (UNIX)
 if (WIN32)
 	SET(CMAKE_C_FLAGS "/nologo /Zi /GS /INCREMENTAL /MP /Gy /guard:cf /W3 ${CMAKE_C_FLAGS}")
 	SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} /DNDEBUG /O2")
 	SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} /DEBUG /Od /we4715 /we4716")
 
+	#	SET(CMAKE_EXE_LINKER_FLAGS "/INCREMENTAL ${CMAKE_EXE_LINKER_FLAGS}")
 	SET(CMAKE_EXE_LINKER_FLAGS "/NXCOMPAT /guard:cf ${CMAKE_EXE_LINKER_FLAGS}")
 	SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
 	SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "/DYNAMICBASE ${CMAKE_EXE_LINKER_FLAGS_RELEASE}")

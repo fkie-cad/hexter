@@ -566,7 +566,7 @@ TEST_F(HexterTest, testInsert)
 
 TEST_F(HexterTest, testFind)
 {
-	uint64_t binary_size = 0x60;
+//	uint64_t binary_size = 0x60;
 	string name = "testFind.bla";
 	string src = temp_dir + "/" + name;
 

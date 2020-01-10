@@ -1,17 +1,13 @@
-#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/ptrace.h>
-#include <sys/wait.h>
 #include <fnmatch.h>
 #include <sys/stat.h>
 #include <dirent.h>
 
 #include "ProcessHandlerLinux.h"
-#include "utils/common_fileio.h"
 #include "utils/Converter.h"
 #include "utils/Strings.h"
 #include "utils/TerminalUtil.h"
@@ -41,7 +37,7 @@ typedef struct ProcStat
 {
 //	uint32_t pid; // The process ID.
 //	char comm[16];  // The filename of the executable, in parentheses. This is visible whether or not the executable is swapped out.
-	char state; // process state: R  Running, S  Sleeping in an interruptible wait, D  Waiting in uninterruptible disk sleep, Z  Zombie, T  Stopped, t  Tracing stop , W  Paging, X  Dead, x  Dead, K  Wakekill, W  Waking, P  Parked
+	char state; // process state: R  Running, S  Sleeping in an interruptable wait, D  Waiting in uninterruptable disk sleep, Z  Zombie, T  Stopped, t  Tracing stop , W  Paging, X  Dead, x  Dead, K  Wakekill, W  Waking, P  Parked
 	uint32_t ppid; // The PID of the parent of this process.
 //	uint32_t pgrp; // The process group ID of the process.
 //	int session; // %d The session ID of the process.
@@ -414,7 +410,7 @@ uint64_t getSizeOfProcess(uint32_t pid)
 	memset(&entry, 0, sizeof(entry));
 	ProcMapsEntry last_entry;
 	memset(&entry, 0, sizeof(entry));
-	uint64_t start_address;
+	uint64_t start_address = 0;
 
 	char* module_name = NULL;
 	Bool proc_module_started = false;
@@ -840,8 +836,8 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 			{
 				found = found - entry.address;
 				base_off = normalizeOffset(found, &skip_bytes);
-				Printer_setHiglightBytes(p_needle_ln);
-				Printer_setHiglightWait(skip_bytes);
+				Printer_setHighlightBytes(p_needle_ln);
+				Printer_setHighlightWait(skip_bytes);
 				skip_bytes = 0;
 				print_s = 1;
 			}
@@ -1002,8 +998,8 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 
 			found -= base_addr;
 			base_off = normalizeOffset(found, &skip_bytes);
-			Printer_setHiglightBytes(p_needle_ln);
-			Printer_setHiglightWait(skip_bytes);
+			Printer_setHighlightBytes(p_needle_ln);
+			Printer_setHighlightWait(skip_bytes);
 			skip_bytes = 0;
 
 			printf("\n");

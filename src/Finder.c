@@ -13,7 +13,7 @@ static uint16_t* failure = NULL;
 
 void Finder_initFailure(unsigned char* needle, uint32_t needle_ln)
 {
-	int i = 0;
+//	int i = 0;
 	failure = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
 	computeFailure(needle, needle_ln, failure);
 //	if ( failure != NULL )

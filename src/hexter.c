@@ -12,12 +12,10 @@
 #include "hexter.h"
 #include "Globals.h"
 #include "utils/common_fileio.h"
-#include "Finder.h"
 #include "Printer.h"
 #include "Writer.h"
 #include "utils/Converter.h"
 #include "utils/Helper.h"
-#include "utils/Strings.h"
 #if defined(__linux__) || defined(__linux) || defined(linux)
 	#include "ProcessHandlerLinux.h"
 #elif defined(_WIN32)
