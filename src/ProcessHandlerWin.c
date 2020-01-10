@@ -395,8 +395,8 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 			{
 				found = found - (size_t) info.BaseAddress;
 				base_off = normalizeOffset(found, &skip_bytes);
-				Printer_setHiglightBytes(p_needle_ln);
-				Printer_setHiglightWait(skip_bytes);
+				Printer_setHighlightBytes(p_needle_ln);
+				Printer_setHighlightWait(skip_bytes);
 				skip_bytes = 0;
 			}
 		}
@@ -593,8 +593,8 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 			}
 			found -= (size_t) base_addr;
 			base_off = normalizeOffset(found, &skip_bytes);
-			Printer_setHiglightBytes(p_needle_ln);
-			Printer_setHiglightWait(skip_bytes);
+			Printer_setHighlightBytes(p_needle_ln);
+			Printer_setHighlightWait(skip_bytes);
 			skip_bytes = 0;
 
 			printf("\n");
