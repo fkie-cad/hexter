@@ -24,8 +24,8 @@ void printAnsiFormatedHexValue(const unsigned char b);
 #ifdef _WIN32
 void printWinFormatedHexValue(const unsigned char b);
 #endif
-void Printer_setHiglightBytes(int16_t v);
+void Printer_setHighlightBytes(int16_t v);
 void Printer_setSkipBytes(uint8_t skip_bytes);
-void Printer_setHiglightWait(int16_t v);
+void Printer_setHighlightWait(int16_t v);
 
 #endif

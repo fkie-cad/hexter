@@ -75,6 +75,7 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
 	if ( !block )
 	{
 		printf("Malloc block failed.\n");
+		fclose(fi);
 		return;
 	}
 
@@ -91,8 +92,8 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
 		}
 
 		block_start = normalizeOffset(found, &skip_bytes);
-		Printer_setHiglightBytes(needle_ln);
-		Printer_setHiglightWait(skip_bytes);
+		Printer_setHighlightBytes(needle_ln);
+		Printer_setHighlightWait(skip_bytes);
 		skip_bytes = 0;
 	}
 
@@ -160,8 +161,8 @@ void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t
 				break;
 
 			block_start = normalizeOffset(found, &skip_bytes);
-			Printer_setHiglightBytes(needle_ln);
-			Printer_setHiglightWait(skip_bytes);
+			Printer_setHighlightBytes(needle_ln);
+			Printer_setHighlightWait(skip_bytes);
 			skip_bytes = 0;
 
 			printf("\n");
@@ -431,13 +432,13 @@ void printAsciiByte(const unsigned char c)
 	}
 }
 
-void Printer_setHiglightBytes(int16_t v)
+void Printer_setHighlightBytes(int16_t v)
 {
 	highlight_hex_bytes = v;
 	highlight_ascii_bytes = v;
 }
 
-void Printer_setHiglightWait(int16_t v)
+void Printer_setHighlightWait(int16_t v)
 {
 	highlight_hex_wait = v;
 	highlight_ascii_wait = v;
