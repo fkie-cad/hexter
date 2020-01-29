@@ -45,7 +45,7 @@
 #define NO_PRINT_ASCII_SUBSTITUTION '.'
 
 #define MAX_PAYLOAD_LN 512
-#define FIND_FAILURE UINT64_MAX
+#define FIND_FAILURE SIZE_MAX
 
 extern size_t file_size;
 extern char file_path[PATH_MAX];

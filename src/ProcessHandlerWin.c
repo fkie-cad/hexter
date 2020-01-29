@@ -39,6 +39,7 @@ Bool getProcessHeapListSnapshot(HANDLE* hHeapSnap, HEAPLIST32* hl, DWORD pid);
 void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base);
 char* getHEFlagString(DWORD flag);
 char* getHLFlagString(DWORD flag);
+BOOL isKnownProtection(DWORD protect);
 char* getProtectString(DWORD protect);
 int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info);
 int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb);
@@ -655,10 +656,6 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
 
 /**
  *
- * @param me32 MODULEENTRY32*
- * @param process HANDLE
- * @param base_off size_t
- * @param block char*
  * @return
  */
 size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, size_t n_size, HANDLE process,
@@ -705,6 +702,8 @@ BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, u
 			continue;
 
 //		printf(" - - is accessable: 0x%p, 0x%p, 0x%p, \n", address, info->BaseAddress, info->RegionSize);
+		if ( address < (uintptr_t)info->BaseAddress )
+			return FALSE;
 		if ( addressIsInRegionRange(address, (size_t) info->BaseAddress, info->RegionSize) )
 			return TRUE;
 	}
@@ -921,7 +920,7 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
 
 	printf("0x%p | 0x%p | 0x%*lx | ", info->BaseAddress, info->AllocationBase, w_rs, info->RegionSize);
-
+	
 	printf("%-9s%s", getMemoryStateString(info->State), SEPARATOR);
 
 	printf("%-11s%s" , getMemoryTypeString(info->Type), SEPARATOR);
@@ -936,11 +935,17 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 	if ( info->AllocationProtect & PAGE_GUARD )
 		guard = 1;
 
-	printf("%-18s%s", getProtectString(info->Protect), SEPARATOR);
+	if ( isKnownProtection(info->Protect) )
+		printf("%-18s%s", getProtectString(info->Protect), SEPARATOR);
+	else
+		printf("0x%-16lx%s", info->Protect, SEPARATOR);
 
 	info->AllocationProtect &= ~(PAGE_GUARD | PAGE_NOCACHE);
-	printf("%-18s%s", getProtectString(info->AllocationProtect), SEPARATOR);
-
+	if ( isKnownProtection(info->AllocationProtect) )
+		printf("%-18s%s", getProtectString(info->AllocationProtect), SEPARATOR);
+	else
+		printf("0x%-16lx%s", info->AllocationProtect, SEPARATOR);
+	
 	memset(f_path, 0, MAX_PATH);
 //	if ( GetModuleBaseNameA(process, info->AllocationBase, f_path, f_path_size) )
 	if ( GetMappedFileNameA(process, info->AllocationBase, f_path, f_path_size) )
@@ -971,6 +976,11 @@ BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 {
+//	if ( mbi->Protect & (PAGE_GUARD|PAGE_NOACCESS) )
+//		return FALSE;
+//
+//	return (mbi->Protect & PAGE_R_W_E) > 0;
+	
 //	return	!( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS )
 	return	info->Protect != PAGE_NOACCESS
 			&&
@@ -983,6 +993,8 @@ BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 char* getMemoryStateString(DWORD state)
 {
 	switch (state) {
+		case 0:
+			return("None");
 		case MEM_COMMIT:
 			return("Committed");
 		case MEM_RESERVE:
@@ -990,13 +1002,15 @@ char* getMemoryStateString(DWORD state)
 		case MEM_FREE:
 			return("Free");
 		default:
-			return("None");
+			return("Other");
 	}
 }
 
 char* getMemoryTypeString(DWORD type)
 {
 	switch (type) {
+		case 0:
+			return("None");
 		case MEM_IMAGE:
 			return("Code Module");
 		case MEM_MAPPED:
@@ -1004,14 +1018,31 @@ char* getMemoryTypeString(DWORD type)
 		case MEM_PRIVATE:
 			return("Private");
 		default:
-			return("None");
+			return("Other");
 	}
+}
+
+BOOL isKnownProtection(DWORD protect)
+{
+	return ( protect == 0 ||
+			protect == PAGE_NOACCESS ||
+			protect ==  PAGE_READONLY ||
+			protect ==  PAGE_READWRITE ||
+			protect ==  PAGE_WRITECOPY ||
+			protect ==  PAGE_EXECUTE ||
+			protect ==  PAGE_EXECUTE_READ ||
+			protect ==  PAGE_EXECUTE_READWRITE ||
+			protect ==  PAGE_EXECUTE_WRITECOPY ||
+			protect ==  PAGE_TARGETS_INVALID 
+	);
 }
 
 char* getProtectString(DWORD protect)
 {
 	switch ( protect )
 	{
+		case 0:
+			return("None");
 		case PAGE_NOACCESS:
 			return("No Access");
 		case PAGE_READONLY:
@@ -1032,7 +1063,7 @@ char* getProtectString(DWORD protect)
 //			case PAGE_TARGETS_NO_UPDATE:
 			return("NO_UPDATE/INVALID");
 		default:
-			return("None");
+			return("Other");
 	}
 }
 
