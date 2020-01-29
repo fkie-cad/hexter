@@ -32,6 +32,6 @@ echo buildTools=%buildTools%
     exit /B 0
 
 :usage
-    @echo Usage: %0 [%target%/%target%_shared [32/64 [Debug/Release [buildTools]]]
+    @echo Usage: %0 [%target%^|%target%_shared [32/64 [Debug^|Release [buildTools]]]
     @echo Default: %0 [%target% %bitness% %mode% %buildTools%]
     exit /B 1

@@ -1,7 +1,7 @@
 #ifndef HEXTER_SRC_HEXTER_H
 #define HEXTER_SRC_HEXTER_H
 
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
 	#define HEXTER_API
 #elif defined(HEXTER_EXPORTS)
 	#define HEXTER_API __declspec(dllexport)

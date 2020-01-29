@@ -15,7 +15,7 @@
 #include "Helper.h"
 #include "../Globals.h"
 
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
 	#define PATH_SEPARATOR 0x2F
 #elif defined(_WIN32)
 	#define PATH_SEPARATOR 0x5C
