@@ -16,6 +16,8 @@
 #include "Finder.h"
 #include "utils/Helper.h"
 
+#define PAGE_R_W_E ((PAGE_READONLY|PAGE_READWRITE|PAGE_WRITECOPY|PAGE_EXECUTE_READ|PAGE_EXECUTE_READWRITE|PAGE_EXECUTE_WRITECOPY))
+
 typedef int (*MemInfoCallback)(HANDLE, MEMORY_BASIC_INFORMATION*);
 
 size_t getModuleSize(unsigned char* p, MEMORY_BASIC_INFORMATION info, HANDLE process);
@@ -378,7 +380,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 	while ( s )
 	{
 		old_protect = 0;
-		setRegionProtection(process, &info, PAGE_READONLY, &old_protect);
+//		setRegionProtection(process, &info, PAGE_READONLY, &old_protect);
 
 		if ( find_f )
 		{
@@ -405,7 +407,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 //		Printer_setSkipBytes(skip_bytes);
 		print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found, file_name);
 
-		setRegionProtection(process, &info, old_protect, &old_protect);
+//		setRegionProtection(process, &info, old_protect, &old_protect);
 
 		if ( !getNextPrintableRegion(process, &info, &info_p, file_name, print_s, last_base) )
 			break;
@@ -442,15 +444,12 @@ BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD n
 //	if ( info->Type == MEM_PRIVATE )
 //		return TRUE;
 	
-//	if ( strncmp(getProtectString(info->Protect), "None", 6) == 0 )
+	s = VirtualProtectEx(process, info->BaseAddress, info->RegionSize, new_protect, old_protect);
+	if ( !s )
 	{
-		s = VirtualProtectEx(process, info->BaseAddress, info->RegionSize, new_protect, old_protect);
-		if ( !s )
-		{
-			printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", GetLastError(), (size_t) info->BaseAddress);
-//			printError("VirtualProtect", GetLastError());
-			return FALSE;
-		}
+		printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", GetLastError(), (size_t) info->BaseAddress);
+//		printError("VirtualProtect", GetLastError());
+		return FALSE;
 	}
 	return TRUE;
 }
@@ -974,19 +973,19 @@ BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
 			( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
 }
 
-BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
+BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* mbi)
 {
-//	if ( mbi->Protect & (PAGE_GUARD|PAGE_NOACCESS) )
-//		return FALSE;
-//
-//	return (mbi->Protect & PAGE_R_W_E) > 0;
+	if ( mbi->Protect & (PAGE_GUARD|PAGE_NOACCESS) )
+		return FALSE;
+
+	return (mbi->Protect & PAGE_R_W_E) > 0;
 	
-//	return	!( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS )
-	return	info->Protect != PAGE_NOACCESS
-			&&
-			!( info->State == MEM_RESERVE && (info->Type == MEM_PRIVATE||info->Type == MEM_MAPPED) && info->Protect == 0 )
+//	return	!( mbi->State == MEM_FREE && mbi->Protect == PAGE_NOACCESS )
+//	return	mbi->Protect != PAGE_NOACCESS
 //			&&
-//			!( info->State == MEM_RESERVE && info->Type == MEM_MAPPED && info->Protect == 0 )
+//			!( mbi->State == MEM_RESERVE && (mbi->Type == MEM_PRIVATE||mbi->Type == MEM_MAPPED) && mbi->Protect == 0 )
+//			&&
+//			!( mbi->State == MEM_RESERVE && mbi->Type == MEM_MAPPED && mbi->Protect == 0 )
 			;
 }
 
