@@ -20,8 +20,9 @@
 	#include "ProcessHandlerLinux.h"
 #elif defined(_WIN32)
 	#include <process.h>
-#include <time.h>
-#include "ProcessHandlerWin.h"
+	#include <time.h>
+	#include "ProcessHandlerWin.h"
+	#include "utils/Strings.h"
 #endif
 
 #define BINARYNAME ("hexter")
@@ -55,7 +56,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.4";
+static const char* vs = "1.5.5";
+static const char* last_changed = "29.01.2020";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -260,7 +262,7 @@ void printUsage()
 	printf("Usage: ./%s -file a/file [options]\n", BINARYNAME);
 	printf("Usage: ./%s [options] -pid 123\n", BINARYNAME);
 	printf("Version: %s\n", vs);
-	printf("Last changed: 12.11.2019\n");
+	printf("Last changed: %s\n", last_changed);
 }
 
 void printHelp()
