@@ -268,8 +268,10 @@ void printTripleCols(const unsigned char* block, size_t size, size_t offset, uin
 
 void printOffsetCol(size_t offset, uint8_t width)
 {
-#if defined(_WIN32)
+#if defined(Win64)
 	printf("%0*llx: ", width, offset);
+#elif defined(_WIN32)
+	printf("%0*lx: ", width, offset);
 #else
 	printf("%0*lx: ", width, offset);
 #endif
