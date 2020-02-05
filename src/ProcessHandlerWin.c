@@ -1025,14 +1025,22 @@ BOOL isKnownProtection(DWORD protect)
 {
 	return ( protect == 0 ||
 			protect == PAGE_NOACCESS ||
-			protect ==  PAGE_READONLY ||
-			protect ==  PAGE_READWRITE ||
-			protect ==  PAGE_WRITECOPY ||
-			protect ==  PAGE_EXECUTE ||
-			protect ==  PAGE_EXECUTE_READ ||
-			protect ==  PAGE_EXECUTE_READWRITE ||
-			protect ==  PAGE_EXECUTE_WRITECOPY ||
-			protect ==  PAGE_TARGETS_INVALID 
+			protect == PAGE_READONLY ||
+			protect == PAGE_READWRITE ||
+			protect == PAGE_WRITECOPY ||
+			protect == PAGE_EXECUTE ||
+			protect == PAGE_EXECUTE_READ ||
+			protect == PAGE_EXECUTE_READWRITE ||
+			protect == PAGE_EXECUTE_WRITECOPY ||
+			protect == PAGE_TARGETS_INVALID ||
+			protect == (PAGE_GUARD | PAGE_EXECUTE) ||
+			protect == (PAGE_GUARD | PAGE_EXECUTE_READ) ||
+			protect == (PAGE_GUARD | PAGE_EXECUTE_READWRITE) ||
+			protect == (PAGE_GUARD | PAGE_EXECUTE_WRITECOPY) ||
+			protect == (PAGE_GUARD | PAGE_NOACCESS) ||
+			protect == (PAGE_GUARD | PAGE_READONLY) ||
+			protect == (PAGE_GUARD | PAGE_READWRITE) ||
+			protect == (PAGE_GUARD | PAGE_WRITECOPY)
 	);
 }
 
@@ -1043,24 +1051,48 @@ char* getProtectString(DWORD protect)
 		case 0:
 			return("None");
 		case PAGE_NOACCESS:
-			return("No Access");
+//			return("No Access");
+			return("---");
 		case PAGE_READONLY:
-			return("Read Only");
+//			return("Read Only");
+			return("r--");
 		case PAGE_READWRITE:
-			return("Read/Write");
+//			return("Read/Write");
+			return("rw-");
 		case PAGE_WRITECOPY:
-			return("Copy on Write");
+//			return("Copy on Write");
+			return("rc-");
 		case PAGE_EXECUTE:
-			return("Execute only");
+//			return("Execute only");
+			return("--x");
 		case PAGE_EXECUTE_READ:
-			return("Execute/Read");
+//			return("Execute/Read");
+			return("r-x");
 		case PAGE_EXECUTE_READWRITE:
-			return("Execute/Read/Write");
+//			return("Execute/Read/Write");
+			return("rwx");
 		case PAGE_EXECUTE_WRITECOPY:
-			return("COW Executable");
+//			return("COW Executable");
+			return("rcx");
 		case PAGE_TARGETS_INVALID:
 //			case PAGE_TARGETS_NO_UPDATE:
 			return("NO_UPDATE/INVALID");
+		case PAGE_GUARD | PAGE_EXECUTE:
+			return("g--x");
+		case PAGE_GUARD | PAGE_EXECUTE_READ:
+			return("gr-x");
+		case PAGE_GUARD | PAGE_EXECUTE_READWRITE:
+			return("grwx");
+		case PAGE_GUARD | PAGE_EXECUTE_WRITECOPY:
+			return("grcx");
+		case PAGE_GUARD | PAGE_NOACCESS:
+			return("g---");
+		case PAGE_GUARD | PAGE_READONLY:
+			return("gr--");
+		case PAGE_GUARD | PAGE_READWRITE:
+			return("grw-");
+		case PAGE_GUARD | PAGE_WRITECOPY:
+			return("grc-");
 		default:
 			return("Other");
 	}
