@@ -8,11 +8,11 @@
 
 int parseUint64Auto(const char* arg, uint64_t* value)
 {
-	uint8_t base = 10;
-	if ( arg[0] != 0 && arg[1] != 0 && arg[0] ==  '0' && arg[1] ==  'x')
-		base = 16;
+//	uint8_t base = 10;
+//	if ( arg[0] != 0 && arg[1] != 0 && arg[0] ==  '0' && arg[1] ==  'x')
+//		base = 16;
 
-	return parseUint64(arg, value, base);
+	return parseUint64(arg, value, 0);
 }
 
 int parseUint64(const char* arg, uint64_t* value, uint8_t base)
@@ -22,7 +22,7 @@ int parseUint64(const char* arg, uint64_t* value, uint8_t base)
 	errno = 0;
 	uint64_t result;
 
-	if ( base != 10 && base != 16 )
+	if ( base != 10 && base != 16 && base != 0 )
 	{
 		fprintf(stderr, "Error: Unsupported base %u!\n", base);
 		return 1;

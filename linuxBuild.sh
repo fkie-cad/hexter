@@ -5,7 +5,7 @@ mode=Release
 
 if [[ -n "$1" && $1 == "-h" ]]
 then
-	echo "Usage: $0 [${target} [Debug/Release]]"
+	echo "Usage: $0 [${target} [Debug|Release]]"
 	echo "Default: $0 [${target} ${mode}]"
 	exit
 fi
@@ -20,8 +20,9 @@ then
     mode=$2
 fi
 
-build_dir=build
-if [[ ${mode} == "Debug" ]]
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+build_dir="${ROOT}/build"
+if [[ ${mode} == "Debug" || ${mode} == "debug" ]]
 then
 	build_dir=build/debug
 fi
@@ -31,5 +32,5 @@ echo "mode: "${mode}
 echo "build_dir: "${build_dir}
 
 mkdir -p ${build_dir}
-cmake . -B${build_dir} -DCMAKE_BUILD_TYPE=${mode}
+cmake ${ROOT} -B${build_dir} -DCMAKE_BUILD_TYPE=${mode}
 cmake --build ${build_dir} --target ${target}
