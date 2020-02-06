@@ -171,7 +171,7 @@ void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t
 		else if ( input == 'q' )
 			break;
 
-		if ( block_start == UINT64_MAX )
+		if ( block_start == SIZE_MAX )
 			break;
 	}
 }
@@ -188,8 +188,11 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
 	{
 		debug_info("%lu / %lu\n", (p+1), nr_of_parts);
 		read_size = block_size;
+		debug_info(" - read_size: 0x%lx\n", read_size);
+		debug_info(" - block_start: 0x%lx\n", block_start);
+		debug_info(" - end: 0x%lx\n", end);
 		if ( block_start + read_size > end ) read_size = end - block_start;
-		debug_info(" - read_size: %lu\n", read_size);
+		debug_info(" - read_size: 0x%lx\n", read_size);
 
 		memset(block, 0, block_size);
 		size = readFile(fi, block_start, read_size, block);
@@ -207,7 +210,7 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
 	}
 
 	if ( block_start >= block_max )
-		block_start = UINT64_MAX;
+		block_start = SIZE_MAX;
 
 	return block_start;
 }
