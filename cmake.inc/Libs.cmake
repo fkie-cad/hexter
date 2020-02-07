@@ -9,14 +9,12 @@ elseif (WIN32)
 	set(LIB_EXTENSION lib)
 endif ()
 
-set(HEXTER_LIB ${CMAKE_SOURCE_DIR}/cmake-build-release/hexter.${LIB_EXTENSION})
-if(EXISTS ${HEXTER_LIB})
-	message("-- Found: hexter.${LIB_EXTENSION} ${HEXTER_LIB}")
-else()
-	set(HEXTER_LIB ${CMAKE_SOURCE_DIR}/cmake-build-debug/hexter.${LIB_EXTENSION})
-	if(EXISTS ${HEXTER_LIB})
-		message("-- Found: hexter.${LIB_EXTENSION} ${HEXTER_LIB}")
-	else()
-		message("-- Not Found: hexter.${LIB_EXTENSION} ${HEXTER_LIB}")
-	endif()
-endif()
+# cad filescanner
+set(LIB_NAME hexter)
+set(LIB_DIR ${CMAKE_SOURCE_DIR}/build)
+set(HEXTER_LIB ${LIB_DIR}/lib${LIB_NAME}.so)
+
+# cad filescanner debug
+set(LIB_NAME hexter)
+set(LIB_DIR ${CMAKE_SOURCE_DIR}/build/debug)
+set(HEXTER_DEBUG_LIB ${LIB_DIR}/lib${LIB_NAME}.so)

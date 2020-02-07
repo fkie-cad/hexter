@@ -56,8 +56,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.7";
-static const char* last_changed = "06.02.2020";
+static const char* vs = "1.5.8";
+static const char* last_changed = "07.02.2020";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -674,7 +674,7 @@ uint8_t parseType(const char* arg)
  * @param _length
  * @return int status info
  */
-HEXTER_API int printFile(char* _file_name, size_t _start, size_t _length)
+HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _length)
 {
 	initParameters();
 	expandFilePath(_file_name, file_path);
@@ -682,6 +682,7 @@ HEXTER_API int printFile(char* _file_name, size_t _start, size_t _length)
 	run_mode = RUN_MODE_FILE;
 	start = _start;
 	length = _length;
+	continuous_f = false;
 
 //	print_col_mask = print_col_mask | print_hex_mask;
 
@@ -702,7 +703,7 @@ HEXTER_API int printFile(char* _file_name, size_t _start, size_t _length)
  * @param _lpt
  * @return int status info
  */
-HEXTER_API int printProcess(uint32_t _pid, size_t _start, size_t _length, int _lpm, int _lpx, int _lph, int _lpt)
+HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length, int _lpm, int _lpx, int _lph, int _lpt)
 {
 	initParameters();
 #ifdef _WIN32
@@ -714,6 +715,7 @@ HEXTER_API int printProcess(uint32_t _pid, size_t _start, size_t _length, int _l
 	run_mode = RUN_MODE_PID;
 	start = _start;
 	length = _length;
+	continuous_f = false;
 
 	list_process_memory_f = _lpx;
 	list_process_modules_f = _lpm;

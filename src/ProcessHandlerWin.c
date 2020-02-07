@@ -654,8 +654,15 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
 }
 
 /**
+ * Read process memory bytes at base + offset into block.
  *
- * @return
+ * @param	base_addr BYTE* base address of module region
+ * @param	base_off size_t offset into base of module region
+ * @param	region_size DWORD size of module region
+ * @param	n_size size_t number of bytes to read
+ * @param	process HANDLE target process
+ * @param	block unsigned char* pre-allocated block to store read bytes in
+ * @return size_t number of read bytes
  */
 size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, size_t n_size, HANDLE process,
 						unsigned char* block)

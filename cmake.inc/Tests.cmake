@@ -2,6 +2,8 @@ if ( ${GTEST_FOUND} )
 
 	set(TESTS_DIR tests)
 
+	file(COPY ${TESTS_DIR}/files DESTINATION ./${TESTS_DIR}/)
+
 	set(HEXTER_TEST_MISC_FILES
 		${CMAKE_CURRENT_SOURCE_DIR}/${TESTS_DIR}/misc/Misc.h
 		${CMAKE_CURRENT_SOURCE_DIR}/${TESTS_DIR}/misc/Misc.cpp
@@ -29,12 +31,12 @@ if ( ${GTEST_FOUND} )
 	)
 
 	set_target_properties(${UNIT_TEST_SUITE} PROPERTIES
-		CXX_STANDARD 11
+		CXX_STANDARD 17
 		CXX_STANDARD_REQUIRED YES
 		CXX_EXTENSIONS NO
 		LANGUAGES CXX
-		COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Werror=return-type -fsanitize=address -fno-omit-frame-pointer"
-		LINK_FLAGS "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address"
+		COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Werror=return-type -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
+		LINK_FLAGS "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
 		)
 
 	target_link_libraries(${UNIT_TEST_SUITE} PRIVATE
@@ -45,5 +47,35 @@ if ( ${GTEST_FOUND} )
 		cTests
 		${UNIT_TEST_SUITE}
 	)
+
+
+
+	set(TEST_SUITE hexter_lib_tests)
+
+	add_executable(${TEST_SUITE} "")
+	target_sources(${TEST_SUITE} PRIVATE
+		${TESTS_DIR}/unitLibTests.cpp
+		${UTILS_FILES}
+		${HEXTER_FILES}
+		${HEXTER_TEST_MISC_FILES}
+		${CMAKE_CURRENT_SOURCE_DIR}/${TESTS_DIR}/HexterLibTest.h
+		)
+	add_dependencies(${TEST_SUITE}
+		${HEXTER_SHARED_LIB}
+		)
+	set_target_properties(${TEST_SUITE} PROPERTIES
+		CXX_STANDARD 17
+		CXX_STANDARD_REQUIRED YES
+		CXX_EXTENSIONS NO
+		LANGUAGES CXX
+		COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Werror=return-type -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
+		LINK_FLAGS "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
+		)
+	target_link_libraries(${TEST_SUITE} PRIVATE
+		${GTEST_BOTH_LIBRARIES}
+		optimized ${HEXTER_LIB}
+		debug ${HEXTER_DEBUG_LIB}
+#		stdc++fs # has to be included after utils lib
+		)
 
 endif()

@@ -8,3 +8,4 @@ tests/sources
 .project
 .settings/
 updateBin.bat
+update_usr_lib.sh
