@@ -25,6 +25,9 @@ echo mode=%mode%
 echo build_dir=%build_dir%
 echo buildTools=%buildTools%
 
+rem vcvarsall.bat [architecture] [platform_type] [winsdk_version] [ -vcvars_ver= vcversion]
+rem architecture = x86, x86_x64, ... 
+
 :build
     echo #define Win%bitness% 1 > src/env.h
     cmd /k "mkdir %build_dir% & %buildTools%"\VC\Auxiliary\Build\vcvars%bitness%.bat" & cmake . -B%build_dir% -DCMAKE_BUILD_TYPE=%mode% -G "CodeBlocks - NMake Makefiles" & cmake --build %build_dir% --config %mode% --target %target% & exit"

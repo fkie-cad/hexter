@@ -2,9 +2,11 @@
 #define COMMON_FILEIO_H
 
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "../env.h"
 
-#if defined(Win64)
+#if defined(Win64) || defined(_WIN64)
     #define fseek(f, o, t) _fseeki64(f, o, t)
 #endif
 //#define _chsize(fp, s) _chsize64(fp, s)

@@ -15,7 +15,7 @@
 	#define ENTER 0xa // aka \n
 #endif
 
-//#if defined(Win64)
+//#if defined(_WIN64)
 //	#define fseek(f, o, t) _fseeki64(f, o, t)
 //#endif
 //#define _chsize(fp, s) _chsize64(fp, s)
