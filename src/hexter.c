@@ -171,7 +171,8 @@ int run(const char payload_format, const char* raw_payload)
 	if ( (insert_f || overwrite_f || find_f) && payload_format > 0 )
 	{
 		payload_ln = parsePayload(payload_format, raw_payload, &payload);
-		if ( payload == NULL) exit(0);
+		if ( payload == NULL)
+			exit(0);
 	}
 
 	if ( insert_f )
