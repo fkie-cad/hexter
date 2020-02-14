@@ -138,11 +138,10 @@ size_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, size_t of
  * Find the needle in a loaded block.
  * If the needle has been found, j==needle_ln and the found offset in the block is the returned value.
  *
- * @param needle
- * @param needle_ln
- * @param buf
+ * @param needle unsigned char* the needle
+ * @param needle_ln uint32_t length of the needle
+ * @param buf unsigned char* haystack buffer to find the needle in
  * @param j
- * @param failure
  * @param n
  * @return	size_t the last search offset in the block.
  */
