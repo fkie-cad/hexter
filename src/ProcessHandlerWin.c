@@ -676,7 +676,8 @@ size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, siz
 
 	if ( !s )
 	{
-		printf(" - Error (0x%lx): ReadProcessMemory 0x%llx bytes at 0x%llx\n", GetLastError(), bytes_read, (uintptr_t)base_addr + base_off);
+		printf(" - Error (0x%lx): ReadProcessMemory 0x%llx of 0x%llx bytes at 0x%llx\n", 
+				GetLastError(), bytes_read, n_size, (uintptr_t)base_addr + base_off);
 		return 0;
 	}
 
