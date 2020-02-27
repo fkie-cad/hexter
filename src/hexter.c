@@ -599,7 +599,7 @@ uint8_t keepLengthInFile()
 #else
 		printf("Info: Start offset %lu plus length %lu is greater then the file size %lu\nPrinting only to file size.\n",
 #endif
-			   start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
+		start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
 		length = file_size - start;
 		continuous_f = 0;
 		return 1;

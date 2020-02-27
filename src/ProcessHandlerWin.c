@@ -47,13 +47,13 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info);
 int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb);
 char* getMemoryStateString(DWORD state);
 char* getMemoryTypeString(DWORD type);
-int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, char* reg_name);
+int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found);
 BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char* info_p);
 BOOL getRegionName(HANDLE process, PVOID base, char* file_name);
 //BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect);
-BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length);
+//BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length);
 void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name, unsigned char* p, HANDLE process);
 void printRunningProcessInfo(PROCESSENTRY32* pe32);
 
@@ -115,7 +115,7 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, size_t* start)
 
 		if ( addressIsInRegionRange(*start, (size_t) base_addr, info.RegionSize) )
 		{
-			info_line_break = keepLengthInModule(p, &info, process, *start, &length);
+//			info_line_break = keepLengthInModule(p, &info, process, *start, &length);
 			CloseHandle(process);
 			return info_line_break;
 		}
@@ -139,38 +139,38 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, size_t* start)
 		info_line_break = 1;
 	}
 	(*start) = (size_t) info.AllocationBase;
-	if ( keepLengthInModule(p, &info, process, *start, &length))
-		info_line_break = 1;
+//	if ( keepLengthInModule(p, &info, process, *start, &length) )
+//		info_line_break = 1;
 
 	CloseHandle(process);
 	
 	return info_line_break;
 }
 
-/**
- * Keep a given length in a hit module.
- * 
- * @param info MEMORY_BASIC_INFORMATION* the module info
- * @param start size_t the start offset
- * @param length size_t the length
- * @return BOOL flags, if length has been modified
- */
-BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length)
-{
-	DWORD base_off = start - (size_t) info->BaseAddress;
-	size_t module_size = getModuleSize(p, *info, process);
-	if ( module_size == 0 )
-		return FALSE;
-	
-	if ( base_off + *length > module_size )
-	{
-		printf("Info: Length 0x%llx does not fit in region!\nSetting it to 0x%llx!\n", *length, module_size - base_off);
-		*length = module_size - base_off;
-		return TRUE;
-	}
-	
-	return FALSE;
-}
+///**
+// * Keep a given length in a hit module.
+// * 
+// * @param info MEMORY_BASIC_INFORMATION* the module info
+// * @param start size_t the start offset
+// * @param length size_t the length
+// * @return BOOL flags, if length has been modified
+// */
+//BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length)
+//{
+//	DWORD base_off = start - (size_t) info->BaseAddress;
+//	size_t module_size = getModuleSize(p, *info, process);
+//	if ( module_size == 0 )
+//		return FALSE;
+//	
+//	if ( base_off + *length > module_size )
+//	{
+//		printf("Info: Length 0x%llx does not fit in region!\nSetting it to 0x%llx!\n", *length, module_size - base_off);
+//		*length = module_size - base_off;
+//		return TRUE;
+//	}
+//	
+//	return FALSE;
+//}
 
 /**
  * Calculate size of Module, i.e. continuous regions with the same name.
@@ -406,7 +406,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 		}
 
 //		Printer_setSkipBytes(skip_bytes);
-		print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found, file_name);
+		print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found);
 
 //		setRegionProtection(process, &info, old_protect, &old_protect);
 
@@ -546,7 +546,7 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
  * @param found size_t if something has been searched, the found offset.
  * @return int 0 if end of block is reached, 1 if forced to quit
  */
-int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, char* reg_name)
+int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found)
 {
 	size_t n_size = 0;
 	unsigned char buffer[BLOCKSIZE_LARGE] = {0};
@@ -606,11 +606,11 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 
 /**
  *
- * @param me32
- * @param process
- * @param base_off
- * @param base_addr
- * @param buffer
+ * @param process HANDLE
+ * @param base_addr BYTE*
+ * @param base_off size_t
+ * @param region_size DWORD
+ * @param buffer unsigned char*
  * @return
  */
 size_t
@@ -975,12 +975,6 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 	return 0;
 }
 
-//BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
-//{
-//	return ( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS ) ||
-//			( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
-//}
-
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* mbi)
 {
 	if ( mbi->Protect & (PAGE_GUARD|PAGE_NOACCESS) )
@@ -994,7 +988,7 @@ BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* mbi)
 //			!( mbi->State == MEM_RESERVE && (mbi->Type == MEM_PRIVATE||mbi->Type == MEM_MAPPED) && mbi->Protect == 0 )
 //			&&
 //			!( mbi->State == MEM_RESERVE && mbi->Type == MEM_MAPPED && mbi->Protect == 0 )
-			;
+//			;
 }
 
 char* getMemoryStateString(DWORD state)
@@ -1060,28 +1054,28 @@ char* getProtectString(DWORD protect)
 			return("None");
 		case PAGE_NOACCESS:
 //			return("No Access");
-			return("---");
+			return(" ---");
 		case PAGE_READONLY:
 //			return("Read Only");
-			return("r--");
+			return(" r--");
 		case PAGE_READWRITE:
 //			return("Read/Write");
-			return("rw-");
+			return(" rw-");
 		case PAGE_WRITECOPY:
 //			return("Copy on Write");
-			return("rc-");
+			return(" rc-");
 		case PAGE_EXECUTE:
 //			return("Execute only");
-			return("--x");
+			return(" --x");
 		case PAGE_EXECUTE_READ:
 //			return("Execute/Read");
-			return("r-x");
+			return(" r-x");
 		case PAGE_EXECUTE_READWRITE:
 //			return("Execute/Read/Write");
-			return("rwx");
+			return(" rwx");
 		case PAGE_EXECUTE_WRITECOPY:
 //			return("COW Executable");
-			return("rcx");
+			return(" rcx");
 		case PAGE_TARGETS_INVALID:
 //			case PAGE_TARGETS_NO_UPDATE:
 			return("NO_UPDATE/INVALID");

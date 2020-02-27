@@ -117,7 +117,7 @@ static Bool isReadableRegion(ProcMapsEntry *entry);
 static Bool addressIsInRegionRange(uint64_t address, uint64_t base, uint64_t size);
 static void setModuleEndAddress(ProcMapsEntry *entry, FILE *fp);
 static uint64_t getModuleEndAddress(ProcMapsEntry *module, FILE* fp);
-static Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length);
+//static Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length);
 
 static void printRegionInfo(ProcMapsEntry* entry, const char* file_name);
 static Bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t printed_module_base);
@@ -309,7 +309,7 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t *start)
 		if ( addressIsInRegionRange(*start, entry.address, entry.size) )
 		{
 			setModuleEndAddress(&entry, fp);
-			info_line_break = keepLengthInModule(&entry, *start, &length);
+//			info_line_break = keepLengthInModule(&entry, *start, &length);
 			fclose(fp);
 			return info_line_break;
 		}
@@ -330,8 +330,8 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t *start)
 	(*start) =  entry.address;
 
 	setModuleEndAddress(&entry, fp);
-	if ( keepLengthInModule(&entry, *start, &length) )
-		info_line_break = 1;
+//	if ( keepLengthInModule(&entry, *start, &length) )
+//		info_line_break = 1;
 
 	fclose(fp);
 
@@ -384,17 +384,17 @@ uint64_t getModuleEndAddress(ProcMapsEntry *module, FILE* fp)
 	return end_address;
 }
 
-Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length)
-{
-	uint64_t base_off = start - entry->address;
-	if ( base_off + *length > entry->size )
-	{
-		printf("Info: Length 0x%lx does not fit in region!\nSetting it to 0x%lx!\n", *length, entry->size - base_off);
-		*length = entry->size - base_off;
-		return true;
-	}
-	return false;
-}
+//Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length)
+//{
+//	uint64_t base_off = start - entry->address;
+//	if ( base_off + *length > entry->size )
+//	{
+//		printf("Info: Length 0x%lx does not fit in region!\nSetting it to 0x%lx!\n", *length, entry->size - base_off);
+//		*length = entry->size - base_off;
+//		return true;
+//	}
+//	return false;
+//}
 
 /**
  * Actually gets the size of the main program process.
