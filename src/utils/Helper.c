@@ -287,9 +287,9 @@ Bool confirmContinueWithNextRegion(char* name, size_t address)
 //#else
 //		input = getch();
 //#endif
-		if ( input == 'c' )
+		if ( input == CONTINUE )
 			return true;
-		else if ( input == 'q' )
+		else if ( input == QUIT )
 			return false;
 		else if ( counter > 100 )
 			return false;

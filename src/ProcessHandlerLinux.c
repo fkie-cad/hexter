@@ -987,7 +987,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 			base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end);
 //			printf(" -- base_off: 0x%lx\n", base_off);
 		}
-		else if ( find_f && input == 'n' )
+		else if ( find_f && input == NEXT )
 		{
 			found = findNeedleInProcessMemoryBlock(pid, base_addr, size, found + p_needle_ln, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
@@ -1005,7 +1005,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 			printf("\n");
 			base_off = printBlock(nr_of_parts, block, fp, block_size, base_addr+base_off, base_end);
 		}
-		else if ( input == 'q' )
+		else if ( input == QUIT )
 		{
 			s = 1;
 			break;

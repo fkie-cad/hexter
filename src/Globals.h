@@ -44,6 +44,10 @@
 #define COL_SEPARATOR '|'
 #define NO_PRINT_ASCII_SUBSTITUTION '.'
 
+#define NEXT ('n')
+#define QUIT ('q')
+#define CONTINUE ('c')
+
 #define MAX_PAYLOAD_LN 512
 #define FIND_FAILURE SIZE_MAX
 

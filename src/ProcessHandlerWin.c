@@ -444,10 +444,6 @@ BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD n
 	if ( !s )
 	{
 		printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", GetLastError(), (size_t) info->BaseAddress);
-<<<<<<< Updated upstream
-//		printError("VirtualProtect", GetLastError());
-=======
->>>>>>> Stashed changes
 		return FALSE;
 	}
 	
@@ -544,9 +540,11 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 /**
  *
  * @param process
- * @param me32
- * @param base_off uint32_t base offset in module to start at printing
- * @return 0 if end of block is reached, 1 if forced to quit
+ * @param base_addr BYTE* base of module
+ * @param base_off uint32_t base offset in module to start printing at
+ * @param region_size SIZE_T size of region in module
+ * @param found size_t if something has been searched, the found offset.
+ * @return int 0 if end of block is reached, 1 if forced to quit
  */
 int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, char* reg_name)
 {
@@ -562,13 +560,16 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 	if ( !continuous_f )
 		return 1;
 
-	while ( n_size && n_size == length )
+	if ( base_off == region_size )
+		return 0;
+
+	while ( n_size > 0 && n_size == length )
 	{
 		input = _getch();
 
 		if ( input == ENTER )
 			n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
-		else if ( find_f && input == 'n' )
+		else if ( find_f && input == NEXT )
 		{
 			found = findNeedleInProcessMemoryBlock(base_addr, region_size, found + p_needle_ln, process, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
@@ -585,13 +586,19 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 			printf("\n");
 			n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
 		}
-		else if ( input == 'q' )
+		else if ( input == QUIT )
 		{
 			s = 1;
 			break;
 		}
 
 		base_off += n_size;
+
+		if ( base_off == region_size )
+		{
+			s = 0;
+			break;
+		}
 	}
 
 	return s;
@@ -616,13 +623,15 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
 	size_t end = block_start + length;
 	size_t p;
 	size_t nr_of_parts = length / BLOCKSIZE_LARGE;
-	if ( length % BLOCKSIZE_LARGE != 0 ) nr_of_parts++;
+	if ( length % BLOCKSIZE_LARGE != 0 )
+		nr_of_parts++;
 	
 	for ( p = 0; p < nr_of_parts; p++ )
 	{
 		debug_info("%llu / %llu\n", (p + 1), nr_of_parts);
 		read_size = BLOCKSIZE_LARGE;
-		if ( block_start + read_size > end ) read_size = end - block_start;
+		if ( block_start + read_size > end )
+			read_size = end - block_start;
 		debug_info(" - read_size: %llu\n", read_size);
 
 		memset(buffer, 0, BLOCKSIZE_LARGE);

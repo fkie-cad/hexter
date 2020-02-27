@@ -154,7 +154,7 @@ void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t
 
 		if ( input == ENTER )
 			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
-		else if ( find_f && input == 'n' )
+		else if ( find_f && input == NEXT )
 		{
 			found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max);
 			if ( found == FIND_FAILURE )
@@ -168,7 +168,7 @@ void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t
 			printf("\n");
 			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
 		}
-		else if ( input == 'q' )
+		else if ( input == QUIT )
 			break;
 
 		if ( block_start == SIZE_MAX )
