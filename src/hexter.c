@@ -56,8 +56,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.8";
-static const char* last_changed = "07.02.2020";
+static const char* vs = "1.5.9";
+static const char* last_changed = "27.02.2020";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -171,7 +171,8 @@ int run(const char payload_format, const char* raw_payload)
 	if ( (insert_f || overwrite_f || find_f) && payload_format > 0 )
 	{
 		payload_ln = parsePayload(payload_format, raw_payload, &payload);
-		if ( payload == NULL) exit(0);
+		if ( payload == NULL)
+			exit(0);
 	}
 
 	if ( insert_f )
@@ -598,7 +599,7 @@ uint8_t keepLengthInFile()
 #else
 		printf("Info: Start offset %lu plus length %lu is greater then the file size %lu\nPrinting only to file size.\n",
 #endif
-			   start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
+		start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
 		length = file_size - start;
 		continuous_f = 0;
 		return 1;

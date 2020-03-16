@@ -47,13 +47,13 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info);
 int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb);
 char* getMemoryStateString(DWORD state);
 char* getMemoryTypeString(DWORD type);
-int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, char* reg_name);
+int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found);
 BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char* info_p);
 BOOL getRegionName(HANDLE process, PVOID base, char* file_name);
-BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
+//BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect);
-BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length);
+//BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length);
 void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name, unsigned char* p, HANDLE process);
 void printRunningProcessInfo(PROCESSENTRY32* pe32);
 
@@ -115,7 +115,7 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, size_t* start)
 
 		if ( addressIsInRegionRange(*start, (size_t) base_addr, info.RegionSize) )
 		{
-			info_line_break = keepLengthInModule(p, &info, process, *start, &length);
+//			info_line_break = keepLengthInModule(p, &info, process, *start, &length);
 			CloseHandle(process);
 			return info_line_break;
 		}
@@ -139,38 +139,38 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, size_t* start)
 		info_line_break = 1;
 	}
 	(*start) = (size_t) info.AllocationBase;
-	if ( keepLengthInModule(p, &info, process, *start, &length))
-		info_line_break = 1;
+//	if ( keepLengthInModule(p, &info, process, *start, &length) )
+//		info_line_break = 1;
 
 	CloseHandle(process);
 	
 	return info_line_break;
 }
 
-/**
- * Keep a given length in a hit module.
- * 
- * @param info MEMORY_BASIC_INFORMATION* the module info
- * @param start size_t the start offset
- * @param length size_t the length
- * @return BOOL flags, if length has been modified
- */
-BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length)
-{
-	DWORD base_off = start - (size_t) info->BaseAddress;
-	size_t module_size = getModuleSize(p, *info, process);
-	if ( module_size == 0 )
-		return FALSE;
-	
-	if ( base_off + *length > module_size )
-	{
-		printf("Info: Length 0x%llx does not fit in region!\nSetting it to 0x%llx!\n", *length, module_size - base_off);
-		*length = module_size - base_off;
-		return TRUE;
-	}
-	
-	return FALSE;
-}
+///**
+// * Keep a given length in a hit module.
+// * 
+// * @param info MEMORY_BASIC_INFORMATION* the module info
+// * @param start size_t the start offset
+// * @param length size_t the length
+// * @return BOOL flags, if length has been modified
+// */
+//BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length)
+//{
+//	DWORD base_off = start - (size_t) info->BaseAddress;
+//	size_t module_size = getModuleSize(p, *info, process);
+//	if ( module_size == 0 )
+//		return FALSE;
+//	
+//	if ( base_off + *length > module_size )
+//	{
+//		printf("Info: Length 0x%llx does not fit in region!\nSetting it to 0x%llx!\n", *length, module_size - base_off);
+//		*length = module_size - base_off;
+//		return TRUE;
+//	}
+//	
+//	return FALSE;
+//}
 
 /**
  * Calculate size of Module, i.e. continuous regions with the same name.
@@ -384,10 +384,11 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 
 		if ( find_f )
 		{
-			found = findNeedleInProcessMemoryBlock(info.BaseAddress, info.RegionSize, base_off, process, p_needle,
-												   p_needle_ln);
+			found = findNeedleInProcessMemoryBlock(info.BaseAddress, info.RegionSize, base_off, process, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
 			{
+				setRegionProtection(process, &info, old_protect, &old_protect);
+				
 				if ( !getNextPrintableRegion(process, &info, &info_p, file_name, print_s, last_base) )
 					break;
 
@@ -396,7 +397,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 			}
 			else
 			{
-				found = found - (size_t) info.BaseAddress;
+				found = found - (uintptr_t) info.BaseAddress;
 				base_off = normalizeOffset(found, &skip_bytes);
 				Printer_setHighlightBytes(p_needle_ln);
 				Printer_setHighlightWait(skip_bytes);
@@ -405,7 +406,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 		}
 
 //		Printer_setSkipBytes(skip_bytes);
-		print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found, file_name);
+		print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found);
 
 //		setRegionProtection(process, &info, old_protect, &old_protect);
 
@@ -435,22 +436,17 @@ BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD n
 {
 	BOOL s;
 	
-//	if ( info->Protect == new_protect || *old_protect == new_protect )
-//	{
-//		*old_protect = new_protect;
-//		return TRUE;
-//	}
-	
-//	if ( info->Type == MEM_PRIVATE )
-//		return TRUE;
+	// VirtualProtectEx fails (with no consequences) if private and yet readable and set to readable. 
+	if ( info->Type == MEM_PRIVATE && *old_protect == 0 && ( info->Protect == PAGE_READWRITE || info->Protect == PAGE_READONLY ) )
+		return TRUE;
 	
 	s = VirtualProtectEx(process, info->BaseAddress, info->RegionSize, new_protect, old_protect);
 	if ( !s )
 	{
 		printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", GetLastError(), (size_t) info->BaseAddress);
-//		printError("VirtualProtect", GetLastError());
 		return FALSE;
 	}
+	
 	return TRUE;
 }
 
@@ -467,11 +463,7 @@ BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsi
 	if ( !s )
 		return FALSE;
 
-//	printf("last_base: %p\n", last_base);
-//	printf("info.AllocationBase: %p\n", info->AllocationBase);
-
 	getRegionName(process, info->AllocationBase, file_name);
-//	printf("file_name: %s\n", *file_name);
 	if ( last_base != info->AllocationBase )
 	{
 		if ( !confirmContinueWithNextRegion(file_name, (uintptr_t) info->AllocationBase) )
@@ -519,15 +511,9 @@ BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION
 
 	*p += info->RegionSize;
 	query_size = VirtualQueryEx(process, *p, info, sizeof(*info));
-//	printf("query_size: %lu\n", query_size);
-//	printf("sizeof(*info): %lu\n", sizeof(*info));
 
 	if ( query_size != sizeof(*info) )
-	{
-//		printf("ERROR (0x%08lx) VirtualQueryEx: could not query info!\n", GetLastError());
-//		printError("queryNextRegion", GetLastError());
 		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -537,21 +523,16 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 	const DWORD f_path_size = PATH_MAX;
 	char f_path[PATH_MAX] = {0};
 	DWORD s;
-//	printf("getRegionName()\n");
 
 //	GetModuleBaseNameA(process, base, f_path, f_path_size); // sometimes not valid
 	s = GetMappedFileNameA(process, base, f_path, f_path_size);
-//	printf(" - s: %lu\n", s);
 	if ( s == 0 )
 	{
 		file_name[0] = 0;
 		return FALSE;
 	}
-//	printf(" - f_path: %s\n", f_path);
 	f_path[f_path_size-1] = 0;
-//	printf(" - f_path: %s\n", f_path);
 	getFileName(f_path, file_name);
-//	printf(" - file_name: %s\n", file_name);
 
 	return TRUE;
 }
@@ -559,11 +540,13 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 /**
  *
  * @param process
- * @param me32
- * @param base_off uint32_t base offset in module to start at printing
- * @return 0 if end of block is reached, 1 if forced to quit
+ * @param base_addr BYTE* base of module
+ * @param base_off uint32_t base offset in module to start printing at
+ * @param region_size SIZE_T size of region in module
+ * @param found size_t if something has been searched, the found offset.
+ * @return int 0 if end of block is reached, 1 if forced to quit
  */
-int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, char* reg_name)
+int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found)
 {
 	size_t n_size = 0;
 	unsigned char buffer[BLOCKSIZE_LARGE] = {0};
@@ -577,13 +560,16 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 	if ( !continuous_f )
 		return 1;
 
-	while ( n_size && n_size == length )
+	if ( base_off == region_size )
+		return 0;
+
+	while ( n_size > 0 && n_size == length )
 	{
 		input = _getch();
 
 		if ( input == ENTER )
 			n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
-		else if ( find_f && input == 'n' )
+		else if ( find_f && input == NEXT )
 		{
 			found = findNeedleInProcessMemoryBlock(base_addr, region_size, found + p_needle_ln, process, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
@@ -591,7 +577,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 				s = 0;
 				break;
 			}
-			found -= (size_t) base_addr;
+			found -= (uintptr_t) base_addr;
 			base_off = normalizeOffset(found, &skip_bytes);
 			Printer_setHighlightBytes(p_needle_ln);
 			Printer_setHighlightWait(skip_bytes);
@@ -600,13 +586,19 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 			printf("\n");
 			n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
 		}
-		else if ( input == 'q' )
+		else if ( input == QUIT )
 		{
 			s = 1;
 			break;
 		}
 
 		base_off += n_size;
+
+		if ( base_off == region_size )
+		{
+			s = 0;
+			break;
+		}
 	}
 
 	return s;
@@ -614,11 +606,11 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 
 /**
  *
- * @param me32
- * @param process
- * @param base_off
- * @param base_addr
- * @param buffer
+ * @param process HANDLE
+ * @param base_addr BYTE*
+ * @param base_off size_t
+ * @param region_size DWORD
+ * @param buffer unsigned char*
  * @return
  */
 size_t
@@ -631,13 +623,15 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
 	size_t end = block_start + length;
 	size_t p;
 	size_t nr_of_parts = length / BLOCKSIZE_LARGE;
-	if ( length % BLOCKSIZE_LARGE != 0 ) nr_of_parts++;
+	if ( length % BLOCKSIZE_LARGE != 0 )
+		nr_of_parts++;
 	
 	for ( p = 0; p < nr_of_parts; p++ )
 	{
 		debug_info("%llu / %llu\n", (p + 1), nr_of_parts);
 		read_size = BLOCKSIZE_LARGE;
-		if ( block_start + read_size > end ) read_size = end - block_start;
+		if ( block_start + read_size > end )
+			read_size = end - block_start;
 		debug_info(" - read_size: %llu\n", read_size);
 
 		memset(buffer, 0, BLOCKSIZE_LARGE);
@@ -682,7 +676,8 @@ size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, siz
 
 	if ( !s )
 	{
-		printf(" - Error (0x%lx): ReadProcessMemory 0x%llx bytes at 0x%llx\n", GetLastError(), bytes_read, (size_t)base_addr + base_off);
+		printf(" - Error (0x%lx): ReadProcessMemory 0x%llx of 0x%llx bytes at 0x%llx\n", 
+				GetLastError(), bytes_read, n_size, (uintptr_t)base_addr + base_off);
 		return 0;
 	}
 
@@ -759,22 +754,22 @@ findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, 
 	size_t block_i;
 	size_t j = 0;
 	size_t base_off = offset;
-	size_t n_size = length;
-	unsigned char buf[BLOCKSIZE_LARGE] = {0};
+	size_t n_size = BLOCKSIZE_LARGE;
+	unsigned char find_buf[BLOCKSIZE_LARGE] = {0};
 
 	debug_info("Find: ");
 	for ( block_i = 0; block_i < needle_ln; block_i++ )
 		debug_info("%02x", p_needle[block_i]);
 	debug_info("\n");
 
-	while ( n_size && n_size == length )
+	while ( n_size && n_size == BLOCKSIZE_LARGE )
 	{
-		n_size = readProcessBlock(base_addr, base_off, base_size, length, process, buf);
-		block_i = findNeedleInBlock(needle, needle_ln, buf, &j, n_size);
+		n_size = readProcessBlock(base_addr, base_off, base_size, BLOCKSIZE_LARGE, process, find_buf);
+		block_i = findNeedleInBlock(needle, needle_ln, find_buf, &j, n_size);
 
 		if ( j == needle_ln )
 		{
-			found = (size_t) base_addr + base_off + block_i - needle_ln + 1;
+			found = (uintptr_t) base_addr + base_off + block_i - needle_ln + 1;
 			break;
 		}
 
@@ -890,6 +885,13 @@ int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfo
 	return 0;
 }
 
+/**
+ * List process memory layout.
+ * TODO: flag stack and heap regions by reading TEB / PEB
+ * 
+ * @param pid 
+ * @return 
+ */
 Bool listProcessMemory(uint32_t pid)
 {
 	HANDLE process = NULL;
@@ -974,12 +976,6 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 	return 0;
 }
 
-BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info)
-{
-	return ( info->State == MEM_FREE && info->Protect == PAGE_NOACCESS ) ||
-			( info->State == MEM_RESERVE && info->Type == MEM_PRIVATE && info->Protect == 0 );
-}
-
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* mbi)
 {
 	if ( mbi->Protect & (PAGE_GUARD|PAGE_NOACCESS) )
@@ -993,7 +989,7 @@ BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* mbi)
 //			!( mbi->State == MEM_RESERVE && (mbi->Type == MEM_PRIVATE||mbi->Type == MEM_MAPPED) && mbi->Protect == 0 )
 //			&&
 //			!( mbi->State == MEM_RESERVE && mbi->Type == MEM_MAPPED && mbi->Protect == 0 )
-			;
+//			;
 }
 
 char* getMemoryStateString(DWORD state)
@@ -1059,28 +1055,28 @@ char* getProtectString(DWORD protect)
 			return("None");
 		case PAGE_NOACCESS:
 //			return("No Access");
-			return("---");
+			return(" ---");
 		case PAGE_READONLY:
 //			return("Read Only");
-			return("r--");
+			return(" r--");
 		case PAGE_READWRITE:
 //			return("Read/Write");
-			return("rw-");
+			return(" rw-");
 		case PAGE_WRITECOPY:
 //			return("Copy on Write");
-			return("rc-");
+			return(" rc-");
 		case PAGE_EXECUTE:
 //			return("Execute only");
-			return("--x");
+			return(" --x");
 		case PAGE_EXECUTE_READ:
 //			return("Execute/Read");
-			return("r-x");
+			return(" r-x");
 		case PAGE_EXECUTE_READWRITE:
 //			return("Execute/Read/Write");
-			return("rwx");
+			return(" rwx");
 		case PAGE_EXECUTE_WRITECOPY:
 //			return("COW Executable");
-			return("rcx");
+			return(" rcx");
 		case PAGE_TARGETS_INVALID:
 //			case PAGE_TARGETS_NO_UPDATE:
 			return("NO_UPDATE/INVALID");
