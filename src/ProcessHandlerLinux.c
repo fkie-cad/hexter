@@ -545,7 +545,7 @@ Bool listProcessModules(uint32_t pid)
 	uint32_t last_module_inode = 0;
 	uint64_t module_size = 0;
 	uint64_t module_nr = 0;
-	uint64_t start_address;
+	uint64_t start_address = 0;
 
 	ProcMapsEntry entry;
 	memset(&entry, 0, sizeof(entry));
@@ -605,7 +605,7 @@ Bool listProcessModules(uint32_t pid)
 
 Bool isModule(ProcMapsEntry* entry)
 {
-	return entry->pathname && entry->pathname[0] != 0 && entry->pathname[0] != '[' && entry->inode != 0;
+	return entry->pathname[0] != 0 && entry->pathname[0] != '[' && entry->inode != 0;
 }
 
 void printProcessModulesTableHeader(const uint8_t map_entry_col_width[6])

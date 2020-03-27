@@ -12,6 +12,8 @@
 #include "Globals.h"
 #include "utils/Converter.h"
 
+static void truncateFile(FILE* fp, size_t file_size, size_t length);
+
 /**
  * Parse the arg as a byte.
  *
@@ -293,7 +295,7 @@ uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
  * @param payload_ln
  * @param offset
  */
-void insert(char* file_path, unsigned char* payload, uint32_t payload_ln, size_t offset)
+void insert(const char* file_path, unsigned char* payload, uint32_t payload_ln, size_t offset)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
@@ -356,7 +358,7 @@ void insert(char* file_path, unsigned char* payload, uint32_t payload_ln, size_t
  * @param	payload_ln uint32_t the length of the bytes to write
  * @param	offset size_t the offset to write the bytes at
  */
-void overwrite(char* file_path, unsigned char* payload, uint32_t payload_ln, size_t offset)
+void overwrite(const char* file_path, unsigned char* payload, uint32_t payload_ln, size_t offset)
 {
 	FILE* fp;
 	// backup
@@ -403,13 +405,14 @@ void overwrite(char* file_path, unsigned char* payload, uint32_t payload_ln, siz
  * @param start size_t start offset of the deletion.
  * @param length size_t length of the bytes to delete.
  */
-void deleteBytes(char* file_path, size_t start, size_t length)
+void deleteBytes(const char* file_path, size_t start, size_t length)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
 	const int buf_ln = BLOCKSIZE_LARGE;
 	size_t n = buf_ln;
 	FILE* fp;
 	size_t offset;
+	size_t end;
 
 	if ( start > file_size )
 	{
@@ -423,32 +426,44 @@ void deleteBytes(char* file_path, size_t start, size_t length)
 		return;
 	}
 
-	offset = start;
+	// If delete from start to end, just truncate.
+	if ( start + length >= file_size )
+	{
+		truncateFile(fp, file_size, length);
+		fclose(fp);
+		return;
+	}
+
+	end = start + length;
+	offset = end;
 	fseek(fp, offset, SEEK_SET);
 	while ( n == buf_ln )
 	{
+		memset(buf, 0, BLOCKSIZE_LARGE);
+
+		// read from offset
 		fseek(fp, offset, SEEK_SET);
 		n = fread(buf, 1, buf_ln, fp);
 
-		if ( offset == start )
-		{
-			fseek(fp, offset, SEEK_SET);	   	   // f: ....0123456789ABCDEF, buf = 0123456789ABCDEF, length = 4
-			fwrite(&buf[length], 1, n-length, fp); // f: ....456789ABCDEF...., buf = 0123[456789ABCDEF]
-		}
-		else
-		{
-			fseek(fp, offset-length, SEEK_SET);	 // f: ....0123456789ABCDEF, buf = 01234567, length =
-			fwrite(buf, 1, n, fp);               // f: 01234567896789ABCDEF...., buf = 01234567
-		}
+		// write to start
+		fseek(fp, start, SEEK_SET);	 // f: ....0123456789ABCDEF, buf = 01234567, length =
+		fwrite(buf, 1, n, fp);               // f: 01234567896789ABCDEF...., buf = 01234567
 
+		// increase offset and start
 		offset += n;
+		start += n;
 	}
 
-#if defined(__linux__) || defined(__linux) || defined(linux)
-	ftruncate(fileno(fp), file_size-length);
-#elif defined(_WIN32)
-	_chsize(_fileno(fp), file_size-length);
-#endif
+	truncateFile(fp, file_size, length);
 
 	fclose(fp);
+}
+
+void truncateFile(FILE* fp, size_t size, size_t length)
+{
+#if defined(__linux__) || defined(__linux) || defined(linux)
+	ftruncate(fileno(fp), size-length);
+#elif defined(_WIN32)
+	_chsize(_fileno(fp), size-length);
+#endif
 }

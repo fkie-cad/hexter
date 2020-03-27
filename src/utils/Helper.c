@@ -217,7 +217,7 @@ uint8_t countHexWidth64(uint64_t value)
  */
 uint8_t countHexWidth32(uint32_t value)
 {
-	uint8_t width = 16;
+	uint8_t width = 8;
 	uint8_t t8;
 	uint16_t t16 = (uint16_t) (value >> 16u);
 	if ( t16 == 0 )

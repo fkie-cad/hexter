@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <deque>
 #include <functional>
+#include <filesystem>
 
 #include "misc/Misc.h"
 //#include "../src/Globals.h"
@@ -24,10 +25,13 @@
 
 using namespace std;
 
+namespace fs = std::filesystem;
+
 class WriterTest : public testing::Test
 {
 	protected:
 		static string temp_dir;
+		const string pe_file = "tests/files/qappsrv.exe";
 
 		static Misc misc;
 
@@ -66,6 +70,9 @@ class WriterTest : public testing::Test
 
 			return string(dir);
 		}
+
+		void assertProperlyDeleted(const string& src, vector<uint8_t>& bytes, uint64_t start);
+		void checkBytes(const string& file0, const string& file1, size_t start_o, size_t start_c, size_t size);
 
 	public:
 		static void SetUpTestCase()
@@ -367,16 +374,54 @@ TEST_F(WriterTest, testInsertOutOfFileBounds)
 	remove(src.c_str());
 }
 
-TEST_F(WriterTest, testDelete)
+TEST_F(WriterTest, testDeleteStart)
+{
+	uint64_t binary_size = 0x50;
+//	string src = temp_dir+"/testDelete.hex";
+	string src = "/tmp/testDelete.tmp";
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
+
+	uint64_t start = 0;
+	length = 0x10;
+
+	assertProperlyDeleted(src, bytes, start);
+
+	remove(src.c_str());
+}
+
+TEST_F(WriterTest, testDeleteMiddle)
+{
+	uint64_t binary_size = 65;
+//	string src = temp_dir+"/testDelete.hex";
+	string src = "/tmp/testDelete.tmp";
+	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
+
+	uint64_t start = 12;
+	length = 9;
+
+	assertProperlyDeleted(src, bytes, start);
+
+	remove(src.c_str());
+}
+
+TEST_F(WriterTest, testDeleteEnd)
 {
 	uint64_t binary_size = 64;
 //	string src = temp_dir+"/testDelete.hex";
 	string src = "/tmp/testDelete.tmp";
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
+	uint64_t start = 21;
+	length = binary_size - start;
+
+	assertProperlyDeleted(src, bytes, start);
+
+	remove(src.c_str());
+}
+
+void WriterTest::assertProperlyDeleted(const string& src, vector<uint8_t>& bytes, uint64_t start)
+{
 	snprintf(file_path, PATH_MAX, "%s", &src[0]);
-	uint64_t start = 2;
-	length = 8;
 	file_size = getSize(file_path);
 
 //	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
@@ -397,20 +442,90 @@ TEST_F(WriterTest, testDelete)
 	ifstream check_fs(src);
 	uint64_t size = getSize(file_path);
 	cout << " new size: "<<dec<<size<<endl;
-	EXPECT_EQ(size, binary_size-length);
+	EXPECT_EQ(size, bytes.size()-length);
 	check_fs.seekg(0);
 
 	for ( int i = 0; i < size; i++ )
 	{
 		unsigned char cs;
-		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		check_fs.read((char*)(&(cs)), 1);
 		cout<<setw(2)<<setfill('0') << i <<hex<<" g: "<<setw(2)<<setfill('0')<<+cs<<  " = "<<setw(2)<<setfill('0')<<+deleted_bytes[i]<<dec<<" :e"<<endl;
 
 		EXPECT_EQ(cs, deleted_bytes[i]);
 	}
 
 	check_fs.close();
-	remove(src.c_str());
+}
+
+void WriterTest::checkBytes(const string& file0, const string& file1, size_t start_o, size_t start_c, size_t size)
+{
+	uint8_t bo;
+	uint8_t bc;
+	ifstream original(file0);
+	ifstream cropped(file1);
+
+	original.seekg(start_o);
+	cropped.seekg(start_c);
+
+	for ( size_t i = 0; i < size; i++ )
+	{
+		original.read((char*)(&(bo)), 1);
+		cropped.read((char*)(&(bc)), 1);
+
+		EXPECT_EQ(bo, bc);
+	}
+	original.close();
+	cropped.close();
+}
+
+TEST_F(WriterTest, testMultiDeleteOnRealFile)
+{
+	string src0 = pe_file;
+
+	string file0 = "/tmp/testMultiDeleteOnRealFile.exe";
+
+	fs::copy_file(src0, file0, fs::copy_options::skip_existing);
+
+	uint64_t c0_s = 0x400; // coderegion start
+	uint64_t c0_e = 0x4642; // coderegion end
+
+	uint64_t file0_size_o = fs::file_size(file0);
+	uint64_t file0_size = file0_size_o;
+
+	uint64_t s = 0;
+	uint64_t l = c0_s;
+
+	snprintf(file_path, PATH_MAX, "%s", &file0[0]);
+
+//	printf("file_size(file0): 0x%lx\n", file0_size);
+//	printf("delete s: 0x%lx, l: 0x%lx\n", s, l);
+
+	file_size = getSize(file_path);
+
+	deleteBytes(&file0[0], s, l);
+
+	file0_size = fs::file_size(file0);
+	EXPECT_EQ(file0_size, file0_size_o - l);
+
+//	printf("file_size(file0): 0x%lx\n", fs::file_size(file0));
+
+	checkBytes(src0, file0, c0_s, s, file0_size);
+
+//	printf("\n\n");
+	s = c0_e - c0_s;
+	l = file0_size - s;
+	file_size = getSize(file_path);
+//	printf("s: 0x%lx, l: 0x%lx\n", s, l);
+
+	deleteBytes(&file0[0], s, l);
+	file0_size = fs::file_size(file0);
+	EXPECT_EQ(file0_size, file0_size_o - l - c0_s);
+
+//	printf("file_size(file0): 0x%lx\n", fs::file_size(file0));
+
+	checkBytes(src0, file0, c0_s, 0, file0_size);
+
+	fs::remove(file0);
 }
 
 TEST_F(WriterTest, testParsePlainBytes)

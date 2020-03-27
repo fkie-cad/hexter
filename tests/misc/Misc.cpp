@@ -30,7 +30,7 @@ vector<uint8_t> Misc::createBinary(const string& file_src, size_t f_size)
 	{
 		uint8_t value = (*dis)(*gen);
 		uint8_t size = sizeof(value);
-		f.write(reinterpret_cast<char *>(&(value)), size);
+		f.write((char*)(&(value)), size);
 		values[i] = value;
 	}
 
