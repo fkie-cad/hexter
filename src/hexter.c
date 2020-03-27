@@ -408,7 +408,7 @@ void parseArgs(int argc, char** argv)
 				s = parseUint64Auto(argv[i + 1], &length);
 				if ( s != 0 )
 				{
-					printf("INFO: Could not parse length. Setting it to %u!\n", DEFAULT_LENGTH);
+					printf("INFO: Could not parse length. Setting it to 0x%x!\n", DEFAULT_LENGTH);
 					length = DEFAULT_LENGTH;
 				}
 				else
@@ -566,7 +566,7 @@ void sanitizeParams(uint32_t pid)
 
 	if ( length == 0 )
 	{
-		fprintf(stdout, "Info: Length is 0. Setting to %u!\n", DEFAULT_LENGTH);
+		fprintf(stdout, "Info: Length is 0. Setting to 0x%x!\n", DEFAULT_LENGTH);
 		length = DEFAULT_LENGTH;
 		info_line_break = 1;
 	}
@@ -582,7 +582,7 @@ uint8_t keepStartInFile()
 #if defined(_WIN32)
 		fprintf(stderr, "Info: Start offset %llx is greater the the file_size %llx (%llu)!\nSetting to 0!", start, file_size, file_size);
 #else
-		fprintf(stderr, "Info: Start offset %lx is greater the the file_size %lx (%lu)!\nSetting to 0!", start, file_size, file_size);
+		fprintf(stderr, "Info: Start offset 0x%lx is greater the the file_size 0x%lx (%lu)!\nSetting to 0!\n", start, file_size, file_size);
 #endif
 		start = 0;
 		return 1;
@@ -597,7 +597,7 @@ uint8_t keepLengthInFile()
 #if defined(_WIN32)
 		printf("Info: Start offset %llu plus length %llu is greater then the file size %llu\nPrinting only to file size.\n",
 #else
-		printf("Info: Start offset %lu plus length %lu is greater then the file size %lu\nPrinting only to file size.\n",
+		printf("Info: Start offset 0x%lx plus length 0x%lx is greater then the file size 0x%lx\nPrinting only to file size.\n",
 #endif
 		start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
 		length = file_size - start;
@@ -627,7 +627,7 @@ uint32_t parsePayload(const char format, const char* value, unsigned char** payl
 	{
 		if ( length > MAX_PAYLOAD_LN )
 		{
-			printf("INFO: Fill byte length is greater than %u. Setting to %u!\n", MAX_PAYLOAD_LN, MAX_PAYLOAD_LN);
+			printf("INFO: Fill byte length is greater than 0x%x (%u). Setting to 0x%x (%u)!\n", MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN);
 			length = MAX_PAYLOAD_LN;
 		}
 		ln = payloadParseFillBytes(value, payload, length);
