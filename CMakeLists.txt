@@ -3,8 +3,9 @@ project(Hexter VERSION 1.5.4 DESCRIPTION "A command line hex viewer." LANGUAGES 
 
 set(CMAKE_C_STANDARD 99)
 if (UNIX)
+	# D_FILE_OFFSET_BITS using 64 bit version of file functions
 	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -pedantic -Werror=return-type -D_FILE_OFFSET_BITS=64")
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fno-builtin -Werror=return-type -D_FILE_OFFSET_BITS=64")
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wl,-z,relro,-z,now -fno-builtin -Werror=return-type -D_FILE_OFFSET_BITS=64")
 
 	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer")
 
