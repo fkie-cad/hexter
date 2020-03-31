@@ -17,17 +17,17 @@
 size_t split(char* str, const char* delimiter, char** bucket, const size_t bucket_max)
 {
 	char* token;
-	char* next_token;
+//	char* next_token;
 
-//	token = strtok(str, delimiter);
-	token = strtok_s(str, delimiter, &next_token);
+	token = strtok(str, delimiter);
+//	token = strtok_s(str, delimiter, &next_token);
 	size_t token_id = 0;
 
-	while ( token != NULL)
+	while ( token != NULL )
 	{
 		bucket[token_id] = token;
-//		token = strtok(NULL, delimiter);
-		token = strtok_s(NULL, delimiter, &next_token);
+		token = strtok(NULL, delimiter);
+//		token = strtok_s(NULL, delimiter, &next_token);
 
 		token_id++;
 		if ( token_id >= bucket_max )
