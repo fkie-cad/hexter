@@ -32,5 +32,7 @@ echo "mode: "${mode}
 echo "build_dir: "${build_dir}
 
 mkdir -p ${build_dir}
-cmake ${ROOT} -B${build_dir} -DCMAKE_BUILD_TYPE=${mode}
+cmake -S ${ROOT} -B ${build_dir} -DCMAKE_BUILD_TYPE=${mode}
 cmake --build ${build_dir} --target ${target}
+
+return $?
