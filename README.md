@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting reading, writing and searching in files
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.5.11  
-Last changed: 31.03.2020
+1.5.12  
+Last changed: 17.04.2020
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc or msbuild) is required.  
@@ -51,7 +51,7 @@ Optional Parameters:
    * d: double word, 
    * q: quad word.  
    Expect for the ascii string, all values have to be passed as hex values.  
- * -d Delete -l bytes from offset -s. (File mode only.)
+ * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
  * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'a/file/name'.
  * -pid only.
    * -lpx List whole process memory layout.

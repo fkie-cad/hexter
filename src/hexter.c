@@ -56,8 +56,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.11";
-static const char* last_changed = "31.03.2020";
+static const char* vs = "1.5.12";
+static const char* last_changed = "17.04.2020";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -88,19 +88,8 @@ static uint8_t keepLengthInFile();
 
 
 // TODO:
-// - Debug lenght bug if > 0x400
-//		- pid
-//			- Windows
-//			- Linux ??
-// + unbind -lrp from dependencies
-// - highlight found part
-//	 + hex
-//	 + ascii
-// + continuous find typing 'n'
 // - find and replace -fh ... -rh ..-
-// + overwrite with a number of fill bytes
 // - reversed payload, endianess option for hex and word payload
-// + align offset to 0x10, print spaces to fill col up
 // - improve search performance
 // + view processes
 //   + linux
@@ -283,7 +272,7 @@ void printHelp()
 		   "     Expect for the ascii string, all values have to be passed as hex values.\n"
 		   "     A fill byte has the length of -l.\n"
 //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
-		   " * -d Delete -l bytes from offset -s. (File mode only.)\n"
+		   " * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
 		   " * -pid only options:\n"
 		   " * * -lpx List whole process memory layout.\n"
 		   " * * -lpm List all process modules.\n"
@@ -566,8 +555,16 @@ void sanitizeParams(uint32_t pid)
 
 	if ( length == 0 )
 	{
-		fprintf(stdout, "Info: Length is 0. Setting to 0x%x!\n", DEFAULT_LENGTH);
-		length = DEFAULT_LENGTH;
+		if ( delete_f )
+		{
+			fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%x!\n", file_size - start);
+			length = file_size - start;
+		}
+		else
+		{
+			fprintf(stdout, "Info: Length is 0. Setting to 0x%x!\n", DEFAULT_LENGTH);
+			length = DEFAULT_LENGTH;
+		}
 		info_line_break = 1;
 	}
 
