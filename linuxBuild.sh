@@ -35,4 +35,4 @@ mkdir -p ${build_dir}
 cmake -S ${ROOT} -B ${build_dir} -DCMAKE_BUILD_TYPE=${mode}
 cmake --build ${build_dir} --target ${target}
 
-return $?
+exit $?
