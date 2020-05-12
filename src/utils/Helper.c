@@ -51,6 +51,7 @@ void expandFilePath(const char* src, char* dest)
 
 /**
  * Create a temporary file and store its name in buf.
+ * Currently Linux only.
  *
  * @param	buf char[128]
  * @param	prefix char* name prefix of the tmp file

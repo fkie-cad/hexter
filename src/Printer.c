@@ -2,9 +2,10 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #if defined(__linux__) || defined(__linux) || defined(linux)
 	#include <unistd.h>
-	#include "utils/TerminalUtil.h"
+#include "utils/TerminalUtil.h"
 #endif
 #if defined(_WIN32)
 	#include <conio.h>
@@ -41,6 +42,8 @@ static unsigned char* needle = NULL;
 static uint32_t needle_ln;
 static size_t found = 0;
 
+static int errsv;
+
 /**
  * Prints the values depending on the mode.
  *
@@ -64,10 +67,12 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
 	debug_info("nr_of_parts: %lu\n", nr_of_parts);
 	debug_info("\n");
 
+	errno = 0;
 	fi = fopen(file_path, "rb");
+	errsv = errno;
 	if ( !fi )
 	{
-		printf("File %s does not exist.\n", file_path);
+		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
 		return;
 	}
 
@@ -176,43 +181,52 @@ void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t
 	}
 }
 
-size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, size_t block_start, size_t block_max)
+size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, size_t read_start, size_t read_max)
 {
 	size_t p;
 	size_t read_size = 0;
 	size_t size;
-	size_t end = block_start + length;
+	size_t end = read_start + length;
 	uint8_t offset_width = countHexWidth64(end);
+
+	// adjust end size if it exceeds read_max
+	if ( end > read_max )
+		end = read_max;
 
 	for ( p = 0; p < nr_of_parts; p++ )
 	{
 		debug_info("%lu / %lu\n", (p+1), nr_of_parts);
 		read_size = block_size;
 		debug_info(" - read_size: 0x%lx\n", read_size);
-		debug_info(" - block_start: 0x%lx\n", block_start);
+		debug_info(" - block_start: 0x%lx\n", read_start);
 		debug_info(" - end: 0x%lx\n", end);
-		if ( block_start + read_size > end ) read_size = end - block_start;
+		if ( read_start >= end )
+			break;
+		if ( read_start + read_size > end )
+			read_size = end - read_start;
+		if ( read_size == 0 )
+			break;
 		debug_info(" - read_size: 0x%lx\n", read_size);
 
 		memset(block, 0, block_size);
-		size = readFile(fi, block_start, read_size, block);
+		size = readFile(fi, read_start, read_size, block);
 
 		if ( !size )
 		{
-			printf("ERROR: Reading block of bytes failed!\n");
-			block_start = block_max;
+			printf("ERROR (0x%x): Reading block of bytes failed!\n", cfio_getErrno());
+			read_start = read_max;
 			break;
 		}
 
-		printLine(block, block_start, size, offset_width);
+		printLine(block, read_start, size, offset_width);
 
-		block_start += read_size;
+		read_start += read_size;
 	}
 
-	if ( block_start >= block_max )
-		block_start = SIZE_MAX;
+	if ( read_start >= read_max )
+		read_start = SIZE_MAX;
 
-	return block_start;
+	return read_start;
 }
 
 void printLine(const unsigned char* block, size_t block_start, size_t size, uint8_t offset_width)
@@ -370,7 +384,7 @@ void printAnsiFormatedHexValue(const unsigned char b)
 {
 	if ( highlight_hex_bytes > 0 && highlight_hex_wait-- <= 0 )
 	{
-		printf(HIGHLIGHT_HEX_STYLE);
+		setAnsiFormat(HIGHLIGHT_HEX_STYLE);
 		highlight_hex_bytes--;
 		printf("%02X ", b);
 		resetAnsiFormat();

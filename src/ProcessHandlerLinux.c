@@ -6,6 +6,7 @@
 #include <fnmatch.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <errno.h>
 
 #include "ProcessHandlerLinux.h"
 #include "utils/Converter.h"
@@ -135,6 +136,7 @@ static const uint16_t line_size = 512;
 
 static unsigned char* p_needle = NULL;
 static uint32_t p_needle_ln;
+static int errsv = 0;
 
 /**
  * Open proc pid file
@@ -148,7 +150,11 @@ Bool fopenProcessFile(uint32_t pid, FILE **fp, char *type, const char* mode)
 {
 	char file[64];
 	sprintf(file, "/proc/%u/%s", pid, type);
+	file[63] = 0;
+
+	errno = 0;
 	*fp = fopen(file, mode);
+	errsv = errno;
 
 	if ( !(*fp) )
 		return false;
@@ -193,8 +199,10 @@ Bool parseProcessMaps(uint32_t pid, MapsInfoCallback cb)
 	ProcMapsEntry entry;
 
 	if ( !fopenProcessMaps(pid, &fp) )
-		return 0;
-
+	{
+		printf("ERROR (%x): Could not open process maps %u.\n", errsv, pid);
+		return false;
+	}
 	while ( fgets(line, line_size, fp) )
 	{
 		line[line_size] = 0;
@@ -288,7 +296,7 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t *start)
 
 	if ( !fopenProcessMaps(pid, &fp) )
 	{
-		printf("ERROR: Could not open process maps %u.\n", pid);
+		printf("ERROR (%x): Could not open process maps %u.\n", errsv, pid);
 		return 0;
 	}
 
@@ -419,8 +427,10 @@ uint64_t getSizeOfProcess(uint32_t pid)
 		return 0;
 
 	if ( !fopenProcessMaps(pid, &fp) )
+	{
+		printf("ERROR (%x): Could not open process maps %u.\n", errsv, pid);
 		return 0;
-
+	}
 	while ( fgets(line, line_size, fp) )
 	{
 		line[line_size] = 0;
@@ -470,7 +480,7 @@ Bool getProcName(uint32_t pid, char* name, size_t name_size)
 	// -r--r--r-- ... cmdline
 	if ( !fopenProcessFile(pid, &fp, "cmdline", "r") )
 	{
-		printf("ERROR: failed to open /proc/%u/cmdline\n", pid);
+		printf("ERROR (%x): failed to open /proc/%u/cmdline\n", errsv, pid);
 		return false;
 	}
 	fgets(line, line_size, fp);
@@ -499,12 +509,12 @@ Bool getProcStat(uint32_t pid, ProcStat* proc_stat)
 	FILE* fp = NULL;
 	char line[LINE_BUFFER_SPACE];
 	const uint8_t bucket_max = 53;
-	char* bucket[53]; // one more space to mark uncommon value of comm
+	char* bucket[53]; // one more entry to mark uncommon value of comm
 	size_t bucket_ln;
 
 	if ( !fopenProcessFile(pid, &fp, "stat", "r") )
 	{
-		printf("ERROR: failed to open /proc/%u/stat\n", pid);
+		printf("ERROR (%x): failed to open /proc/%u/stat\n", errsv, pid);
 		return false;
 	}
 	fgets(line, line_size, fp);
@@ -553,7 +563,10 @@ Bool listProcessModules(uint32_t pid)
 	memset(&entry, 0, sizeof(entry));
 
 	if ( !fopenProcessMaps(pid, &fp) )
-		return 0;
+	{
+		printf("ERROR (%x): Could not open process maps %u.\n", errsv, pid);
+		return false;
+	}
 
 	printProcessModulesTableHeader(map_entry_col_width);
 
@@ -724,6 +737,7 @@ int writeProcessMemory(uint32_t pid, unsigned char *payload, uint32_t payload_ln
 {
 	char file[64];
 	sprintf(file, "/proc/%u/%s", pid, "mem");
+	file[63] = 0;
 	overwrite(file, payload, payload_ln, start);
 
 	return 0;
@@ -762,14 +776,14 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
 	// check if /proc/pid/mem is accessible
 	if ( !fopenProcessMemory(pid, &fp, "r") )
 	{
-		printf("ERROR: Could not open process %u memory.\nRoot permissions are required!", pid);
+		printf("ERROR (%x): Could not open process %u memory.\nRoot permissions are required!", errsv, pid);
 		return false;
 	}
 	fclose(fp); // maybe hold and pass pointer to mem, since it is used anyway
 
 	if ( !fopenProcessMaps(pid, &fp) )
 	{
-		printf("ERROR: Could not open process maps %u.\n", pid);
+		printf("ERROR (%x): Could not open process maps %u.\n", errsv, pid);
 		return false;
 	}
 
@@ -915,7 +929,7 @@ findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_s
 
 	if ( !fopenProcessMemory(pid, &fp, "r") )
 	{
-		printf("ERROR: Could not open process %u memory.\n", pid);
+		printf("ERROR (%x): Could not open process %u memory.\n", errsv, pid);
 		return false;
 	}
 	found = findNeedleInFP(needle, needle_ln, base_addr+offset, fp, base_addr+base_size);
@@ -926,9 +940,12 @@ findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_s
 
 /**
  *
- * @param fp
- * @param me32
- * @param base_off uint32_t base offset in module to start at printing
+ * @param pid uint32_t process id
+ * @param base_addr uint64_t module base address
+ * @param base_off uint64_t base offset in module to start at printing
+ * @param size uint64_t size of module
+ * @param found uint64_t found offset
+ * @param print_s int auto print flag
  * @return 0 if end of block is reached, 1 if forced to quit
  */
 int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s)
@@ -957,7 +974,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 
 	if ( !fopenProcessMemory(pid, &fp, "r") )
 	{
-		printf("ERROR: Could not open process %u memory.\n", pid);
+		printf("ERROR (%x): Could not open process %u memory.\n", errsv, pid);
 		return false;
 	}
 //	printf("printRegionProcessMemory\n");
@@ -1094,7 +1111,7 @@ char* getStateString(char c)
 		case 'Z': return "Zombie";
 		case 'T': return "Stopped";
 		case 't': return "Tracing";
-		case 'X': return "Dead";
+		case 'X': // return "Dead";
 		case 'x': return "Dead";
 		case 'K': return "Wakekill";
 //		case 'W': return "Paging"; // before Linux 2.6.0

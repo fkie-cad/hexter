@@ -19,5 +19,6 @@ size_t getSize(const char* finame);
 //size_t cfio_sanitizeFileSize(const char* finame, size_t file_size, size_t begin, size_t stopAt);
 //size_t cfio_readFile(const char* finame, size_t begin, size_t size, unsigned char* data);
 size_t readFile(FILE* fi, size_t begin, size_t size, unsigned char* data);
+int cfio_getErrno();
 
 #endif

@@ -9,7 +9,7 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t nee
 void setPrintingStyle();
 void Printer_cleanUp(unsigned char* block, FILE* fi);
 void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, size_t block_start, size_t block_max);
-size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, size_t block_start, size_t block_max);
+size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, size_t read_start, size_t read_max);
 void printLine(const unsigned char* block, size_t block_start, size_t size, uint8_t offset_width);
 void printDoubleCols(const unsigned char* block, size_t size);
 void printTripleCols(const unsigned char* block, size_t size, size_t offset, uint8_t width);
