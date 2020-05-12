@@ -56,8 +56,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.12";
-static const char* last_changed = "17.04.2020";
+static const char* vs = "1.5.13";
+static const char* last_changed = "12.05.2020";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
