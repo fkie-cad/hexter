@@ -53,12 +53,13 @@ size_t splitArgs(char* buffer, char* argv[], size_t argv_size)
 
 /**
  * Split args string into parts, delimited by space.
- * A string in args may be marked by sm.
+ * Spaces in between chars enclosed by som, scm (som chars chars scm) are not split. 
  *
  * @param buffer char* the args buffer string
  * @param argv char** the pre-allocated argv container
  * @param argv_size size_t the maximum expected number of args, i.e. size of argv
- * @param sm char a string marker. A characters enclosed by this marker are not split by spaces.
+ * @param som char a (opening)´string marker. A characters sequence opened by this marker is not split by spaces.
+ * @param scm char a (closing) string marker. A characters sequence closed by this marker is not split by spaces.
  * @return size_t the actual number of parsed argv.
  */
 size_t splitArgsCSM(char* buffer, char* argv[], size_t argv_size, char som, char scm)
