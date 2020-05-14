@@ -9,6 +9,9 @@
 
 #define HEXTER_EXPORTS
 
+// for usage in Diller
+// #define DILLER
+
 #include "hexter.h"
 #include "Globals.h"
 #include "utils/common_fileio.h"
@@ -86,8 +89,6 @@ void cleanUp(unsigned char* payload);
 
 static uint8_t keepStartInFile();
 static uint8_t keepLengthInFile();
-
-#define DILLER
 
 // TODO:
 // - find and replace -fh ... -rh ..-
