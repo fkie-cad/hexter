@@ -584,6 +584,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 			skip_bytes = 0;
 
 			printf("\n");
+//			SetConsoleTitle();
 			n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
 		}
 		else if ( input == QUIT )

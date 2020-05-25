@@ -9,12 +9,13 @@ elseif (WIN32)
 	set(LIB_EXTENSION lib)
 endif ()
 
-# cad filescanner
+# release
 set(LIB_NAME hexter)
 set(LIB_DIR ${CMAKE_SOURCE_DIR}/build)
 set(HEXTER_LIB ${LIB_DIR}/lib${LIB_NAME}.so)
 
-# cad filescanner debug
+# debug
 set(LIB_NAME hexter)
 set(LIB_DIR ${CMAKE_SOURCE_DIR}/build/debug)
 set(HEXTER_DEBUG_LIB ${LIB_DIR}/lib${LIB_NAME}.so)
+
