@@ -35,8 +35,10 @@ $ ./hexter [options] -file a/file/name [options]
 $ ./hexter [options] -pid xx [options] 
 ```
 Optional Parameters:
- * -s:uint64_t Start offset in hex or dec. Default = 0x00.
- * -l:uint64_t Length of the part to display in hex or dec. Default = 0x50.
+ * -file string A path to file.
+ * -pid uint32_t A process id.
+ * -s uint64_t Start offset in hex or dec. Default = 0x00.
+ * -l uint64_t Length of the part to display in hex or dec. Default = 0x50.
  * -a ASCII only print.
  * -x HEX only print.
  * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)
@@ -52,7 +54,6 @@ Optional Parameters:
    * q: quad word.  
    Expect for the ascii string, all values have to be passed as hex values.  
  * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
- * -t Type of source ['file', 'pid']. Defaults to 'file'. If 'pid', a process id is passed as 'a/file/name'.
  * -pid only.
    * -lpx List whole process memory layout.
    * -lpm List all process modules.
@@ -68,7 +69,8 @@ The program runs in continuous mode by default, expect for the -i, -o and -d opt
 Step through the file by pressing ENTER.  
 Quit with "q".  
 If searching something in continuous mode, type "n" to find next occurrence.  
-The length value will be padded to fit a block size in continuous mode.
+The length value will be padded to fit a block size in continuous mode.  
+Either use -file or -pid, not both. 
 
 ### EXAMPLES ###
 Print 100 bytes from offset 20 in hex only style.
@@ -99,6 +101,11 @@ $ ./hexter -file a/file/name -d -s 16 -l 16
 Print my process (0) and a list of its modules
 ```bash
 $ ./hexter -pid 0 -lpm
+```
+
+Print a list of running processes.
+```bash
+$ ./hexter -pid 0 -lrp
 ```
 
 ## TESTS ##
