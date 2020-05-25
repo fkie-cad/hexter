@@ -9,6 +9,9 @@
 
 #define HEXTER_EXPORTS
 
+// for usage in Diller
+// #define DILLER
+
 #include "hexter.h"
 #include "Globals.h"
 #include "utils/common_fileio.h"
@@ -71,8 +74,9 @@ static const char format_types[7] = { FORMAT_ASCII, FORMAT_BYTE, FORMAT_FILL_BYT
 static uint8_t format_types_ln = 7;
 
 static void printUsage();
+void printHelp();
 static void initParameters();
-static void parseArgs(int argc, char** argv);
+static int parseArgs(int argc, char** argv);
 static uint8_t isArgOfType(char* arg, char* type);
 static uint8_t isFormatArgOfType(char* arg, char* type);
 static uint8_t hasValue(char* type, int i, int end_i);
@@ -86,7 +90,6 @@ void cleanUp(unsigned char* payload);
 static uint8_t keepStartInFile();
 static uint8_t keepLengthInFile();
 
-
 // TODO:
 // - find and replace -fh ... -rh ..-
 // - reversed payload, endianess option for hex and word payload
@@ -96,16 +99,28 @@ static uint8_t keepLengthInFile();
 //		+ list running processes
 //	 - windows: offset bug +0x1000 from -s when printing ??
 //	 	- get size of whole module, the region belongs to at length check
+#ifdef DILLER
+HEXTER_API
+#endif
 int main(int argc, char** argv)
 {
+	int s;
 	if ( argc < 2 )
 	{
 		printUsage();
 		return -1;
 	}
 
+	if ( isArgOfType(argv[1], "-h") )
+	{
+		printHelp();
+		return 0;
+	}
+
 	initParameters();
-	parseArgs(argc, argv);
+	s = parseArgs(argc, argv);
+	if ( s != 0 )
+		return -2;
 
 	if ( payload_arg_id > 0 )
 		run(argv[payload_arg_id][2], argv[payload_arg_id + 1]);
@@ -161,7 +176,7 @@ int run(const char payload_format, const char* raw_payload)
 	{
 		payload_ln = parsePayload(payload_format, raw_payload, &payload);
 		if ( payload == NULL)
-			exit(0);
+			return 3;
 	}
 
 	if ( insert_f )
@@ -249,8 +264,8 @@ void initParameters()
 
 void printUsage()
 {
-	printf("Usage: ./%s -file a/file [options]\n", BINARYNAME);
-	printf("Usage: ./%s [options] -pid 123\n", BINARYNAME);
+	printf("Usage: %s -file a/file [options]\n", BINARYNAME);
+	printf("Usage: %s [options] -pid 123\n", BINARYNAME);
 	printf("Version: %s\n", vs);
 	printf("Last changed: %s\n", last_changed);
 }
@@ -296,19 +311,13 @@ void printHelp()
 	printf("In continuous mode press ENTER to continue, 'n' to find next or 'q' to quit.\n");
 }
 
-void parseArgs(int argc, char** argv)
+int parseArgs(int argc, char** argv)
 {
 	int start_i = 1;
 	int end_i = argc - 1;
 	int i, s;
 	uint8_t length_found = 0;
 	const char* source = NULL;
-
-	if ( isArgOfType(argv[1], "-h") )
-	{
-		printHelp();
-		exit(0);
-	}
 
 	for ( i = start_i; i < argc; i++ )
 	{
@@ -442,25 +451,25 @@ void parseArgs(int argc, char** argv)
 	{
 //		printf("ERROR: You have to specify either a -file or a -pid!\n");
 		printUsage();
-		exit(0);
+		return 1;
 	}
 
 	if ( (find_f + overwrite_f + insert_f + delete_f) > 1 )
 	{
 		printf("ERROR: overwrite, insert, delete and find have to be used exclusively!\n");
-		exit(0);
+		return 2;
 	}
 
 	if ( delete_f && !length_found )
 	{
 		printf("ERROR: could not parse length of part to delete!\n");
-		exit(0);
+		return 3;
 	}
 
 	if ( run_mode == RUN_MODE_PID && (insert_f + delete_f) > 0 )
 	{
 		printf("ERROR: Inserting or deleting is not supported in process mode!\n");
-		exit(0);
+		return 4;
 	}
 
 //	if ( start_i == 1 )
@@ -470,6 +479,8 @@ void parseArgs(int argc, char** argv)
 		expandFilePath(source, file_path);
 	else
 		snprintf(file_path, PATH_MAX, "%s", source);
+	
+	return 0;
 }
 
 uint8_t isArgOfType(char* arg, char* type)
