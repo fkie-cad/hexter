@@ -156,7 +156,7 @@ uint32_t payloadParseDWord(const char* arg, unsigned char** payload)
 }
 
 /**
- * Parse the arg as a qword/size_t
+ * Parse the arg as a qword/uint64_t
  *
  * @param arg
  * @param payload
@@ -179,7 +179,7 @@ uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 	arg_ln = 8;  // 8 bytes
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
 
-	size_t temp;
+	uint64_t temp;
 	s = parseUint64(&arg[0], &temp, 16);
 	if ( s != 0 )
 		return 0;
@@ -192,7 +192,7 @@ uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 }
 
 /**
- * Parse the arg as a ascii string.
+ * Parse the arg as an ascii string.
  *
  * @param arg
  * @param payload
@@ -219,7 +219,7 @@ uint32_t payloadParseString(const char* arg, unsigned char** payload)
 }
 
 /**
- * Parse the arg plain bytes and reverse them.
+ * Parse the arg as plain bytes and reverse them.
  *
  * @param arg
  * @param payload
