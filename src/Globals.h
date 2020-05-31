@@ -6,7 +6,6 @@
 #include <stddef.h>
 #include <limits.h>
 
-#include "env.h"
 #include "Bool.h"
 
 #if defined(_WIN32)
@@ -14,11 +13,6 @@
 #else
 	#define ENTER 0xa // aka \n
 #endif
-
-//#if defined(_WIN64)
-//	#define fseek(f, o, t) _fseeki64(f, o, t)
-//#endif
-//#define _chsize(fp, s) _chsize64(fp, s)
 
 #define DEBUG_PRINT_INFO 0
 #define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
@@ -54,13 +48,7 @@
 extern size_t file_size;
 extern char file_path[PATH_MAX];
 
-//extern size_t start;
 extern size_t length;
-//extern uint8_t skip_bytes;
-
-//extern uint8_t type;
-//extern const uint8_t RUN_MODE_FILE;
-//extern const uint8_t RUN_MODE_PID;
 
 extern uint8_t print_col_mask;
 extern uint8_t print_offset_mask;
@@ -69,9 +57,6 @@ extern uint8_t print_ascii_mask;
 
 extern uint8_t clean_printing;
 
-//extern uint8_t insert_f;
-//extern uint8_t overwrite_f;
-//extern uint8_t delete_f;
 extern uint8_t find_f;
 extern uint8_t continuous_f;
 

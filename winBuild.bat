@@ -3,7 +3,8 @@
 set target=hexter
 set bitness=64
 set mode=Release
-set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\"
+set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools"
+set buildTools="D:\Programs\Microsoft Visual Studio\2019\BuildTools"
 
 if not [%1]==[] (
     if [%1]==[/?] goto usage
@@ -28,10 +29,10 @@ echo buildTools=%buildTools%
 rem vcvarsall.bat [architecture] [platform_type] [winsdk_version] [ -vcvars_ver= vcversion]
 rem architecture = x86, x86_x64, ... 
 
+set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
+
 :build
-    rem echo #define Win%bitness% 1 > src/env.h
-    cmd /k "mkdir %build_dir% & %buildTools%"\VC\Auxiliary\Build\vcvars%bitness%.bat" & cmake -S . -B %build_dir% -DCMAKE_BUILD_TYPE=%mode% -G "NMake Makefiles" & cmake --build %build_dir% --config %mode% --target %target% & exit"
-    rem break > src/env.h
+    cmd /k "mkdir %build_dir% & %vcvars% & cmake -S . -B %build_dir% -DCMAKE_BUILD_TYPE=%mode% -G "NMake Makefiles" & cmake --build %build_dir% --config %mode% --target %target% & exit"
     exit /B 0
 
 :usage

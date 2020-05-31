@@ -23,6 +23,7 @@
 
 /**
  * Expand a leading '~' in src to a full file path in dest.
+ * dest has be size of PATH_MAX.
  *
  * @param src char*
  * @param dest char*
