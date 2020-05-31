@@ -1,13 +1,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "Finder.h"
 #include "Globals.h"
-//#include "utils/Helper.h"
-//#include "utils/common_fileio.h"
-//#include "Printer.h"
 
 static uint16_t* failure = NULL;
 
@@ -41,14 +37,13 @@ void Finder_initFailure(unsigned char* needle, uint32_t needle_ln)
  */
 size_t find(const char* file_path, const unsigned char* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
 {
-//	size_t n_found;
+	size_t found;
 
-	uint16_t* failure;
+	uint16_t* failure = NULL;
 	failure = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
-//	failure = (uint16_t*) malloc(needle_ln*sizeof(uint16_t));
 	computeFailure(needle, needle_ln, failure);
 
-	size_t found = findNeedleInFile(file_path, needle, needle_ln, offset, max_offset);
+	found = findNeedleInFile(file_path, needle, needle_ln, offset, max_offset);
 //	uint8_t remainder = 0;
 
 //	n_found = normalizeOffset(found, &remainder);
@@ -76,10 +71,12 @@ size_t findNeedleInFile(const char* file_path, const unsigned char* needle, uint
 	FILE* fi;
 	size_t found;
 
+	errno = 0;
 	fi = fopen(file_path, "rb");
+	int errsv = errno;
 	if ( !fi )
 	{
-		printf("ERROR: File %s does not exist.\n", file_path);
+		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
 		return FIND_FAILURE;
 	}
 

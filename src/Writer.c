@@ -309,10 +309,12 @@ void insert(const char* file_path, unsigned char* payload, uint32_t payload_ln, 
 		return;
 	}
 
+	errno = 0;
 	fp = fopen(file_path, "rb+");
+	int errsv = errno;
 	if ( !fp )
 	{
-		printf("File %s does not exist.\n", file_path);
+		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
 		return;
 	}
 
@@ -370,10 +372,12 @@ void overwrite(const char* file_path, unsigned char* payload, uint32_t payload_l
 //	int n = buf_ln;
 	// end backup
 
+	errno = 0;
 	fp = fopen(file_path, "rb+");
+	int errsv = errno;
 	if ( !fp )
 	{
-		printf("File %s does not exist.\n", file_path);
+		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
 		return;
 	}
 	// backup
@@ -419,14 +423,16 @@ void deleteBytes(const char* file_path, size_t start, size_t length)
 		return;
 	}
 
+	errno = 0;
 	fp = fopen(file_path, "rb+");
+	int errsv = errno;
 	if ( !fp )
 	{
-		printf("File %s does not exist.\n", file_path);
+		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
 		return;
 	}
 
-	// If delete from start to end, just truncate.
+	// If delete from start to end of file, just truncate.
 	if ( start + length >= file_size )
 	{
 		truncateFile(fp, file_size, length);
@@ -461,7 +467,7 @@ void deleteBytes(const char* file_path, size_t start, size_t length)
 
 void truncateFile(FILE* fp, size_t size, size_t length)
 {
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
 	ftruncate(fileno(fp), size-length);
 #elif defined(_WIN32)
 	_chsize(_fileno(fp), size-length);

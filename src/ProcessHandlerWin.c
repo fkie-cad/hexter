@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <process.h>
 
 #include <windows.h>
 #include <tlhelp32.h>
@@ -11,7 +10,6 @@
 #include <psapi.h>
 
 #include "ProcessHandlerWin.h"
-#include "Globals.h"
 #include "Printer.h"
 #include "Finder.h"
 #include "utils/Helper.h"
@@ -139,38 +137,11 @@ uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start)
 		info_line_break = 1;
 	}
 	(*start) = (size_t) info.AllocationBase;
-//	if ( keepLengthInModule(p, &info, process, *start, &length) )
-//		info_line_break = 1;
 
 	CloseHandle(process);
 	
 	return info_line_break;
 }
-
-///**
-// * Keep a given length in a hit module.
-// * 
-// * @param info MEMORY_BASIC_INFORMATION* the module info
-// * @param start size_t the start offset
-// * @param length size_t the length
-// * @return BOOL flags, if length has been modified
-// */
-//BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length)
-//{
-//	DWORD base_off = start - (size_t) info->BaseAddress;
-//	size_t module_size = getModuleSize(p, *info, process);
-//	if ( module_size == 0 )
-//		return FALSE;
-//	
-//	if ( base_off + *length > module_size )
-//	{
-//		printf("Info: Length 0x%llx does not fit in region!\nSetting it to 0x%llx!\n", *length, module_size - base_off);
-//		*length = module_size - base_off;
-//		return TRUE;
-//	}
-//	
-//	return FALSE;
-//}
 
 /**
  * Calculate size of Module, i.e. continuous regions with the same name.
@@ -1079,7 +1050,7 @@ char* getProtectString(DWORD protect)
 //			return("COW Executable");
 			return(" rcx");
 		case PAGE_TARGETS_INVALID:
-//			case PAGE_TARGETS_NO_UPDATE:
+//		case PAGE_TARGETS_NO_UPDATE:
 			return("NO_UPDATE/INVALID");
 		case PAGE_GUARD | PAGE_EXECUTE:
 			return("g--x");

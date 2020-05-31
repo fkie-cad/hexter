@@ -89,15 +89,6 @@ void cleanUp(unsigned char* payload);
 static uint8_t keepStartInFile();
 static uint8_t keepLengthInFile();
 
-// TODO:
-// - find and replace -fh ... -rh ..-
-// - reversed payload, endianess option for hex and word payload
-// - improve search performance
-// + view processes
-//   + linux
-//		+ list running processes
-//	 - windows: offset bug +0x1000 from -s when printing ??
-//	 	- get size of whole module, the region belongs to at length check
 #ifdef DILLER
 HEXTER_API
 #endif
@@ -472,9 +463,6 @@ int parseArgs(int argc, char** argv)
 		return 4;
 	}
 
-//	if ( start_i == 1 )
-//		source = argv[i];
-
 	if ( run_mode == RUN_MODE_FILE )
 		expandFilePath(source, file_path);
 	else
@@ -744,19 +732,6 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
 #ifdef _WIN32
 HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
 {
-//	FILE* fp=NULL;
-//	char path[1024];
-//	sprintf(path, "%s%s", getenv("USERPROFILE"), "\\AppData\\Local\\Temp\\hexter.printValue.log");
-//	fp = fopen(path, "a+");
-//	if ( !fp )
-//	{
-//		printf("Could not open file: %s\n", path);
-//		return;
-//	}
-//	printf("file opened\n");
-//	fprintf(fp, "the value: %s\n", lpszCmdLine);
-//	fclose(fp);
-
 	AllocConsole();
 //	AttachConsole(GetCurrentProcessId());
 //	AttachConsole(-1);
@@ -765,7 +740,7 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
 	freopen("conout$", "w", stdout);
 	freopen("conout$", "w", stderr);
 
-	printf("the param cmd line: %s\n", lpszCmdLine);
+	debug_info("the param cmd line: %s\n", lpszCmdLine);
 
 	int i;
 	uint8_t argv_max = 20;
@@ -773,13 +748,12 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
 	char* argv[20];
 	argc = splitArgs(lpszCmdLine, argv, argv_max);
 
-	printf("argc: %u\n", argc);
+	debug_info("argc: %u\n", argc);
 	for ( i = 0; i < argc; i++ )
-		printf("arg%d: %s\n", i, argv[i]);
+		debug_info("arg%d: %s\n", i, argv[i]);
 
 	main(argc, argv);
 	getchar();
-//	system("pause");
 }
 
 #endif

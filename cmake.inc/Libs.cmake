@@ -10,12 +10,5 @@ elseif (WIN32)
 endif ()
 
 # release
-set(LIB_NAME hexter)
-set(LIB_DIR ${CMAKE_SOURCE_DIR}/build)
-set(HEXTER_LIB ${LIB_DIR}/lib${LIB_NAME}.so)
-
-# debug
-set(LIB_NAME hexter)
-set(LIB_DIR ${CMAKE_SOURCE_DIR}/build/debug)
-set(HEXTER_DEBUG_LIB ${LIB_DIR}/lib${LIB_NAME}.so)
-
+set(HEXTER_LIB_NAME hexter)
+set(HEXTER_LIB_FULL_NAME ${CMAKE_SHARED_LIBRARY_PREFIX}${HEXTER_LIB_NAME}.${LIB_EXTENSION})

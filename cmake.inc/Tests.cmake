@@ -73,8 +73,7 @@ if ( ${GTEST_FOUND} )
 		)
 	target_link_libraries(${TEST_SUITE} PRIVATE
 		${GTEST_BOTH_LIBRARIES}
-		optimized ${HEXTER_LIB}
-		debug ${HEXTER_DEBUG_LIB}
+		${CMAKE_CURRENT_BINARY_DIR}/${HEXTER_LIB_FULL_NAME}
 		)
 
 endif()
