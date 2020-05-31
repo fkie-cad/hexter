@@ -30,7 +30,7 @@ rem architecture = x86, x86_x64, ...
 
 :build
     rem echo #define Win%bitness% 1 > src/env.h
-    cmd /k "mkdir %build_dir% & %buildTools%"\VC\Auxiliary\Build\vcvars%bitness%.bat" & cmake -S . -B %build_dir% -DCMAKE_BUILD_TYPE=%mode% -G "NMake Makefiles" & cmake --build %build_dir% --config %mode% --target %target% & exit"
+    cmd /k "mkdir %build_dir% & %buildTools%"\VC\Auxiliary\Build\vcvars%bitness%.bat" & cmake -S . -B%build_dir% -DCMAKE_BUILD_TYPE=%mode% -G "NMake Makefiles" & cmake --build %build_dir% --config %mode% --target %target% & exit"
     rem break > src/env.h
     exit /B 0
 

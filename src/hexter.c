@@ -59,8 +59,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.13";
-static const char* last_changed = "12.05.2020";
+static const char* vs = "1.5.14";
+static const char* last_changed = "28.05.2020";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -82,7 +82,6 @@ static uint8_t isFormatArgOfType(char* arg, char* type);
 static uint8_t hasValue(char* type, int i, int end_i);
 static void sanitizeParams(uint32_t pid);
 static uint32_t parsePayload(const char format, const char* value, unsigned char** payload);
-static uint8_t parseType(const char* arg);
 
 static int run(const char payload_format, const char* raw_payload);
 void cleanUp(unsigned char* payload);
@@ -277,7 +276,7 @@ void printHelp()
 	printf(" * -file:string A file name to show the hex source of.\n"
 		   " * -pid:size_t A process id (in hex or dec) to show the hex source of. Pass 0 for your own process.\n"
 		   " * -s:size_t Startoffset. Default = 0.\n"
-		   " * -l:size_t Length of the part to display. Default = 50.\n"
+		   " * -l:size_t Length of the part to display. Default = 0x100.\n"
 		   " * -a ASCII only print.\n"
 		   " * -x HEX only print.\n"
 		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)\n"
@@ -289,12 +288,12 @@ void printHelp()
 //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
 		   " * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
 		   " * -pid only options:\n"
-		   " * * -lpx List whole process memory layout.\n"
+		   " * * -lpx List entire process memory layout.\n"
 		   " * * -lpm List all process modules.\n"
 		   " * * -lpt List all process threads.\n"
 		   " * * -lph List all process heaps.\n"
 		   " * * -lphb List all process heaps and its blocks.\n"
-		   " * * -lrp List all running processes. Pass any pid or zero to get it running.\n"
+		   " * * -lrp List all running processes. Pass any pid or 0 to get it running.\n"
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
@@ -306,6 +305,7 @@ void printHelp()
 	printf("Example: ./%s -file path/to/a.file -oh 0bea -s 0x100\n", BINARYNAME);
 	printf("Example: ./%s -file path/to/a.file -fh f001 -s 0x100\n", BINARYNAME);
 	printf("Example: ./%s -file path/to/a.file -d -s 0x100 -l 0x8\n", BINARYNAME);
+	printf("Example: ./%s -pid  -lrp\n", BINARYNAME);
 	printf("Example: ./%s -pid 1234 -s 0x5000 -lpm\n", BINARYNAME);
 	printf("\n");
 	printf("In continuous mode press ENTER to continue, 'n' to find next or 'q' to quit.\n");
@@ -548,9 +548,10 @@ void sanitizeParams(uint32_t pid)
 	if ( run_mode == RUN_MODE_FILE )
 		info_line_break = keepStartInFile();
 	else if ( run_mode == RUN_MODE_PID )
-		info_line_break = makeStartAndLengthHitAccessableMemory(pid, &start);
+		info_line_break = makeStartHitAccessableMemory(pid, &start);
 
 	// normalize start offset to block size
+	// called after insert and overwrite
 	if ( !find_f && !delete_f )
 	{
 		start = normalizeOffset(start, &skip_bytes);
@@ -568,7 +569,7 @@ void sanitizeParams(uint32_t pid)
 	{
 		if ( delete_f )
 		{
-			fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%x!\n", file_size - start);
+			fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%lx!\n", file_size - start);
 			length = file_size - start;
 		}
 		else
@@ -662,19 +663,6 @@ uint32_t parsePayload(const char format, const char* value, unsigned char** payl
 	return ln;
 }
 
-uint8_t parseType(const char* arg)
-{
-	if ( strncmp(arg, "file", 10) == 0 )
-		return RUN_MODE_FILE;
-	else if ( strncmp(arg, "pid", 10) == 0 )
-		return RUN_MODE_PID;
-	else
-	{
-		printf("INFO: Could not parse type. Setting it to 'file'!\n");
-		return RUN_MODE_FILE;
-	}
-}
-
 /**
  * Library function to print a file (-t file).
  *
@@ -742,9 +730,10 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
 /**
  * Intended to be called by rundll32.
  * Usage: rundll32 hexter.dll,runHexter hexter params
- * The hexter is a dummy and the rest of the params should be used as explained in normal usage:
- * filename [options] or [options] filename.
- * With the hexter dummy param, the splitted arguments may be passed to the main function.
+ * Example: rundll32 hexter.dll,runHexter hexter -pid 0 -lrp
+ * The "hexter" param is a dummy param and the rest of the params should be used as explained in normal usage:
+ * -file|-pid xxx [options]
+ * With the "hexter" dummy param, the splitted arguments may be passed to the main function.
  * Otherwise it had to be added internally.
  *
  * @param hwnd
