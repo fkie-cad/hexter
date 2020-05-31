@@ -90,7 +90,7 @@ size_t getSizeOfProcess(uint32_t pid)
  * @param start size_t*
  * @return uint8_t if there has been error output, flags a line break
  */
-uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, size_t* start)
+uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start)
 {
 	unsigned char *p = NULL;
 	MEMORY_BASIC_INFORMATION info;

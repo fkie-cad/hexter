@@ -12,7 +12,7 @@ BOOL listProcessThreads(size_t pid);
 Bool listProcessMemory(uint32_t pid);
 
 Bool listProcessHeaps(uint32_t pid, int type);
-uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, size_t* start);
+uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start);
 int writeProcessMemory(uint32_t pid, unsigned char* _payload, uint32_t _payload_ln, size_t start);
 BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln);
 //BOOL printProcessModules(uint32_t pid, size_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln);

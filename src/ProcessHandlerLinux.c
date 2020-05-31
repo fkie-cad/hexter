@@ -284,7 +284,7 @@ Bool parseProcMapsLine(char* line, ProcMapsEntry* entry)
 	return true;
 }
 
-uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t *start)
+uint8_t makeStartHitAccessableMemory(uint32_t pid, uint64_t *start)
 {
 	FILE *fp = NULL;
 	char line[LINE_BUFFER_SPACE];
@@ -338,8 +338,6 @@ uint8_t makeStartAndLengthHitAccessableMemory(uint32_t pid, uint64_t *start)
 	(*start) =  entry.address;
 
 	setModuleEndAddress(&entry, fp);
-//	if ( keepLengthInModule(&entry, *start, &length) )
-//		info_line_break = 1;
 
 	fclose(fp);
 

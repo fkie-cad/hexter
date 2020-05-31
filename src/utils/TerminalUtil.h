@@ -2,7 +2,7 @@
 #define HEXTER_SRC_UTILS_TERINAL_UTIL_H
 
 /**
- * Linux implementation of gech().
+ * Linux implementation of getch().
  * Immediately get an inputted char without waiting for ENTER.
  */
 

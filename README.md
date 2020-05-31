@@ -4,27 +4,27 @@ A minimal terminal hex viewer supporting reading, writing and searching in files
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.5.13  
-Last changed: 12.05.2020
+1.5.14  
+Last changed: 28.05.2020
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc or msbuild) is required.  
-- Building with cmake obviously requires cmake.  
+- Building with cmake requires cmake.  
 
 ## BUILD ##
 
-### Linux ###
+### Linux (gcc) & cmake ###
 ```bash
 $ ./linuxBuild.sh [-h]
 ```
 
-### MsBuild & Windows & cmake ###
+### Windows (MsBuild) & cmake ###
 ```bash
 $ winBuild.bat [/h]
 ```
 The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.
 
-### DLL : MsBuild & Windows & cmake ### 
+### DLL : Windows (MsBuild) & cmake ### 
 ```bash
 $ winBuild.bat hexter_shared [64 [Release]]
 ```
@@ -37,8 +37,8 @@ $ ./hexter [options] -pid xx [options]
 Optional Parameters:
  * -file string A path to file.
  * -pid uint32_t A process id.
- * -s uint64_t Start offset in hex or dec. Default = 0x00.
- * -l uint64_t Length of the part to display in hex or dec. Default = 0x50.
+ * -s uint64_t Start offset in hex or dec. Default = 0.
+ * -l uint64_t Length of the part to display in hex or dec. Default = 0x100.
  * -a ASCII only print.
  * -x HEX only print.
  * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)
@@ -55,22 +55,22 @@ Optional Parameters:
    Expect for the ascii string, all values have to be passed as hex values.  
  * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
  * -pid only.
-   * -lpx List whole process memory layout.
+   * -lpx List entire process memory layout.
    * -lpm List all process modules.
    * -lpt List all process threads.
    * -lph List all process heaps.
    * -lphb List all process heaps and its blocks.
-   * -lrp List all running processes. Pass any pid or zero to get it running.
+   * -lrp List all running processes. Pass any pid or 0 to get it running.
  * -b Force breaking, not continuous mode and print just one block.
  * -p For a plain, not styled text output. 
  * -h Print this.
 
+Either use -file or -pid, not both. 
 The program runs in continuous mode by default, expect for the -i, -o and -d option, or if the -b option is set.  
 Step through the file by pressing ENTER.  
 Quit with "q".  
 If searching something in continuous mode, type "n" to find next occurrence.  
 The length value will be padded to fit a block size in continuous mode.  
-Either use -file or -pid, not both. 
 
 ### EXAMPLES ###
 Print 100 bytes from offset 20 in hex only style.
@@ -119,10 +119,11 @@ The test may be built with the target_name=hexter_tests which is the name of the
 [1] https://github.com/google/googletest
 
 
-## CREDITS & CONTACT ## 
+## COPYRIGHT, CREDITS & CONTACT ##
+Published under [LICENCE](LICENSE).   
 #### Author ####
 - Henning Braun ([henning.braun@fkie.fraunhofer.de](henning.braun@fkie.fraunhofer.de)) 
 
 #### Co-Author ####
-common_codeio.h
+common_codeio.c
 - Viviane Zwanger ([viviane.zwanger@fkie.fraunhofer.de](viviane.zwanger@fkie.fraunhofer.de))

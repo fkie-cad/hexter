@@ -75,7 +75,6 @@ if ( ${GTEST_FOUND} )
 		${GTEST_BOTH_LIBRARIES}
 		optimized ${HEXTER_LIB}
 		debug ${HEXTER_DEBUG_LIB}
-#		stdc++fs # has to be included after utils lib
 		)
 
 endif()

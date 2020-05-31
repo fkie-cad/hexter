@@ -4,7 +4,6 @@ set target=hexter
 set bitness=64
 set mode=Release
 set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools"
-set buildTools="D:\Programs\Microsoft Visual Studio\2019\BuildTools"
 
 if not [%1]==[] (
     if [%1]==[/?] goto usage
