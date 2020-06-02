@@ -120,7 +120,7 @@ The test may be built with the target_name=hexter_tests which is the name of the
 
 
 ## COPYRIGHT, CREDITS & CONTACT ##
-Published under [LICENCE](LICENSE).   
+Published under [GNU GENERAL PUBLIC LICENSE](LICENSE).   
 #### Author ####
 - Henning Braun ([henning.braun@fkie.fraunhofer.de](henning.braun@fkie.fraunhofer.de)) 
 
