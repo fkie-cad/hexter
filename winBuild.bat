@@ -84,8 +84,8 @@ set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
     exit /B 0
 
 :usage
-    @echo Usage: %0 [/t %target%^|%target%_shared] [/b 32^|64] [/m Debug^|Release] [/d C:\Build\Tools\] [/h]
-    @echo Default: %0 [%target% %bitness% %mode% %buildTools%]
+    @echo Usage: %0 [/t %target%^|%target%_shared] [/b 32^|64] [/m Debug^|Release] [/bt C:\Build\Tools\] [/h]
+    @echo Default: %0 [/t %target% /b %bitness% /m %mode% /bt %buildTools%]
     exit /B 0
 
 :help
