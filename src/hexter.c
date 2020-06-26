@@ -80,7 +80,8 @@ static int parseArgs(int argc, char** argv);
 static uint8_t isArgOfType(char* arg, char* type);
 static uint8_t isFormatArgOfType(char* arg, char* type);
 static uint8_t hasValue(char* type, int i, int end_i);
-static void sanitizeParams(uint32_t pid);
+static int sanitizeDeleteParams();
+static void sanitizePrintParams(uint32_t pid);
 static uint32_t parsePayload(const char format, const char* value, unsigned char** payload);
 
 static int run(const char payload_format, const char* raw_payload);
@@ -170,24 +171,38 @@ int run(const char payload_format, const char* raw_payload)
 	}
 
 	if ( insert_f )
+	{
 		insert(file_path, payload, payload_ln, start);
+		file_size = getSize(file_path);
+	}
 	else if ( overwrite_f && run_mode == RUN_MODE_FILE )
+	{
 		overwrite(file_path, payload, payload_ln, start);
+		file_size = getSize(file_path);
+	}
 	else if ( overwrite_f && run_mode == RUN_MODE_PID )
+	{
 		writeProcessMemory(pid, payload, payload_ln, start);
-
-	sanitizeParams(pid);
+	}
 
 	if ( delete_f )
 	{
+		if ( sanitizeDeleteParams() != 0 )
+		{
+			cleanUp(payload);
+			return 1;
+		}
 		deleteBytes(file_path, start, length);
-		length = DEFAULT_LENGTH;
+		file_size = getSize(file_path);
+		length = (DEFAULT_LENGTH <= file_size) ? DEFAULT_LENGTH : file_size;
 		start = 0;
 	}
 
+	sanitizePrintParams(pid);
 	setPrintingStyle();
 	if ( run_mode == RUN_MODE_FILE )
 	{
+		// recalculate file size, it may has changed due to reading or deleting
 		getFileNameL(file_path, &file_name);
 		printf("file: %s\n", file_name);
 		print(start, skip_bytes, payload, payload_ln);
@@ -512,7 +527,48 @@ uint8_t hasValue(char* type, int i, int end_i)
 	return 1;
 }
 
-void sanitizeParams(uint32_t pid)
+int sanitizeDeleteParams()
+{
+	if ( !delete_f )
+		return 0;
+	
+	uint8_t info_line_break = 0;
+
+	if ( start >= file_size )
+	{
+#if defined(_WIN32)
+		fprintf(stderr, "ERROR: Start offset 0x%llx is greater the the file size 0x%llx (%llu)!\n",
+#else
+		fprintf(stderr, "ERROR: Start offset 0x%lx is greater the the file size 0x%lx (%lu)!\n",
+#endif
+				start, file_size, file_size);
+		return 1;
+	}
+	
+	if ( length == 0 )
+	{
+#if defined(_WIN32)
+		fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%llx!\n",
+#else
+		fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%lx!\n",
+#endif
+				file_size - start);
+		length = file_size - start;
+		info_line_break = 1;
+	}
+	
+//	if ( start + length > file_size )
+//	{
+//		length = file_size - start;
+//	}
+
+	if ( info_line_break )
+		printf("\n");
+	
+	return 0;
+}
+
+void sanitizePrintParams(uint32_t pid)
 {
 	uint8_t col_size;
 
@@ -558,16 +614,8 @@ void sanitizeParams(uint32_t pid)
 
 	if ( length == 0 )
 	{
-		if ( delete_f )
-		{
-			fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%lx!\n", file_size - start);
-			length = file_size - start;
-		}
-		else
-		{
-			fprintf(stdout, "Info: Length is 0. Setting to 0x%x!\n", DEFAULT_LENGTH);
-			length = DEFAULT_LENGTH;
-		}
+		fprintf(stdout, "Info: Length is 0. Setting to 0x%x!\n", DEFAULT_LENGTH);
+		length = DEFAULT_LENGTH;
 		info_line_break = 1;
 	}
 
@@ -580,9 +628,9 @@ uint8_t keepStartInFile()
 	if ( start >= file_size )
 	{
 #if defined(_WIN32)
-		fprintf(stderr, "Info: Start offset %llx is greater the the file_size %llx (%llu)!\nSetting to 0!", start, file_size, file_size);
+		fprintf(stdout, "Info: Start offset 0x%llx is greater the the file size 0x%llx (%llu)!\nSetting to 0!\n", start, file_size, file_size);
 #else
-		fprintf(stderr, "Info: Start offset 0x%lx is greater the the file_size 0x%lx (%lu)!\nSetting to 0!\n", start, file_size, file_size);
+		fprintf(stdout, "Info: Start offset 0x%lx is greater the the file size 0x%lx (%lu)!\nSetting to 0!\n", start, file_size, file_size);
 #endif
 		start = 0;
 		return 1;
@@ -595,7 +643,7 @@ uint8_t keepLengthInFile()
 	if ( start + length > file_size )
 	{
 #if defined(_WIN32)
-		printf("Info: Start offset %llu plus length %llu is greater then the file size %llu\nPrinting only to file size.\n",
+		printf("Info: Start offset 0x%llx plus length 0x%llx is greater then the file size 0x%llx\nPrinting only to file size.\n",
 #else
 		printf("Info: Start offset 0x%lx plus length 0x%lx is greater then the file size 0x%lx.\nPrinting only to file size.\n",
 #endif
