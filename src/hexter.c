@@ -255,8 +255,9 @@ void initParameters()
 
 void printUsage()
 {
-	printf("Usage: %s -file a/file [options]\n", BINARYNAME);
-	printf("Usage: %s [options] -pid 123\n", BINARYNAME);
+	printf("Usage: %s [options] -file a/file [options]\n", BINARYNAME);
+	printf("Usage: %s [options] -pid 123 [options]\n", BINARYNAME);
+	printf("\n");
 	printf("Version: %s\n", vs);
 	printf("Last changed: %s\n", last_changed);
 }
@@ -264,6 +265,7 @@ void printUsage()
 void printHelp()
 {
 	printUsage();
+	printf("\n");
 	printf("Options:\n");
 	printf(" * -file:string A file name to show the hex source of.\n"
 		   " * -pid:size_t A process id (in hex or dec) to show the hex source of. Pass 0 for your own process.\n"
@@ -297,7 +299,7 @@ void printHelp()
 	printf("Example: ./%s -file path/to/a.file -oh 0bea -s 0x100\n", BINARYNAME);
 	printf("Example: ./%s -file path/to/a.file -fh f001 -s 0x100\n", BINARYNAME);
 	printf("Example: ./%s -file path/to/a.file -d -s 0x100 -l 0x8\n", BINARYNAME);
-	printf("Example: ./%s -pid  -lrp\n", BINARYNAME);
+	printf("Example: ./%s -pid 0 -lrp\n", BINARYNAME);
 	printf("Example: ./%s -pid 1234 -s 0x5000 -lpm\n", BINARYNAME);
 	printf("\n");
 	printf("In continuous mode press ENTER to continue, 'n' to find next or 'q' to quit.\n");
