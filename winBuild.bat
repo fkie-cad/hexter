@@ -5,19 +5,68 @@ set bitness=64
 set mode=Release
 set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools"
 
-if not [%1]==[] (
-    if [%1]==[/?] goto usage
-    if [%1]==[/h] goto usage
-    if [%1]==[/help] goto usage
+GOTO :ParseParams
 
-    set target=%1
-)
-if not [%2]==[] set bitness=%2
-if not [%3]==[] set mode=%3
-if not [%4]==[] set buildTools=%4
+:ParseParams
+
+    REM IF "%~1"=="" GOTO Main
+    if [%1]==[/?] goto help
+    if [%1]==[/h] goto help
+    if [%1]==[/help] goto help
+
+    IF "%~1"=="/t" (
+        SET target=%2
+        SHIFT
+        goto reParseParams
+    )
+    IF "%~1"=="/target" (
+        SET target=%2
+        SHIFT
+        goto reParseParams
+    )
+    IF "%~1"=="/b" (
+        SET bitness=%~2
+        SHIFT
+        goto reParseParams
+    )
+    IF "%~1"=="/bitness" (
+        SET bitness=%~2
+        SHIFT
+        goto reParseParams
+    )
+    IF "%~1"=="/m" (
+        SET mode=%~2
+        SHIFT
+        goto reParseParams
+    )
+    IF "%~1"=="/mode" (
+        SET mode=%~2
+        SHIFT
+        goto reParseParams
+    )
+    IF "%~1"=="/bt" (
+        SET buildTools=%~2
+        SHIFT
+        goto reParseParams
+    )
+    IF "%~1"=="/buildtools" (
+        SET buildTools=%~2
+        SHIFT
+        goto reParseParams
+    )
+    
+    :reParseParams
+        SHIFT
+        if [%1]==[] goto main
+
+GOTO :ParseParams
+
+
+:main
 
 set build_dir=build\%bitness%
 if [%mode%]==[Debug] set build_dir=build\debug\%bitness%
+if [%mode%]==[debug] set build_dir=build\debug\%bitness%
 
 echo target=%target%
 echo bitness=%bitness%
@@ -35,6 +84,14 @@ set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
     exit /B 0
 
 :usage
-    @echo Usage: %0 [%target%^|%target%_shared [32/64 [Debug^|Release [buildTools]]]
+    @echo Usage: %0 [/t %target%^|%target%_shared] [/b 32^|64] [/m Debug^|Release] [/d C:\Build\Tools\] [/h]
     @echo Default: %0 [%target% %bitness% %mode% %buildTools%]
-    exit /B 1
+    exit /B 0
+
+:help
+    call :usage
+    @echo /t^|/target The target name to build.
+    @echo /b^|/bitness The target bitness. Default: 32.
+    @echo /m^|/mode The mode (Debug^|Release) to build in. Default: Debug.
+    @echo /bt^|/buildtools Custom path to Microsoft Visual Studio BuildTools
+    exit /B 0
