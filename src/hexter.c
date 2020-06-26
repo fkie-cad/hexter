@@ -59,7 +59,7 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.16";
+static const char* vs = "1.5.17";
 static const char* last_changed = "26.06.2020";
 
 #define FORMAT_ASCII 'a'
@@ -557,10 +557,10 @@ int sanitizeDeleteParams()
 		info_line_break = 1;
 	}
 	
-//	if ( start + length > file_size )
-//	{
-//		length = file_size - start;
-//	}
+	if ( start + length > file_size )
+	{
+		length = file_size - start;
+	}
 
 	if ( info_line_break )
 		printf("\n");

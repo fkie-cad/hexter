@@ -4,7 +4,7 @@ A minimal terminal hex viewer supporting reading, writing and searching in files
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.5.16  
+1.5.17  
 Last changed: 26.06.2020
 
 ## REQUIREMENTS ##

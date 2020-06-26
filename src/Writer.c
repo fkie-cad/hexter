@@ -420,9 +420,7 @@ void deleteBytes(const char* file_path, size_t start, size_t length)
 	size_t end;
 
 	if ( start > file_size )
-	{
 		return;
-	}
 
 	errno = 0;
 	fp = fopen(file_path, "rb+");
@@ -436,6 +434,7 @@ void deleteBytes(const char* file_path, size_t start, size_t length)
 	// If delete from start to end of file, just truncate.
 	if ( start + length >= file_size )
 	{
+		length = file_size - start;
 		truncateFile(fp, file_size, length);
 		fclose(fp);
 		return;
