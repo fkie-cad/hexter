@@ -59,8 +59,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.15";
-static const char* last_changed = "02.06.2020";
+static const char* vs = "1.5.16";
+static const char* last_changed = "26.06.2020";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -71,7 +71,7 @@ static const char* last_changed = "02.06.2020";
 #define FORMAT_FILL_BYTE 'f'
 
 static const char format_types[7] = { FORMAT_ASCII, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
-static uint8_t format_types_ln = 7;
+static const uint8_t format_types_ln = 7;
 
 static void printUsage();
 void printHelp();
@@ -182,6 +182,7 @@ int run(const char payload_format, const char* raw_payload)
 	{
 		deleteBytes(file_path, start, length);
 		length = DEFAULT_LENGTH;
+		start = 0;
 	}
 
 	setPrintingStyle();

@@ -92,7 +92,7 @@ Misc WriterTest::misc;
 TEST_F(WriterTest, testOverwriteInFile)
 {
 	uint64_t binary_size = 64;
-	string src = temp_dir+"/testOverwriteInFile.bind";
+	string src = temp_dir+"/testOverwriteInFile.bin";
 //	string src = "/tmp/WriterTestSrc.tmp";
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
@@ -376,13 +376,13 @@ TEST_F(WriterTest, testInsertOutOfFileBounds)
 
 TEST_F(WriterTest, testDeleteStart)
 {
-	uint64_t binary_size = 0x50;
+	uint64_t binary_size = 64;
 //	string src = temp_dir+"/testDelete.hex";
 	string src = "/tmp/testDelete.tmp";
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	uint64_t start = 0;
-	length = 0x10;
+	length = 17;
 
 	assertProperlyDeleted(src, bytes, start);
 
@@ -411,7 +411,7 @@ TEST_F(WriterTest, testDeleteEnd)
 	string src = "/tmp/testDelete.tmp";
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
-	uint64_t start = 21;
+	uint64_t start = 31;
 	length = binary_size - start;
 
 	assertProperlyDeleted(src, bytes, start);
@@ -425,33 +425,41 @@ void WriterTest::assertProperlyDeleted(const string& src, vector<uint8_t>& bytes
 	file_size = getSize(file_path);
 
 //	cout << " new BLOCKSIZE_LARGE: "<<BLOCKSIZE_LARGE<<endl;
-	vector<uint8_t> deleted_bytes = bytes;
-	deleted_bytes.erase(deleted_bytes.begin()+start, deleted_bytes.begin()+start+length);
+	vector<uint8_t> resulting_bytes = bytes;
+	resulting_bytes.erase(resulting_bytes.begin() + start, resulting_bytes.begin() + start + length);
+	vector<uint8_t> deleted_bytes(bytes.begin()+start, bytes.begin()+start+length);
 
-	cout << "bytes:"<<endl;
+	printf("bytes:\n");
 	for ( uint8_t p : bytes )
-		cout << hex <<setw(2)<<setfill('0')<< +p << "|";
-	cout << endl;
-	cout << "deleted bytes:"<<endl;
-	for ( uint8_t p : deleted_bytes )
-		cout << hex <<setw(2)<<setfill('0')<< +p << "|";
-	cout << endl;
+		printf("%02x|", +p);
+	printf("\n");
+	printf("deleted_bytes bytes:\n");
+	for ( uint8_t p : deleted_bytes  )
+		printf("%02x|", +p);
+	printf("\n");
+	printf("resulting bytes:\n");
+	for ( uint8_t p : resulting_bytes )
+		printf("%02x|", +p);
+	printf("\n");
 
 	deleteBytes(&src[0], start, length);
 
 	ifstream check_fs(src);
 	uint64_t size = getSize(file_path);
-	cout << " new size: "<<dec<<size<<endl;
-	EXPECT_EQ(size, bytes.size()-length);
+	size_t expected_size = bytes.size()-length;
+	printf(" old size: 0x%lx\n", bytes.size());
+	printf(" new size: 0x%lx\n", size);
+	printf(" exp size: 0x%lx\n", expected_size);
+	EXPECT_EQ(size, expected_size);
 	check_fs.seekg(0);
 
 	for ( int i = 0; i < size; i++ )
 	{
 		unsigned char cs;
 		check_fs.read((char*)(&(cs)), 1);
-		cout<<setw(2)<<setfill('0') << i <<hex<<" g: "<<setw(2)<<setfill('0')<<+cs<<  " = "<<setw(2)<<setfill('0')<<+deleted_bytes[i]<<dec<<" :e"<<endl;
+//		printf("0x%x g: %02x = %02x :e\n", i, +cs, deleted_bytes[i]);
 
-		EXPECT_EQ(cs, deleted_bytes[i]);
+		EXPECT_EQ(cs, resulting_bytes[i]);
 	}
 
 	check_fs.close();
