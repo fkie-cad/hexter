@@ -577,7 +577,7 @@ void sanitizeParams(uint32_t pid)
 
 uint8_t keepStartInFile()
 {
-	if ( start > file_size )
+	if ( start >= file_size )
 	{
 #if defined(_WIN32)
 		fprintf(stderr, "Info: Start offset %llx is greater the the file_size %llx (%llu)!\nSetting to 0!", start, file_size, file_size);
@@ -597,7 +597,7 @@ uint8_t keepLengthInFile()
 #if defined(_WIN32)
 		printf("Info: Start offset %llu plus length %llu is greater then the file size %llu\nPrinting only to file size.\n",
 #else
-		printf("Info: Start offset 0x%lx plus length 0x%lx is greater then the file size 0x%lx\nPrinting only to file size.\n",
+		printf("Info: Start offset 0x%lx plus length 0x%lx is greater then the file size 0x%lx.\nPrinting only to file size.\n",
 #endif
 		start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
 		length = file_size - start;
