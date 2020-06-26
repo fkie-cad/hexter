@@ -3,12 +3,12 @@
 
 #include "TerminalUtil.h"
 
-struct termios old, new_t;
-
-void initTermios(int echo)
+void initTermios(int echo, struct termios* old)
 {
-	tcgetattr(0, &old); /* grab old terminal i/o settings */
-	new_t = old; /* make new_t settings same as old settings */
+	struct termios new_t;
+
+	tcgetattr(0, old); /* grab old terminal i/o settings */
+	new_t = *old; /* make new_t settings same as old settings */
 	new_t.c_lflag &= ~ICANON; /* disable buffered i/o */
 	if (echo) {
 		new_t.c_lflag |= ECHO; /* set echo mode */
@@ -21,9 +21,9 @@ void initTermios(int echo)
 /**
  * Restore old terminal i/o settings
  */
-void resetTermios()
+void resetTermios(struct termios* old)
 {
-	tcsetattr(0, TCSANOW, &old);
+	tcsetattr(0, TCSANOW, old);
 }
 
 /**
@@ -32,10 +32,11 @@ void resetTermios()
  */
 char getch_(int echo)
 {
+	struct termios old_t;
 	char ch;
-	initTermios(echo);
+	initTermios(echo, &old_t);
 	ch = getchar();
-	resetTermios();
+	resetTermios(&old_t);
 	return ch;
 }
 
