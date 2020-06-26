@@ -26,7 +26,7 @@ The correct path to your build tools may be passed as a parameter or just change
 
 ### DLL : Windows (MsBuild) & cmake ### 
 ```bash
-$ winBuild.bat hexter_shared [64 [Release]]
+$ winBuild.bat /t hexter_shared [/b 64] [/m Release]]
 ```
 
 ## USAGE ##
