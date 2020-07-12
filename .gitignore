@@ -1,4 +1,6 @@
-build*
+build/*
+build/64/*
+build/32/*
 venv/
 .idea
 tests/sources
@@ -12,3 +14,6 @@ CMakeSettings.json
 .vs
 res
 TODO
+
+!build/64/hexter.exe
+!build/ss.txt
