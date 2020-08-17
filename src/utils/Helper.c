@@ -71,7 +71,7 @@ int getTempFile(char* buf, const char* prefix)
 }
 
 /**
- * Extract the file_name out of a file_path.
+ * Extract the base file name out of a file_path.
  * "Light" version just pointing to the file_name in the memory of file_path.
  *
  * @param file_path char*
@@ -86,7 +86,7 @@ void getFileNameL(char* file_path, char** file_name)
 }
 
 /**
- * Extract the file_name out of a file_path.
+ * Extract the base file name out of a file_path.
  * Copying the found name into file_name.
  * Make sure, file_name char[] has a capacity of PATH_MAX!
  *
@@ -113,7 +113,7 @@ void getFileName(const char* file_path, char* file_name)
 }
 
 /**
- * Extract the file_name out of a file_path.
+ * Extract the base file name out of a file_path.
  * Copying the found name into file_name allocated char*.
  * Caller is responsible for freeing it!
  *
@@ -138,7 +138,7 @@ char* getFileNameP(const char* file_path)
 }
 
 /**
- * Extract the file_name out of a file_path.
+ * Extract the base file name offset out of a file_path.
  *
  * @param file_path char*
  * @param file_name char*
