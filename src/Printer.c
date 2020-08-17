@@ -62,9 +62,9 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
 	size_t nr_of_parts = length / block_size;
 	if ( length % block_size != 0 ) nr_of_parts++;
 
-	debug_info("start: %lu\n", start);
-	debug_info("block_size: %d\n", block_size);
-	debug_info("nr_of_parts: %lu\n", nr_of_parts);
+	debug_info("start: 0x%lx\n", start);
+	debug_info("block_size: 0x%x\n", block_size);
+	debug_info("nr_of_parts: 0x%lx\n", nr_of_parts);
 	debug_info("\n");
 
 	errno = 0;
@@ -187,7 +187,7 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
 	size_t read_size = 0;
 	size_t size;
 	size_t end = read_start + length;
-	uint8_t offset_width = countHexWidth64(end);
+	uint8_t offset_width = countHexWidth64(end-HEX_COL_SIZE);
 
 	// adjust end size if it exceeds read_max
 	if ( end > read_max )

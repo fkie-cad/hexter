@@ -15,5 +15,6 @@ CMakeSettings.json
 res
 TODO
 
+!build/hexter
 !build/64/hexter.exe
-!build/ss.txt
+!build/32/hexter.exe
