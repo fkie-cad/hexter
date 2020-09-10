@@ -72,13 +72,3 @@ exit /B 0
     @echo /v Verbose mode.
 	@echo /h Print this.
     exit /B 0
-
-:isDir
-	setlocal
-	set v=%~1
-	if [%v:~0,-1%\] == [%v%] (
-		exit /b 1
-	) else (
-		exit /b 0
-	)
-	endlocal

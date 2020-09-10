@@ -59,8 +59,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.18";
-static const char* last_changed = "15.08.2020";
+static const char* vs = "1.5.19";
+static const char* last_changed = "10.08.2020";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -153,9 +153,9 @@ int run(const char payload_format, const char* raw_payload)
 	}
 
 	debug_info("file_path: %s\n", file_path);
-	debug_info("file_size: 0x%lx\n", file_size);
-	debug_info("start: 0x%lx\n", start);
-	debug_info("length: 0x%lx\n", length);
+	debug_info("file_size: 0x%zx\n", file_size);
+	debug_info("start: 0x%zx\n", start);
+	debug_info("length: 0x%zx\n", length);
 	debug_info("print_col_mask only: %d\n", print_col_mask);
 	debug_info("insert: %d\n", insert_f);
 	debug_info("overwrite: %d\n", overwrite_f);
@@ -586,7 +586,7 @@ void sanitizePrintParams(uint32_t pid)
 		if ( length % col_size != 0 )
 		{
 			length = length + col_size - (length % col_size);
-			printf("INFO: Normalized length to 0x%llx\n", length);
+			printf("INFO: Normalized length to 0x%zx\n", length);
 		}
 	}
 
@@ -642,12 +642,10 @@ uint8_t keepLengthInFile()
 {
 	if ( start + length > file_size )
 	{
-#if defined(_WIN32)
-		printf("Info: Start offset 0x%llx plus length 0x%llx is greater then the file size 0x%llx\nPrinting only to file size.\n",
-#else
-		printf("Info: Start offset 0x%lx plus length 0x%lx is greater then the file size 0x%lx.\nPrinting only to file size.\n",
-#endif
+		printf("Info: Start offset 0x%zx plus length 0x%zx is greater then the file size 0x%zx\n"
+			"Printing only to file size.\n",
 		start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
+
 		length = file_size - start;
 		continuous_f = 0;
 		return 1;

@@ -77,3 +77,9 @@ if ( ${GTEST_FOUND} )
 		)
 
 endif()
+
+
+
+add_executable(createRandBin
+	${CMAKE_CURRENT_SOURCE_DIR}/tests/createRandBin.c
+	)
