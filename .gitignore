@@ -16,5 +16,6 @@ res
 TODO
 
 !build/hexter
+!build/hexter.sha256
 !build/64/hexter.exe
 !build/32/hexter.exe
