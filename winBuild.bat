@@ -91,6 +91,11 @@ set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
 
 :build
     cmd /k "mkdir %build_dir% & %vcvars% & %cmake% -S . -B %build_dir% -DCMAKE_BUILD_TYPE=%mode% -G "NMake Makefiles" & %cmake% --build %build_dir% --config %mode% --target %target% & exit"
+
+    if /i [%mode%]==[release] (
+        certutil -hashfile %build_dir%/%target%.exe sha256 | find /i /v "sha256" | find /i /v "certutil" > %build_dir%/%target%.sha256
+    )
+
     exit /B 0
 
 :usage
