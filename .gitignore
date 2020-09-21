@@ -1,7 +1,3 @@
-#/build/**
-#!/build/64/**
-#!/build/32/**
-
 /build/**
 !/build/**/
 
