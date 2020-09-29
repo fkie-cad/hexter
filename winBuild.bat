@@ -111,9 +111,11 @@ set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
 
 :help
     call :usage
+	echo.
+	echo Options:
     @echo /t^|/target The target name to build. Default: hexter.
     @echo /b^|/bitness The target bitness. Default: 64.
     @echo /m^|/mode The mode (Debug^|Release) to build in. Default: Release.
     @echo /bt^|/buildtools Custom path to Microsoft Visual Studio BuildTools
-    @echo /mt Statically include LIBCMT.lib. Increases file size but may be needed to run on some systems. Default: no.
+    @echo /mt Statically include LIBCMT.lib. Increases file size but may be needed if a "VCRUNTIMExxx.dll not found Error" occurs on the target system. Default: no.
     exit /B 0
