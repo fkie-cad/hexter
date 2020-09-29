@@ -241,7 +241,7 @@ TEST_F(HexterTest, testMainWithNotExistingFile)
 TEST_F(HexterTest, testMainWithRandomFile)
 {
 	uint64_t binary_size = DEFAULT_LENGTH;
-	string name = "testMainWithRandomFile.bind";
+	string name = "testMainWithRandomFile.bin";
 	string src = temp_dir + "/" + name;
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src};
@@ -256,7 +256,7 @@ TEST_F(HexterTest, testMainWithRandomFile)
 TEST_F(HexterTest, testMainWithRandomFileNegativeArgs)
 {
 	uint64_t binary_size = 128;
-	string src = temp_dir + "/testMainWithRandomFile.bind";
+	string src = temp_dir + "/testMainWithRandomFile.bin";
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	const vector<string> argv1 = {src, "-s -10", "-l -100"};
@@ -304,7 +304,7 @@ TEST_F(HexterTest, testMainWithRandomFileNegativeArgs)
 TEST_F(HexterTest, testMainWithRandomFileCustomParams)
 {
 	uint64_t binary_size = 0x200;
-	string name = "testMainWithRandomFileCustomParams.bind";
+	string name = "testMainWithRandomFileCustomParams.bin";
 	string src = temp_dir + "/" + name;
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src, "-s 0x10", "-l 0x100", "-b"};
@@ -319,7 +319,7 @@ TEST_F(HexterTest, testMainWithRandomFileCustomParams)
 TEST_F(HexterTest, testMainWithRandomFileHexOnlyPrint)
 {
 	uint64_t binary_size = 0x100;
-	string name = "testMainWithRandomFileHex.bind";
+	string name = "testMainWithRandomFileHex.bin";
 	string src = temp_dir + "/" + name;
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src, "-x", "-b"};
@@ -334,7 +334,7 @@ TEST_F(HexterTest, testMainWithRandomFileHexOnlyPrint)
 TEST_F(HexterTest, testMainWithRandomFileAsciiOnlyPrint)
 {
 	uint64_t binary_size = 0x100;
-	string name = "testMainWithRandomFileAscii.bind";
+	string name = "testMainWithRandomFileAscii.bin";
 	string src = temp_dir + "/" + name;
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 	const vector<string> argv = {src, "-a", "-b"};

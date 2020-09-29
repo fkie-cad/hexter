@@ -119,7 +119,7 @@ TEST_F(WriterTest, testOverwriteInFile)
 	for ( int i = 0; i < binary_size; i++ )
 	{
 		unsigned char cs;
-		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		check_fs.read((char*)(&(cs)), 1);
 		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+bytes[i]<<dec<<endl;
 
 		if ( start <= i && i < start+payload_ln )
@@ -156,7 +156,7 @@ TEST_F(WriterTest, testOverwriteOverEndOfFile)
 	for ( int i = 0; i < binary_size; i++ )
 	{
 		unsigned char cs;
-		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		check_fs.read((char*)(&(cs)), 1);
 		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+bytes[i]<<dec<<endl;
 
 		if ( start <= i && i < start+payload_ln )
@@ -168,7 +168,7 @@ TEST_F(WriterTest, testOverwriteOverEndOfFile)
 	for ( int i = binary_size; i < binary_size + payload_ln / 2; i++ )
 	{
 		unsigned char cs;
-		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		check_fs.read((char*)(&(cs)), 1);
 		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<dec<<endl;
 
 		EXPECT_EQ(cs, payload[j++]);
@@ -206,7 +206,7 @@ TEST_F(WriterTest, testOverwriteOutOfFile)
 	for ( int i = 0; i < binary_size; i++ )
 	{
 		unsigned char cs;
-		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		check_fs.read((char*)(&(cs)), 1);
 		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+bytes[i]<<dec<<endl;
 
 		EXPECT_EQ(cs, bytes[i]);
@@ -217,7 +217,7 @@ TEST_F(WriterTest, testOverwriteOutOfFile)
 	for ( uint64_t i = start; i < start + payload_ln; i++ )
 	{
 		unsigned char cs;
-		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		check_fs.read((char*)(&(cs)), 1);
 		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<dec<<endl;
 
 		EXPECT_EQ(cs, payload[j++]);
@@ -258,7 +258,7 @@ TEST_F(WriterTest, testInsertInFile)
 	for ( uint64_t i = 0; i < size; i++ )
 	{
 		unsigned char cs;
-		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		check_fs.read((char*)(&(cs)), 1);
 //		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+payloaded_bytes[i]<<dec<<endl;
 
 		EXPECT_EQ(cs, payloaded_bytes[i]);
@@ -313,7 +313,7 @@ TEST_F(WriterTest, testInsertOverFileBounds)
 	for ( int i = 0; i < size; i++ )
 	{
 		unsigned char cs;
-		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		check_fs.read((char*)(&(cs)), 1);
 		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+payloaded_bytes[i]<<dec<<endl;
 
 		EXPECT_EQ(cs, payloaded_bytes[i]);
@@ -364,7 +364,7 @@ TEST_F(WriterTest, testInsertOutOfFileBounds)
 	for ( int i = 0; i < size; i++ )
 	{
 		unsigned char cs;
-		check_fs.read(reinterpret_cast<char *>(&(cs)), 1);
+		check_fs.read((char*)(&(cs)), 1);
 		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+payloaded_bytes[i]<<dec<<endl;
 
 		EXPECT_EQ(cs, payloaded_bytes[i]);
