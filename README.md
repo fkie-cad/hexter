@@ -15,7 +15,7 @@ Last changed: 10.09.2020
 
 ### Linux (gcc) & cmake ###
 ```bash
-$ ./linuxBuild.sh [-t hexter] [-m Debug|Release] [- h]
+$ ./linuxBuild.sh [-t hexter] [-m Debug|Release] [-h]
 ```
 
 ### Windows (MsBuild) & cmake ###
