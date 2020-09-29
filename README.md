@@ -15,18 +15,18 @@ Last changed: 10.09.2020
 
 ### Linux (gcc) & cmake ###
 ```bash
-$ ./linuxBuild.sh [-h]
+$ ./linuxBuild.sh [-t hexter] [-m Debug|Release] [- h]
 ```
 
 ### Windows (MsBuild) & cmake ###
 ```bash
-$ winBuild.bat [/h]
+$ winBuild.bat [/t hexter] [/m Release|Debug] [/b 32|64] [/h]
 ```
 The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.
 
 ### DLL : Windows (MsBuild) & cmake ### 
 ```bash
-$ winBuild.bat /t hexter_shared [/b 64] [/m Release]]
+$ winBuild.bat /t hexter_shared [/b 64] [/m Release]] [/mt no|Release|Debug] [/?]
 ```
 
 ## USAGE ##

@@ -17,20 +17,33 @@
 size_t split(char* str, const char* delimiter, char** bucket, const size_t bucket_max)
 {
 	char* token;
-//	char* next_token;
+	size_t token_id = 0;
+
+	if (str == NULL)
+	{
+		printf("ERROR: str is NULL!\n");
+		return 0;
+	}
+	if (bucket == NULL)
+	{
+		printf("ERROR: bucket is NULL!\n");
+		return 0;
+	}
+	if (bucket_max == 0)
+	{
+		printf("ERROR: bucket_max is 0!");
+		return 0;
+	}
 
 	token = strtok(str, delimiter);
-//	token = strtok_s(str, delimiter, &next_token);
-	size_t token_id = 0;
 
 	while ( token != NULL )
 	{
 		bucket[token_id] = token;
 		token = strtok(NULL, delimiter);
-//		token = strtok_s(NULL, delimiter, &next_token);
 
 		token_id++;
-		if ( token_id >= bucket_max )
+		if (token_id >= bucket_max)
 			break;
 	}
 
