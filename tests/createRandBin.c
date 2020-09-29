@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
