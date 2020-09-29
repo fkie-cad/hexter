@@ -1,8 +1,5 @@
 #!/bin/bash
 
-target=hexter
-targets="${target}|${target}_shared"
-
 name=hexter
 def_target=${name}
 pos_targets="${def_target}|hexter_shared|clean"
@@ -60,7 +57,7 @@ function buildTarget() {
 		return 3
 	fi
 
-	if [[ ${mode} == "Release" || ${target} == "release" ]]; then
+	if [[ ${mode} == "Release" || ${mode} == "release" ]]; then
 		sha256sum ${dir}/${target} | awk '{print $1}' > ${dir}/${target}.sha256
 	fi
 
@@ -118,6 +115,9 @@ while getopts ":m:t:h" opt; do
 	\?)
 		echo "Invalid option -$OPTARG" >&2
 		;;
+	: )
+		echo "ERROR: option $OPTARG requires an argument" 1>&2
+		exit $?
 	esac
 done
 
