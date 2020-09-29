@@ -10,6 +10,7 @@ set cmake=cmake
 set prog_name=%~n0
 set user_dir="%~dp0"
 set verbose=1
+set mt=no
 
 
 WHERE %cmake% >nul 2>nul
@@ -65,6 +66,11 @@ GOTO :ParseParams
         SHIFT
         goto reParseParams
     )
+    IF /i "%~1"=="/mt" (
+        SET mt=%~2
+        SHIFT
+        goto reParseParams
+    )
     
     :reParseParams
         SHIFT
@@ -90,11 +96,16 @@ rem architecture = x86, x86_x64, ...
 set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
 
 :build
-    cmd /k "mkdir %build_dir% & %vcvars% & %cmake% -S . -B %build_dir% -DCMAKE_BUILD_TYPE=%mode% -G "NMake Makefiles" & %cmake% --build %build_dir% --config %mode% --target %target% & exit"
+    cmd /k "mkdir %build_dir% & %vcvars% & %cmake% -S . -B %build_dir% -DCMAKE_BUILD_TYPE=%mode% -DMT=%mt% -G "NMake Makefiles" & %cmake% --build %build_dir% --config %mode% --target %target% & exit"
+
+    if /i [%mode%]==[release] (
+        certutil -hashfile %build_dir%/%target%.exe sha256 | find /i /v "sha256" | find /i /v "certutil" > %build_dir%/%target%.sha256
+    )
+
     exit /B 0
 
 :usage
-    @echo Usage: %prog_name% [/t %target%^|%target%_shared] [/b 32^|64] [/m Debug^|Release] [/bt C:\Build\Tools\] [/h]
+    @echo Usage: %prog_name% [/t %target%^|%target%_shared] [/b 32^|64] [/m Debug^|Release] [/bt C:\Build\Tools\] [/mt=no|Debug|Release] [/h]
     @echo Default: %prog_name% [/t %target% /b %bitness% /m %mode% /bt %buildTools%]
     exit /B 0
 
@@ -104,4 +115,5 @@ set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
     @echo /b^|/bitness The target bitness. Default: 64.
     @echo /m^|/mode The mode (Debug^|Release) to build in. Default: Release.
     @echo /bt^|/buildtools Custom path to Microsoft Visual Studio BuildTools
+    @echo /mt Statically include LIBCMT.lib. Increases file size but may be needed to run on some systems. Default: no.
     exit /B 0
