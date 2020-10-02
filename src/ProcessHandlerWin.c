@@ -37,14 +37,14 @@ void ProcessHandler_cleanUp(HANDLE snap, HANDLE process);
 BOOL openProcess(HANDLE* process, uint32_t pid);
 Bool getProcessHeapListSnapshot(HANDLE* hHeapSnap, HEAPLIST32* hl, DWORD pid);
 void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base);
-char* getHEFlagString(DWORD flag);
-char* getHLFlagString(DWORD flag);
+const char* getHEFlagString(DWORD flag);
+const char* getHLFlagString(DWORD flag);
 BOOL isKnownProtection(DWORD protect);
-char* getProtectString(DWORD protect);
+const char* getProtectString(DWORD protect);
 int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info);
 int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb);
-char* getMemoryStateString(DWORD state);
-char* getMemoryTypeString(DWORD type);
+const char* getMemoryStateString(DWORD state);
+const char* getMemoryTypeString(DWORD type);
 int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found);
 BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char* info_p);
 BOOL getRegionName(HANDLE process, PVOID base, char* file_name);
@@ -133,7 +133,7 @@ uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start)
 
 	if ( (*start) > 0 )
 	{
-		printf("Info: Start offset 0x%llx does not hit a module!\nSetting it to 0x%p!\n", (*start), info.AllocationBase);
+		printf("Info: Start offset 0x%zx does not hit a module!\nSetting it to 0x%p!\n", (*start), info.AllocationBase);
 		info_line_break = 1;
 	}
 	(*start) = (size_t) info.AllocationBase;
@@ -414,7 +414,7 @@ BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD n
 	s = VirtualProtectEx(process, info->BaseAddress, info->RegionSize, new_protect, old_protect);
 	if ( !s )
 	{
-		printf(" - Error (0x%lx): VirtualProtect at 0x%llx\n", GetLastError(), (size_t) info->BaseAddress);
+		printf(" - Error (0x%lx): VirtualProtect at 0x%zx\n", GetLastError(), (size_t) info->BaseAddress);
 		return FALSE;
 	}
 	
@@ -648,7 +648,7 @@ size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, siz
 
 	if ( !s )
 	{
-		printf(" - Error (0x%lx): ReadProcessMemory 0x%llx of 0x%llx bytes at 0x%llx\n", 
+		printf(" - Error (0x%lx): ReadProcessMemory 0x%zx of 0x%zx bytes at 0x%zx\n", 
 				GetLastError(), bytes_read, n_size, (uintptr_t)base_addr + base_off);
 		return 0;
 	}
@@ -809,7 +809,7 @@ BOOL openSnap(HANDLE* snap, uint32_t pid, DWORD dwFlags)
 	(*snap) = CreateToolhelp32Snapshot(dwFlags, pid);
 	if ( (*snap) == INVALID_HANDLE_VALUE)
 	{
-		printf("ERROR (0x%lx): CreateToolhelp32Snapshot\n", GetLastError());
+		printf("ERROR (0x%lx): CreateToolhelp32Snapshot(0x%x, 0x%x)\n", GetLastError(), dwFlags, pid);
 		return FALSE;
 	}
 	return TRUE;
@@ -899,7 +899,7 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 	if ( !isAccessibleRegion(info) )
 		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
 
-	printf("0x%p | 0x%p | 0x%*lx | ", info->BaseAddress, info->AllocationBase, w_rs, info->RegionSize);
+	printf("0x%p | 0x%p | 0x%*zx | ", info->BaseAddress, info->AllocationBase, w_rs, info->RegionSize);
 	
 	printf("%-9s%s", getMemoryStateString(info->State), SEPARATOR);
 
@@ -964,7 +964,7 @@ BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* mbi)
 //			;
 }
 
-char* getMemoryStateString(DWORD state)
+const char* getMemoryStateString(DWORD state)
 {
 	switch (state) {
 		case 0:
@@ -980,7 +980,7 @@ char* getMemoryStateString(DWORD state)
 	}
 }
 
-char* getMemoryTypeString(DWORD type)
+const char* getMemoryTypeString(DWORD type)
 {
 	switch (type) {
 		case 0:
@@ -1019,7 +1019,7 @@ BOOL isKnownProtection(DWORD protect)
 	);
 }
 
-char* getProtectString(DWORD protect)
+const char* getProtectString(DWORD protect)
 {
 	switch ( protect )
 	{
@@ -1051,7 +1051,8 @@ char* getProtectString(DWORD protect)
 			return(" rcx");
 		case PAGE_TARGETS_INVALID:
 //		case PAGE_TARGETS_NO_UPDATE:
-			return("NO_UPDATE/INVALID");
+			return("invd");
+			//return("NO_UPDATE/INVALID");
 		case PAGE_GUARD | PAGE_EXECUTE:
 			return("g--x");
 		case PAGE_GUARD | PAGE_EXECUTE_READ:
@@ -1073,9 +1074,15 @@ char* getProtectString(DWORD protect)
 	}
 }
 
+/**
+ * List process heaps
+ * 
+ * @param pid uint32_t
+ * @param type int 1: list heaps, 2: list heaps and its internal blocks.
+ */
 Bool listProcessHeaps(uint32_t pid, int type)
 {
-	HEAPLIST32 hl;
+	HEAPLIST32 hl = { 0 };
 	HANDLE hHeapSnap = INVALID_HANDLE_VALUE;
 
 	if( !getProcessHeapListSnapshot(&hHeapSnap, &hl, pid) )
@@ -1084,7 +1091,7 @@ Bool listProcessHeaps(uint32_t pid, int type)
 	}
 	
 	printf("List of Heaps:\n");
-	printf("%-13s | %-*s | %-s\n",  "flags", (sizeof(SIZE_T)*2+2), "heap id", "pid");
+	printf("%-13s | %-*s | %-s\n",  "flags", (int)(sizeof(SIZE_T)*2+2), "heap id", "pid");
 	printf("------------------------------------------------\n");
 	do
 	{
@@ -1113,7 +1120,7 @@ Bool getProcessHeapListSnapshot(HANDLE* hHeapSnap, HEAPLIST32* hl, DWORD pid)
 
 	if( !Heap32ListFirst((*hHeapSnap), hl) )
 	{
-		printf("Cannot list first heap (%lu)\n", GetLastError());
+		printf("ERROR (0x%lx): Cannot list first heap.\n", GetLastError());
 		return false;
 	}
 	return true;
@@ -1125,21 +1132,22 @@ void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base)
 	HEAPENTRY32 he;
 	ZeroMemory(&he, sizeof(HEAPENTRY32));
 	he.dwSize = sizeof(HEAPENTRY32);
+	int ptr_c_size = sizeof(PVOID) * 2;
 
 	if ( Heap32First(&he, pid, base) )
 	{
-		printf(" - [%17s | %-18s | %11s | %8s | %s | %s | %11s | %18s]\n",
-			"hHandle", "Address", "BlockSize", "Flags", "#locks", "Resvd", "processId", "HeapId");
+		printf("    %*s | %-*s | %9s | %8s | %s | %s | %9s | %-18s\n",
+			ptr_c_size+1, "hHandle", ptr_c_size + 2, "Address", "BlockSize", "Flags", "#locks", "Resvd", "processId", "HeapId");
 		do
 		{
 			heap_size += he.dwBlockSize;
-			printf(" - 0x%p | 0x%016llx | 0x%9llx | %8s |  %5lu |  %4lu |  0x%8lx | 0x%llx \n",
-				   he.hHandle, he.dwAddress, he.dwBlockSize, getHEFlagString(he.dwFlags), he.dwLockCount, he.dwResvd,
+			printf(" - 0x%p | 0x%0*zx | %#9zx | %8s |  %5lu |  %4lu |  %#8lx | 0x%lx \n",
+				   he.hHandle, ptr_c_size, he.dwAddress, he.dwBlockSize, getHEFlagString(he.dwFlags), he.dwLockCount, he.dwResvd,
 				   he.th32ProcessID, he.th32HeapID);
 
 			he.dwSize = sizeof(HEAPENTRY32);
 		} while ( Heap32Next(&he) );
-		printf(" - - heap_size: 0x%x (%u)\n", heap_size, heap_size);
+		printf(" - - heap_size: 0x%x (%u)\n\n", heap_size, heap_size);
 	}
 }
 
@@ -1153,7 +1161,7 @@ BOOL stackTrace(uint32_t pid)
 	return TRUE;
 }
 
-char* getHLFlagString(DWORD flag)
+const char* getHLFlagString(DWORD flag)
 {
 	if ( flag == HF32_DEFAULT )
 		return "HF32_DEFAULT";
@@ -1161,7 +1169,7 @@ char* getHLFlagString(DWORD flag)
 		return "HF32_NONE";
 }
 
-char* getHEFlagString(DWORD flag)
+const char* getHEFlagString(DWORD flag)
 {
 	switch ( flag )
 	{
@@ -1187,7 +1195,7 @@ Bool listRunningProcesses()
 	pe32.dwSize = sizeof( PROCESSENTRY32 );
 	if( !Process32First(snap, &pe32))
 	{
-		printf("ERROR: Process32First\n");
+		printf("ERROR (0x%lx): Process32First\n", GetLastError());
 		CloseHandle(snap);
 		return false;
 	}
@@ -1227,11 +1235,15 @@ void printRunningProcessInfo(PROCESSENTRY32* pe32)
 //		else
 //			printf("ERROR: OpenProcess\n");
 
-	if ( !readable )
+	if (!readable)
+	{
 		SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
+	}
 	printf("0x%08lx | 0x%08lx | %7lu | %13lu | %8lu | %9s | %s\n",
 		   (*pe32).th32ProcessID, (*pe32).th32ParentProcessID, (*pe32).cntThreads, (*pe32).pcPriClassBase,
 		   priorityClass, (readable) ? "true" : "false", (*pe32).szExeFile);
-	if ( !readable )
+	if (!readable)
+	{
 		SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+	}
 }

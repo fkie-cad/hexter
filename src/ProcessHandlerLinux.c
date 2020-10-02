@@ -694,6 +694,12 @@ int printProcMapEntry(ProcMapsEntry* entry, uint32_t last_module_inode, size_t l
 	return 0;
 }
 
+/**
+ * List process heaps
+ * 
+ * @param pid uint32_t
+ * @param type int (Winodws only)
+ */
 Bool listProcessHeaps(uint32_t pid, int type)
 {
 	Bool s;
