@@ -283,7 +283,7 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
 	if ( !s )
 	{
 		last_error = GetLastError();
-		printf(" - Error (0x%lx): WriteProcessMemory %llu bytes at 0x%p\n", last_error, bytes_written, base_addr);
+		printf(" - Error (0x%lx): WriteProcessMemory %zu bytes at 0x%p\n", last_error, bytes_written, base_addr);
 //		printError("WriteProcessMemory", last_error);
 	}
 
@@ -600,11 +600,11 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
 	
 	for ( p = 0; p < nr_of_parts; p++ )
 	{
-		debug_info("%llu / %llu\n", (p + 1), nr_of_parts);
+		debug_info("%zu / %zu\n", (p + 1), nr_of_parts);
 		read_size = BLOCKSIZE_LARGE;
 		if ( block_start + read_size > end )
 			read_size = end - block_start;
-		debug_info(" - read_size: %llu\n", read_size);
+		debug_info(" - read_size: %zu\n", read_size);
 
 		memset(buffer, 0, BLOCKSIZE_LARGE);
 	
@@ -1137,11 +1137,11 @@ void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base)
 	if ( Heap32First(&he, pid, base) )
 	{
 		printf("    %*s | %-*s | %9s | %8s | %s | %s | %9s | %-18s\n",
-			ptr_c_size+1, "hHandle", ptr_c_size + 2, "Address", "BlockSize", "Flags", "#locks", "Resvd", "processId", "HeapId");
+			ptr_c_size+1, "Handle", ptr_c_size + 2, "Address", "BlockSize", "Flags", "#locks", "Resvd", "processId", "HeapId");
 		do
 		{
 			heap_size += he.dwBlockSize;
-			printf(" - 0x%p | 0x%0*zx | %#9zx | %8s |  %5lu |  %4lu |  %#8lx | 0x%lx \n",
+			printf(" - 0x%p | 0x%0*zx | %#9zx | %8s |  %5lu |  %4lu |  %#8lx | 0x%zx \n",
 				   he.hHandle, ptr_c_size, he.dwAddress, he.dwBlockSize, getHEFlagString(he.dwFlags), he.dwLockCount, he.dwResvd,
 				   he.th32ProcessID, he.th32HeapID);
 

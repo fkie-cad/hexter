@@ -522,7 +522,7 @@ Bool getProcStat(uint32_t pid, ProcStat* proc_stat)
 	bucket_ln = splitArgsCSM(line, bucket, bucket_max, '(', ')');
 	if ( bucket_ln == 0 || bucket_ln >= bucket_max )
 	{
-//		printf("bucket_ln: %llu\n", bucket_ln);
+//		printf("bucket_ln: %zu\n", bucket_ln);
 //		int i = 0;
 //		for ( i = 0; i < bucket_ln; i++ )
 //			printf("%d: %s\n", i, bucket[i]);

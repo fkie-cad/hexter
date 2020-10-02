@@ -536,23 +536,15 @@ int sanitizeDeleteParams()
 
 	if ( start >= file_size )
 	{
-#if defined(_WIN32)
-		fprintf(stderr, "ERROR: Start offset 0x%llx is greater the the file size 0x%llx (%llu)!\n",
-#else
-		fprintf(stderr, "ERROR: Start offset 0x%lx is greater the the file size 0x%lx (%lu)!\n",
-#endif
+		fprintf(stderr, "ERROR: Start offset 0x%zx is greater the the file size 0x%zx (%zu)!\n",
 				start, file_size, file_size);
 		return 1;
 	}
 	
 	if ( length == 0 )
 	{
-#if defined(_WIN32)
-		fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%llx!\n",
-#else
-		fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%lx!\n",
-#endif
-				file_size - start);
+		fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%zx!\n", 
+			file_size - start);
 		length = file_size - start;
 		info_line_break = 1;
 	}
@@ -614,7 +606,7 @@ void sanitizePrintParams(uint32_t pid)
 
 	if ( length == 0 )
 	{
-		fprintf(stdout, "Info: Length is 0. Setting to 0x%x!\n", DEFAULT_LENGTH);
+		printf("Info: Length is 0. Setting to 0x%x!\n", DEFAULT_LENGTH);
 		length = DEFAULT_LENGTH;
 		info_line_break = 1;
 	}
@@ -627,11 +619,7 @@ uint8_t keepStartInFile()
 {
 	if ( start >= file_size )
 	{
-#if defined(_WIN32)
-		fprintf(stdout, "Info: Start offset 0x%llx is greater the the file size 0x%llx (%llu)!\nSetting to 0!\n", start, file_size, file_size);
-#else
-		fprintf(stdout, "Info: Start offset 0x%lx is greater the the file size 0x%lx (%lu)!\nSetting to 0!\n", start, file_size, file_size);
-#endif
+		printf("Info: Start offset 0x%zx is greater the the file size 0x%zx (%zu)!\nSetting to 0!\n", start, file_size, file_size);
 		start = 0;
 		return 1;
 	}
@@ -655,6 +643,7 @@ uint8_t keepLengthInFile()
 
 /**
  * Parse payload from
+ * 
  * @param format char the format of the raw payload string
  * @param value char* the raw payload value
  * @param payload char** the array to store the formated payload in

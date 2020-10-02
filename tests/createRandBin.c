@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 	
 	printf("Creating random binary\n"
 		" - path: \"%s\"\n"
-  		" - size: 0x%llx\n", path, size);
+  		" - size: 0x%zx\n", path, size);
 	
 	errno = 0;
 	fp = fopen(path, "wb");
