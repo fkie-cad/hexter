@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting reading, writing and searching in files
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.5.19  
-Last changed: 10.09.2020
+1.5.20  
+Last changed: 02.10.2020
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc or msbuild) is required.  
@@ -22,7 +22,8 @@ $ ./linuxBuild.sh [-t hexter] [-m Debug|Release] [-h]
 ```bash
 $ winBuild.bat [/t hexter] [/m Release|Debug] [/b 32|64] [/h]
 ```
-The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.
+The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.  
+Thats the place to correct the path to your cmake installation as well.
 
 ### DLL : Windows (MsBuild) & cmake ### 
 ```bash
