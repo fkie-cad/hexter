@@ -10,7 +10,7 @@
 #define HEXTER_EXPORTS
 
 // for usage in Diller
-#define DILLER
+//#define DILLER
 
 #include "hexter.h"
 #include "Globals.h"
