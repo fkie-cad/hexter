@@ -10,7 +10,7 @@
 #define HEXTER_EXPORTS
 
 // for usage in Diller
-// #define DILLER
+#define DILLER
 
 #include "hexter.h"
 #include "Globals.h"
@@ -60,7 +60,7 @@ static RunMode run_mode;
 static int payload_arg_id;
 
 static const char* vs = "1.5.20";
-static const char* last_changed = "02.10.2020";
+static const char* last_changed = "11.11.2020";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_BYTE 'b'
@@ -291,18 +291,24 @@ void printHelp()
 		   " * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)\n"
 		   " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
 		   " * -fx Find hex byte sequence. Where x is an format option.\n"
-		   " * * Format options: %c: plain bytes, %c: ascii text, %c: byte, %c: fill byte, %c: word, %c: double word, %c: quad word.\n"
-		   "     Expect for the ascii string, all values have to be passed as hex values.\n"
-		   "     A fill byte has the length of -l.\n"
+		   " * Format options:\n"
+	       "   * %c: plain bytes\n"
+		   "   * %c: ascii text\n"
+		   "   * %c: byte\n"
+		   "   * %c: fill byte (will be inserted -l times)\n"
+		   "   * %c: word\n"
+		   "   * %c: double word\n"
+		   "   * %c: quad word.\n"
+		   "   Expect for the ascii string, all values have to be passed as hex values.\n"
 //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
 		   " * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
 		   " * -pid only options:\n"
-		   " * * -lpx List entire process memory layout.\n"
-		   " * * -lpm List all process modules.\n"
-		   " * * -lpt List all process threads.\n"
-		   " * * -lph List all process heaps.\n"
-		   " * * -lphb List all process heaps and its blocks.\n"
-		   " * * -lrp List all running processes. Pass any pid or 0 to get it running.\n"
+		   "   * -lpx List entire process memory layout.\n"
+		   "   * -lpm List all process modules.\n"
+		   "   * -lpt List all process threads.\n"
+		   "   * -lph List all process heaps.\n"
+		   "   * -lphb List all process heaps and its blocks.\n"
+		   "   * -lrp List all running processes. Pass any pid or 0 to get it running.\n"
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
