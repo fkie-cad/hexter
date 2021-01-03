@@ -1,7 +1,7 @@
 @echo off
 
-set path=""
-set label="Open with Hexter"
+set path=
+set label=Open with Hexter
 
 set prog_name=%~n0
 set user_dir="%~dp0"
