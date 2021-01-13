@@ -301,7 +301,7 @@ void printHelp()
 		   "   * %c: word\n"
 		   "   * %c: double word\n"
 		   "   * %c: quad word.\n"
-		   "   Expect for the ascii string, all values have to be passed as hex values.\n"
+		   "   Expect for the string types, all values have to be passed as hex values, omitting `0x`.\n"
 //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
 		   " * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
 		   " * -pid only options:\n"

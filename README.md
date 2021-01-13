@@ -54,7 +54,7 @@ Optional Parameters:
    * w: word, 
    * d: double word, 
    * q: quad word.  
-   Expect for the ascii string, all values have to be passed as hex values.  
+   Expect for the string types, all values have to be passed as hex values, omitting `0x`.  
  * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
  * -pid only.
    * -lpx List entire process memory layout.
@@ -64,7 +64,7 @@ Optional Parameters:
    * -lphb List all process heaps and its blocks.
    * -lrp List all running processes. Pass any pid or 0 to get it running.
  * -b Force breaking, not continuous mode and print just one block.
- * -p For a plain, not styled text output. 
+ * -p Plain, not styled text output. 
  * -h Print this.
 
 Either use -file or -pid, not both. 
