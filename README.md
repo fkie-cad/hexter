@@ -22,7 +22,8 @@ $ ./linuxBuild.sh [-t hexter] [-m Debug|Release] [-h]
 ```bash
 $ winBuild.bat [/t hexter] [/m Release|Debug] [/b 32|64] [/h]
 ```
-The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.
+The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.  
+Thats the place to correct the path to your cmake installation as well.
 
 ### DLL : Windows (MsBuild) & cmake ### 
 ```bash
