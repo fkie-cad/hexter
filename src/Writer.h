@@ -6,7 +6,8 @@ uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, size_t 
 uint32_t payloadParseWord(const char* arg, unsigned char** payload);
 uint32_t payloadParseDWord(const char* arg, unsigned char** payload);
 uint32_t payloadParseQWord(const char* arg, unsigned char** payload);
-uint32_t payloadParseString(const char* arg, unsigned char** payload);
+uint32_t payloadParseAscii(const char* arg, unsigned char** payload);
+uint32_t payloadParseUtf16(const char* arg, unsigned char** payload);
 uint32_t payloadParseReversedPlainBytes(const char* arg, unsigned char** payload);
 uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload);
 

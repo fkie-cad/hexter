@@ -600,9 +600,9 @@ TEST_F(WriterTest, testParseString)
 	unsigned char* parsed1 = nullptr;
 	unsigned char* parsed2 = nullptr;
 
-	uint32_t payload0_ln = payloadParseString(arg0, &parsed0);
-	uint32_t payload1_ln = payloadParseString(arg1, &parsed1);
-	uint32_t payload2_ln = payloadParseString(arg2, &parsed2);
+	uint32_t payload0_ln = payloadParseAscii(arg0, &parsed0);
+	uint32_t payload1_ln = payloadParseAscii(arg1, &parsed1);
+	uint32_t payload2_ln = payloadParseAscii(arg2, &parsed2);
 
 	unsigned char expected0[] = { 100, 101, 97, 100, 32, 98, 101, 97 };
 	uint32_t expexted0_ln = 8;
