@@ -59,10 +59,11 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.20";
-static const char* last_changed = "11.11.2020";
+static const char* vs = "1.5.21";
+static const char* last_changed = "13.01.2021";
 
 #define FORMAT_ASCII 'a'
+#define FORMAT_UNICODE 'u'
 #define FORMAT_BYTE 'b'
 #define FORMAT_WORD 'w'
 #define FORMAT_D_WORD 'd'
@@ -70,8 +71,8 @@ static const char* last_changed = "11.11.2020";
 #define FORMAT_PLAIN_HEX 'h'
 #define FORMAT_FILL_BYTE 'f'
 
-static const char format_types[7] = { FORMAT_ASCII, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
-static const uint8_t format_types_ln = 7;
+static const char format_types[8] = { FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
+static const uint8_t format_types_ln = 8;
 
 static void printUsage();
 void printHelp();
@@ -294,6 +295,7 @@ void printHelp()
 		   " * Format options:\n"
 	       "   * %c: plain bytes\n"
 		   "   * %c: ascii text\n"
+		   "   * %c: unicode (windows utf16) text.\n"
 		   "   * %c: byte\n"
 		   "   * %c: fill byte (will be inserted -l times)\n"
 		   "   * %c: word\n"
@@ -312,7 +314,7 @@ void printHelp()
 		   " * -b Force breaking, not continuous mode.\n"
 		   " * -p Plain, not styled text output.\n"
 		   " * -h Print this.\n",
-		   FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
+		   FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
 	);
 	printf("\n");
 	printf("Example: ./%s -file path/to/a.file -s 100 -l 128 -x\n", BINARYNAME);
@@ -681,7 +683,9 @@ uint32_t parsePayload(const char format, const char* value, unsigned char** payl
 	else if ( format == FORMAT_Q_WORD )
 		ln = payloadParseQWord(value, payload);
 	else if ( format == FORMAT_ASCII )
-		ln = payloadParseString(value, payload);
+		ln = payloadParseAscii(value, payload);
+	else if ( format == FORMAT_UNICODE )
+		ln = payloadParseUtf16(value, payload);
 //	else if ( format == 'r' )
 //		ln = payloadParseReversedPlainBytes(arg, payload);
 	else if ( format == FORMAT_PLAIN_HEX )

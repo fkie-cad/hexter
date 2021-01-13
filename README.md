@@ -4,8 +4,8 @@ A minimal terminal hex viewer supporting reading, writing and searching in files
 Compilable under Linux and Windows.  
 
 ## Version ##
-1.5.20  
-Last changed: 11.11.2020
+1.5.21  
+Last changed: 13.01.2021
 
 ## REQUIREMENTS ##
 - A decent c compiler (gcc or msbuild) is required.  
@@ -48,6 +48,7 @@ Optional Parameters:
  * Format options: 
    * h: plain bytes, 
    * a: ascii text, 
+   * u: unicode (windows utf16) text, 
    * b: byte, 
    * f: fill byte (will be inserted -l times), 
    * w: word, 

@@ -9,6 +9,7 @@
 	#include <io.h>
 #endif
 
+#include "utils/Strings.h"
 #include "Writer.h"
 #include "Globals.h"
 #include "utils/Converter.h"
@@ -17,6 +18,7 @@ static void truncateFile(FILE* fp, size_t file_size, size_t length);
 
 /**
  * Parse the arg as a byte.
+ * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
@@ -51,6 +53,7 @@ uint32_t payloadParseByte(const char* arg, unsigned char** payload)
 
 /**
  * Parse the fill byte and fill the payload buffer of the passed length with the fill byte.
+ * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
@@ -86,6 +89,7 @@ uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, size_t 
 
 /**
  * Parse the arg as a word/uint16_t
+ * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
@@ -122,6 +126,7 @@ uint32_t payloadParseWord(const char* arg, unsigned char** payload)
 
 /**
  * Parse the arg as a dword/uint32_t
+ * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
@@ -158,6 +163,7 @@ uint32_t payloadParseDWord(const char* arg, unsigned char** payload)
 
 /**
  * Parse the arg as a qword/uint64_t
+ * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
@@ -194,16 +200,17 @@ uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 
 /**
  * Parse the arg as an ascii string.
+ * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
  * @return
  */
-uint32_t payloadParseString(const char* arg, unsigned char** payload)
+uint32_t payloadParseAscii(const char* arg, unsigned char** payload)
 {
 	uint32_t i;
 	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
-	if ( arg_ln < 1 ) // is that even possible?
+	if ( arg_ln < 1 )
 	{
 		printf("Error: Payload string has no value!\n");
 		return 0;
@@ -220,7 +227,52 @@ uint32_t payloadParseString(const char* arg, unsigned char** payload)
 }
 
 /**
+ * Parse the arg as an utf16 (windows unicode) string.
+ * Allocates payload. Caller has to free it.
+ *
+ * @param arg
+ * @param payload
+ * @return
+ */
+uint32_t payloadParseUtf16(const char* arg, unsigned char** payload)
+{
+	uint32_t i;
+    size_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+
+	// fill buffer to get the real size
+    unsigned char outb[MAX_PAYLOAD_LN*4] = {0};
+    size_t outlen = MAX_PAYLOAD_LN*4;
+
+	if ( arg_ln < 1 )
+	{
+		printf("Error: Payload string has no value!\n");
+		return 0;
+	}
+
+    int s = UTF8ToUTF16LE(outb, &outlen, (unsigned char*)arg, &arg_ln);
+
+    if ( s != 0 )
+    {
+        printf("Error (0x%x): Converting to utf16.\n", s);
+        return 0;
+    }
+
+    // alloc payload with real size
+	unsigned char* p = (unsigned char*) malloc(outlen);
+
+	for ( i = 0; i < outlen; i++ )
+	{
+		p[i] = outb[i];
+	}
+
+	*payload = p;
+
+	return outlen;
+}
+
+/**
  * Parse the arg as plain bytes and reverse them.
+ * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
@@ -247,6 +299,7 @@ uint32_t payloadParseReversedPlainBytes(const char* arg, unsigned char** payload
 
 /**
  * Parse the arg as plain bytes.
+ * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
