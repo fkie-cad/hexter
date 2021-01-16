@@ -199,14 +199,14 @@ uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 }
 
 /**
- * Parse the arg as an ascii string.
+ * Parse the arg as an utf8 string.
  * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
  * @return
  */
-uint32_t payloadParseAscii(const char* arg, unsigned char** payload)
+uint32_t payloadParseUtf8(const char* arg, unsigned char** payload)
 {
 	uint32_t i;
 	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
@@ -240,8 +240,8 @@ uint32_t payloadParseUtf16(const char* arg, unsigned char** payload)
     size_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
 
 	// fill buffer to get the real size
-    unsigned char outb[MAX_PAYLOAD_LN*4] = {0};
-    size_t outlen = MAX_PAYLOAD_LN*4;
+    unsigned char outb[MAX_PAYLOAD_LN*2] = {0};
+    size_t outlen = MAX_PAYLOAD_LN*2;
 
 	if ( arg_ln < 1 )
 	{

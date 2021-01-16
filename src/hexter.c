@@ -294,7 +294,7 @@ void printHelp()
 		   " * -fx Find hex byte sequence. Where x is an format option.\n"
 		   " * Format options:\n"
 	       "   * %c: plain bytes\n"
-		   "   * %c: ascii text\n"
+		   "   * %c: ascii/utf-8 text\n"
 		   "   * %c: unicode (windows utf16) text.\n"
 		   "   * %c: byte\n"
 		   "   * %c: fill byte (will be inserted -l times)\n"
@@ -683,7 +683,7 @@ uint32_t parsePayload(const char format, const char* value, unsigned char** payl
 	else if ( format == FORMAT_Q_WORD )
 		ln = payloadParseQWord(value, payload);
 	else if ( format == FORMAT_ASCII )
-		ln = payloadParseAscii(value, payload);
+		ln = payloadParseUtf8(value, payload);
 	else if ( format == FORMAT_UNICODE )
 		ln = payloadParseUtf16(value, payload);
 //	else if ( format == 'r' )

@@ -47,8 +47,8 @@ Optional Parameters:
  * -fx Find hex byte sequence. Where x is an format option.
  * Format options: 
    * h: plain bytes, 
-   * a: ascii text, 
-   * u: unicode (windows utf16) text, 
+   * a: ascii/utf-8 text, 
+   * u: unicode (windows utf-16) text, 
    * b: byte, 
    * f: fill byte (will be inserted -l times), 
    * w: word, 

@@ -40,10 +40,12 @@ class WriterTest : public testing::Test
 
 		void assertPayloadParser(vector<TV>& tv, PayloadParser p)
 		{
+		    unsigned char* parsed = nullptr;
+            uint32_t payload_ln;
+
 			for ( TV e : tv )
 			{
-				unsigned char* parsed = nullptr;
-				uint32_t payload_ln = p(get<0>(e), &parsed);
+				payload_ln = p(get<0>(e), &parsed);
 
 				EXPECT_EQ(payload_ln, get<1>(e));
 
@@ -59,6 +61,10 @@ class WriterTest : public testing::Test
 						EXPECT_EQ(parsed[i], expected[i]);
 					}
 				}
+
+                free(parsed);
+                parsed = nullptr;
+                payload_ln = 0;
 			}
 		}
 
@@ -538,89 +544,48 @@ TEST_F(WriterTest, testMultiDeleteOnRealFile)
 
 TEST_F(WriterTest, testParsePlainBytes)
 {
-	const char* arg0 = "dead0bea";
-	const char* arg1 = "";
-	const char* arg2 = "ead0bea";
+    vector<TV> tv = {
+            TV("dead0bea", 4, {0xDE, 0xAD, 0x0b, 0xea}),
+            TV("", 0, {}),
+            TV("ead0bea", 0, {}),
+    };
 
-	unsigned char* parsed0;
-	unsigned char* parsed1 = nullptr;
-	unsigned char* parsed2 = nullptr;
-
-	uint32_t payload0_ln = payloadParsePlainBytes(arg0, &parsed0);
-	unsigned char expected0[] = { 222, 173, 11, 234 };
-
-	EXPECT_EQ(payload0_ln, 4);
-
-	for ( int i = 0; i < 4; i++ )
-		EXPECT_EQ(parsed0[i], expected0[i]);
-
-	uint32_t payload1_ln = payloadParsePlainBytes(arg1, &parsed1);
-	uint32_t payload2_ln = payloadParsePlainBytes(arg2, &parsed2);
-
-	EXPECT_EQ(payload1_ln, 0);
-	EXPECT_EQ(payload2_ln, 0);
-
-	EXPECT_EQ(parsed1, nullptr);
-	EXPECT_EQ(parsed2, nullptr);
+    assertPayloadParser(tv, payloadParsePlainBytes);
 }
 
 TEST_F(WriterTest, testParseReversedPlainBytes)
 {
-	const char* arg0 = "dead0bea";
-	const char* arg1 = "";
-	const char* arg2 = "ead0bea";
-	unsigned char* parsed0 = nullptr;
-	unsigned char* parsed1 = nullptr;
-	unsigned char* parsed2 = nullptr;
+    vector<TV> tv = {
+            TV("dead0bea", 4, {0xea, 0x0b, 0xAD, 0xDE}),
+            TV("", 0, {}),
+            TV("ead0bea", 0, {}),
+    };
 
-	uint32_t payload0_ln = payloadParseReversedPlainBytes(arg0, &parsed0);
-	unsigned char expected[] = { 234, 11, 173, 222 };
-
-	EXPECT_EQ(payload0_ln, 4);
-
-	for ( int i = 0; i < 4; i++ )
-		EXPECT_EQ(parsed0[i], expected[i]);
-
-	uint32_t payload1_ln = payloadParseReversedPlainBytes(arg1, &parsed1);
-	uint32_t payload2_ln = payloadParseReversedPlainBytes(arg2, &parsed2);
-
-	EXPECT_EQ(payload1_ln, 0);
-	EXPECT_EQ(payload2_ln, 0);
-
-	EXPECT_EQ(parsed1, nullptr);
-	EXPECT_EQ(parsed2, nullptr);
+    assertPayloadParser(tv, payloadParseReversedPlainBytes);
 }
 
-TEST_F(WriterTest, testParseString)
+TEST_F(WriterTest, test_payloadParseUtf8)
 {
-	const char* arg0 = "dead bea";
-	const char* arg1 = "";
-	const char* arg2 = "a";
-	unsigned char* parsed0 = nullptr;
-	unsigned char* parsed1 = nullptr;
-	unsigned char* parsed2 = nullptr;
+    vector<TV> tv = {
+            TV("dead bea", 8, {0x64, 0x65, 0x61, 0x64, 0x20, 0x62, 0x65, 0x61}),
+            TV("", 0, {}),
+            TV("a", 1, {0x61}),
+            TV("ö", 2, {0xC3, 0xB6}),
+    };
 
-	uint32_t payload0_ln = payloadParseAscii(arg0, &parsed0);
-	uint32_t payload1_ln = payloadParseAscii(arg1, &parsed1);
-	uint32_t payload2_ln = payloadParseAscii(arg2, &parsed2);
+    assertPayloadParser(tv, payloadParseUtf8);
+}
 
-	unsigned char expected0[] = { 100, 101, 97, 100, 32, 98, 101, 97 };
-	uint32_t expexted0_ln = 8;
-	unsigned char expected2[] = { 97 };
-	uint32_t expexted2_ln = 1;
+TEST_F(WriterTest, test_payloadParseUtf16)
+{
+    vector<TV> tv = {
+            TV("dead bea", 16, {0x64, 0x00, 0x65, 0x00, 0x61, 0x00, 0x64, 0x00, 0x20, 0x00, 0x62, 0x00, 0x65, 0x00, 0x61, 0x00}),
+            TV("", 0, {}),
+            TV("a", 2, {0x61, 0x00}),
+            TV("ö", 2, {0xf6, 0x00}),
+    };
 
-	EXPECT_EQ(payload0_ln, expexted0_ln);
-
-	for ( int i = 0; i < expexted0_ln; i++ )
-		EXPECT_EQ(parsed0[i], expected0[i]);
-
-	for ( int i = 0; i < expexted2_ln; i++ )
-		EXPECT_EQ(parsed2[i], expected2[i]);
-
-	EXPECT_EQ(payload1_ln, 0);
-	EXPECT_EQ(payload2_ln, 1);
-
-	EXPECT_EQ(parsed1, nullptr);
+    assertPayloadParser(tv, payloadParseUtf16);
 }
 
 TEST_F(WriterTest, testParseByte)
