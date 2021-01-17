@@ -29,7 +29,8 @@ if ( ${GTEST_FOUND} )
 		${HEXTER_TEST_MISC_FILES}
 		${HEXTER_TEST_FILES}
 	)
-
+	
+if (UNIX)
 	set_target_properties(${UNIT_TEST_SUITE} PROPERTIES
 		CXX_STANDARD 17
 		CXX_STANDARD_REQUIRED YES
@@ -38,7 +39,17 @@ if ( ${GTEST_FOUND} )
 		COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Werror=return-type -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
 		LINK_FLAGS "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
 		)
-
+endif (UNIX)
+if (WIN32)
+	set_target_properties(${UNIT_TEST_SUITE} PROPERTIES
+		CXX_STANDARD 17
+		CXX_STANDARD_REQUIRED YES
+		CXX_EXTENSIONS NO
+		LANGUAGES CXX
+		COMPILE_FLAGS "${CMAKE_CXX_FLAGS} /W4 /nologo /Zi /GS /INCREMENTAL /MP /GS /Gy /guard:cf /we4715 /we4716 /DEBUG /Od /MDd"
+		LINK_FLAGS "${CMAKE_LINKER_FLAGS_DEBUG} /DEBUG ${CMAKE_EXE_LINKER_FLAGS_RELEASE}"
+		)
+endif (WIN32)
 	target_link_libraries(${UNIT_TEST_SUITE} PRIVATE
 		${GTEST_BOTH_LIBRARIES}
 		)

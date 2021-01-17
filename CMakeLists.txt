@@ -12,7 +12,7 @@ if (UNIX)
 	set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=leak -fsanitize=undefined -fsanitize=address")
 endif (UNIX)
 if (WIN32)
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4	 /nologo /Zi /GS /INCREMENTAL  /MP /GS /Gy /guard:cf /we4715 /we4716") # /WX
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /nologo /Zi /GS /INCREMENTAL /MP /GS /Gy /guard:cf /we4715 /we4716") # /WX
 	SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} /DEBUG /Od /MDd")
 	SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} /DNDEBUG /O2 /MD")
 

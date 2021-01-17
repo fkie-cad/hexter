@@ -40,6 +40,11 @@ uint32_t payloadParseByte(const char* arg, unsigned char** payload)
 	}
 	arg_ln = 1;  // 1 byte
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
+	if ( p == NULL )
+	{
+		printf("ERROR: Allocating memory failed!\n");
+		return 0;
+	}
 
 	s = parseUint8(&arg[0], p, 16);
 	if ( s != 0 )
@@ -77,6 +82,11 @@ uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, size_t 
 	}
 	arg_ln = length;
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
+	if ( p == NULL )
+	{
+		printf("ERROR: Allocating memory failed!\n");
+		return 0;
+	}
 
 	s = parseUint8(&arg[0], &fill_byte, 16);
 	if ( s != 0 )
@@ -111,6 +121,11 @@ uint32_t payloadParseWord(const char* arg, unsigned char** payload)
 	}
 	arg_ln = 2;  // 2 bytes
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
+	if ( p == NULL )
+	{
+		printf("ERROR: Allocating memory failed!\n");
+		return 0;
+	}
 
 	uint16_t temp;
 	s = parseUint16(&arg[0], &temp, 16);
@@ -148,6 +163,11 @@ uint32_t payloadParseDWord(const char* arg, unsigned char** payload)
 	}
 	arg_ln = 4;  // 4 bytes
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
+	if ( p == NULL )
+	{
+		printf("ERROR: Allocating memory failed!\n");
+		return 0;
+	}
 
 	uint32_t temp;
 	s = parseUint32(&arg[0], &temp, 16);
@@ -185,6 +205,11 @@ uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 	}
 	arg_ln = 8;  // 8 bytes
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
+	if ( p == NULL )
+	{
+		printf("ERROR: Allocating memory failed!\n");
+		return 0;
+	}
 
 	uint64_t temp;
 	s = parseUint64(&arg[0], &temp, 16);
@@ -216,6 +241,11 @@ uint32_t payloadParseUtf8(const char* arg, unsigned char** payload)
 		return 0;
 	}
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
+	if ( p == NULL )
+	{
+		printf("ERROR: Allocating memory failed!\n");
+		return 0;
+	}
 
 	for ( i = 0; i < arg_ln; i++ )
 	{
@@ -259,6 +289,11 @@ uint32_t payloadParseUtf16(const char* arg, unsigned char** payload)
 
     // alloc payload with real size
 	unsigned char* p = (unsigned char*) malloc(outlen);
+	if ( p == NULL )
+	{
+		printf("ERROR: Allocating memory failed!\n");
+		return 0;
+	}
 
 	for ( i = 0; i < outlen; i++ )
 	{
@@ -321,6 +356,11 @@ uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
 	}
 
 	p = (unsigned char*) malloc(arg_ln/2);
+	if ( p == NULL )
+	{
+		printf("ERROR: Allocating memory failed!\n");
+		return 0;
+	}
 
 	for ( i = 0, j = 0; i < arg_ln; i += 2 )
 	{
