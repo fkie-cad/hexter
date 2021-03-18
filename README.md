@@ -3,13 +3,19 @@ A minimal terminal hex viewer supporting reading, writing and searching in files
 
 Compilable under Linux and Windows.  
 
+
 ## Version ##
-1.5.21  
-Last changed: 13.01.2021
+1.5.22  
+Last changed: 18.03.2021
+
 
 ## REQUIREMENTS ##
-- A decent c compiler (gcc or msbuild) is required.  
-- Building with cmake requires cmake.  
+- Linux
+    - Gcc
+    - Building with cmake requires cmake.  
+- Windows
+    - msbuild
+
 
 ## BUILD ##
 
@@ -18,16 +24,15 @@ Last changed: 13.01.2021
 $ ./linuxBuild.sh [-t hexter] [-m Debug|Release] [-h]
 ```
 
-### Windows (MsBuild) & cmake ###
+### Windows (MsBuild)###
 ```bash
-$ winBuild.bat [/t hexter] [/m Release|Debug] [/b 32|64] [/h]
+$ winBuild.bat [/t hexter] [/m Release|Debug] [/b 32|64] [/rt] [/pdb] [/bt] [/h]
 ```
 The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.  
-Thats the place to correct the path to your cmake installation as well.
 
 ### DLL : Windows (MsBuild) & cmake ### 
 ```bash
-$ winBuild.bat /t hexter_shared [/b 64] [/m Release]] [/mt no|Release|Debug] [/?]
+$ winBuild.bat /t hexter_lib [/b 64] [/m Release] [/rt] [/pdb] [/bt] [/?]
 ```
 
 ## USAGE ##
@@ -111,6 +116,7 @@ $ ./hexter -pid 0 -lrp
 ```
 
 ## TESTS ##
+(Currently Gtests run linux only) 
 ### REQUIREMENTS ###
  - The google c++ testing framework gtest [1]  
  - A c++ compiler available to cmake

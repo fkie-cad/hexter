@@ -3,18 +3,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(__linux__) || defined(__linux) || defined(linux)
+
+#include "utils/env.h"
+
+#if defined(_LINUX) || defined(__APPLE__)
 	#include <unistd.h>
 #elif defined(_WIN32)
 	#include <io.h>
 #endif
 
+#include "utils/common_fileio.h"
 #include "utils/Strings.h"
 #include "Writer.h"
 #include "Globals.h"
 #include "utils/Converter.h"
 
-static void truncateFile(FILE* fp, size_t file_size, size_t length);
+static void truncateFile(FILE* fp, size_t file_size, size_t ln);
 
 /**
  * Parse the arg as a byte.
@@ -27,7 +31,7 @@ static void truncateFile(FILE* fp, size_t file_size, size_t length);
 uint32_t payloadParseByte(const char* arg, unsigned char** payload)
 {
 	int s;
-	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
 	if ( arg_ln < 1 )
 	{
 		printf("Error: Payload byte has no value!\n");
@@ -57,18 +61,18 @@ uint32_t payloadParseByte(const char* arg, unsigned char** payload)
 }
 
 /**
- * Parse the fill byte and fill the payload buffer of the passed length with the fill byte.
+ * Parse the fill byte and fill the payload buffer of the passed ln with the fill byte.
  * Allocates payload. Caller has to free it.
  *
  * @param arg
  * @param payload
- * @param length
+ * @param ln
  * @return
  */
-uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, size_t length)
+uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, size_t ln)
 {
 	int s;
-	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
 	uint8_t fill_byte = 0;
 	if ( arg_ln < 1 )
 	{
@@ -80,7 +84,7 @@ uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, size_t 
 		printf("Error: Fill byte is too big!\n");
 		return 0;
 	}
-	arg_ln = length;
+	arg_ln = (uint32_t)ln;
 	unsigned char* p = (unsigned char*) malloc(arg_ln);
 	if ( p == NULL )
 	{
@@ -108,7 +112,7 @@ uint32_t payloadParseFillBytes(const char* arg, unsigned char** payload, size_t 
 uint32_t payloadParseWord(const char* arg, unsigned char** payload)
 {
 	int s;
-	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
 	if ( arg_ln < 1 )
 	{
 		printf("Error: Payload byte has no value!\n");
@@ -150,7 +154,7 @@ uint32_t payloadParseWord(const char* arg, unsigned char** payload)
 uint32_t payloadParseDWord(const char* arg, unsigned char** payload)
 {
 	int s;
-	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
 	if ( arg_ln < 1 )
 	{
 		printf("Error: Payload byte has no value!\n");
@@ -192,7 +196,7 @@ uint32_t payloadParseDWord(const char* arg, unsigned char** payload)
 uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 {
 	int s;
-	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
 	if ( arg_ln < 1 )
 	{
 		printf("Error: Payload byte has no value!\n");
@@ -234,7 +238,7 @@ uint32_t payloadParseQWord(const char* arg, unsigned char** payload)
 uint32_t payloadParseUtf8(const char* arg, unsigned char** payload)
 {
 	uint32_t i;
-	uint32_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
 	if ( arg_ln < 1 )
 	{
 		printf("Error: Payload string has no value!\n");
@@ -267,7 +271,7 @@ uint32_t payloadParseUtf8(const char* arg, unsigned char** payload)
 uint32_t payloadParseUtf16(const char* arg, unsigned char** payload)
 {
 	uint32_t i;
-    size_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+    size_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
 
 	// fill buffer to get the real size
     unsigned char outb[MAX_PAYLOAD_LN*2] = {0};
@@ -302,7 +306,7 @@ uint32_t payloadParseUtf16(const char* arg, unsigned char** payload)
 
 	*payload = p;
 
-	return outlen;
+	return (uint32_t)outlen;
 }
 
 /**
@@ -343,7 +347,7 @@ uint32_t payloadParseReversedPlainBytes(const char* arg, unsigned char** payload
 uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
 {
 	uint32_t i, j;
-	uint16_t arg_ln = strnlen(arg, MAX_PAYLOAD_LN);
+	uint16_t arg_ln = (uint16_t)strnlen(arg, MAX_PAYLOAD_LN);
 	unsigned char* p;
 	char byte[3] = {0};
 	uint32_t payload_ln;
@@ -389,33 +393,32 @@ uint32_t payloadParsePlainBytes(const char* arg, unsigned char** payload)
  * @param payload_ln
  * @param offset
  */
-void insert(const char* file_path, unsigned char* payload, uint32_t payload_ln, size_t offset)
+void insert(const char* path, unsigned char* payload, uint32_t payload_ln, size_t offset)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
-	const int buf_ln = BLOCKSIZE_LARGE;
-	size_t n = buf_ln;
+	size_t n = BLOCKSIZE_LARGE;
 	FILE* fp;
 	size_t i, j;
 
 	if ( offset > file_size )
 	{
-		overwrite(file_path, payload, payload_ln, offset);
+		overwrite(path, payload, payload_ln, offset);
 		return;
 	}
 
 	errno = 0;
-	fp = fopen(file_path, "rb+");
+	fp = fopen(path, "rb+");
 	int errsv = errno;
 	if ( !fp )
 	{
-		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
+		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
 		return;
 	}
 
 	fseek(fp, offset, SEEK_SET);
-	while ( n == buf_ln )
+	while ( n == BLOCKSIZE_LARGE )
 	{
-		n = fread(buf, 1, buf_ln, fp);
+		n = fread(buf, 1, BLOCKSIZE_LARGE, fp);
 
 		fseek(fp, offset, SEEK_SET);		// f: .....0123456789ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
 		fwrite(payload, 1, payload_ln, fp); // f: .....DEAD0BEA89ABCDEF, buf = 0123456789ABCDEF, payload = DEAD0BEA
@@ -451,10 +454,10 @@ void insert(const char* file_path, unsigned char* payload, uint32_t payload_ln, 
  *
  * @param	file_path char*
  * @param	payload unsigned char* the bytes to write
- * @param	payload_ln uint32_t the length of the bytes to write
+ * @param	payload_ln uint32_t the ln of the bytes to write
  * @param	offset size_t the offset to write the bytes at
  */
-void overwrite(const char* file_path, unsigned char* payload, uint32_t payload_ln, size_t offset)
+void overwrite(const char* path, unsigned char* payload, uint32_t payload_ln, size_t offset)
 {
 	FILE* fp;
 	// backup
@@ -467,11 +470,11 @@ void overwrite(const char* file_path, unsigned char* payload, uint32_t payload_l
 	// end backup
 
 	errno = 0;
-	fp = fopen(file_path, "rb+");
+	fp = fopen(path, "rb+");
 	int errsv = errno;
 	if ( !fp )
 	{
-		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
+		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
 		return;
 	}
 	// backup
@@ -499,15 +502,14 @@ void overwrite(const char* file_path, unsigned char* payload, uint32_t payload_l
 /**
  * Delete bytes in file of the passed length.
  *
- * @param file_path
+ * @param path
  * @param start size_t start offset of the deletion.
- * @param length size_t length of the bytes to delete.
+ * @param ln size_t ln of the bytes to delete.
  */
-void deleteBytes(const char* file_path, size_t start, size_t length)
+void deleteBytes(const char* path, size_t start, size_t ln)
 {
 	unsigned char buf[BLOCKSIZE_LARGE];
-	const int buf_ln = BLOCKSIZE_LARGE;
-	size_t n = buf_ln;
+	size_t n = BLOCKSIZE_LARGE;
 	FILE* fp;
 	size_t offset;
 	size_t end;
@@ -516,36 +518,36 @@ void deleteBytes(const char* file_path, size_t start, size_t length)
 		return;
 
 	errno = 0;
-	fp = fopen(file_path, "rb+");
+	fp = fopen(path, "rb+");
 	int errsv = errno;
 	if ( !fp )
 	{
-		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
+		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
 		return;
 	}
 
 	// If delete from start to end of file, just truncate.
-	if ( start + length >= file_size )
+	if ( start + ln >= file_size )
 	{
-		length = file_size - start;
-		truncateFile(fp, file_size, length);
+		ln = file_size - start;
+		truncateFile(fp, file_size, ln);
 		fclose(fp);
 		return;
 	}
 
-	end = start + length;
+	end = start + ln;
 	offset = end;
 	fseek(fp, offset, SEEK_SET);
-	while ( n == buf_ln )
+	while ( n == BLOCKSIZE_LARGE )
 	{
 		memset(buf, 0, BLOCKSIZE_LARGE);
 
 		// read from offset
 		fseek(fp, offset, SEEK_SET);
-		n = fread(buf, 1, buf_ln, fp);
+		n = fread(buf, 1, BLOCKSIZE_LARGE, fp);
 
 		// write to start
-		fseek(fp, start, SEEK_SET);	 // f: ....0123456789ABCDEF, buf = 01234567, length =
+		fseek(fp, start, SEEK_SET);	 // f: ....0123456789ABCDEF, buf = 01234567, ln =
 		fwrite(buf, 1, n, fp);               // f: 01234567896789ABCDEF...., buf = 01234567
 
 		// increase offset and start
@@ -553,16 +555,20 @@ void deleteBytes(const char* file_path, size_t start, size_t length)
 		start += n;
 	}
 
-	truncateFile(fp, file_size, length);
+	truncateFile(fp, file_size, ln);
 
 	fclose(fp);
 }
 
-void truncateFile(FILE* fp, size_t size, size_t length)
+void truncateFile(FILE* fp, size_t size, size_t ln)
 {
-#if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
-	ftruncate(fileno(fp), size-length);
+#if defined(_LINUX) || defined(__APPLE__)
+	ftruncate(fileno(fp), size-ln);
 #elif defined(_WIN32)
-	_chsize(_fileno(fp), size-length);
+	#if defined(_32BIT)
+		_chsize(_fileno(fp), size-ln);
+	#else
+		_chsize_s(_fileno(fp), size-ln);
+	#endif
 #endif
 }

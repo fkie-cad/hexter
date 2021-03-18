@@ -246,13 +246,13 @@ int UTF8ToUTF16LE(unsigned char* outb, size_t* outlen, const unsigned char* in, 
                 break;
             if ( le )
             {
-                *out++ = c;
+                *out++ = (unsigned short)c;
             }
             else
             {
                 tmp = (unsigned char*) out;
-                *tmp = c;
-                *(tmp + 1) = c >> 8;
+                *tmp = (unsigned char)c;
+                *(tmp + 1) = (unsigned char)(c >> 8);
                 out++;
             }
         }
@@ -263,12 +263,12 @@ int UTF8ToUTF16LE(unsigned char* outb, size_t* outlen, const unsigned char* in, 
             c -= 0x10000;
             if ( le )
             {
-                *out++ = 0xD800 | (c >> 10);
+                *out++ = 0xD800 | (unsigned short)(c >> 10);
                 *out++ = 0xDC00 | (c & 0x03FF);
             }
             else
             {
-                tmp1 = 0xD800 | (c >> 10);
+                tmp1 = 0xD800 | (unsigned short)(c >> 10);
                 tmp = (unsigned char*) out;
                 *tmp = (unsigned char) tmp1;
                 *(tmp + 1) = tmp1 >> 8;
@@ -322,7 +322,7 @@ int UTF16LEToUTF8(unsigned char* out, size_t* outlen, const unsigned char* inb, 
 
     if ((*inlenb % 2) == 1)
         (*inlenb)--;
-    inlen = *inlenb / 2;
+    inlen = (unsigned int)(*inlenb / 2);
     inend = in + inlen;
     while ((in < inend) && (out - outstart + 5 < *outlen)) {
         if (le) {
@@ -361,7 +361,7 @@ int UTF16LEToUTF8(unsigned char* out, size_t* outlen, const unsigned char* inb, 
         /* assertion: c is a single UTF-4 value */
         if (out >= outend)
             break;
-        if      (c <    0x80) {  *out++=  c;                bits= -6; }
+        if      (c <    0x80) {  *out++= (unsigned char)c;                bits= -6; }
         else if (c <   0x800) {  *out++= ((c >>  6) & 0x1F) | 0xC0;  bits=  0; }
         else if (c < 0x10000) {  *out++= ((c >> 12) & 0x0F) | 0xE0;  bits=  6; }
         else                  {  *out++= ((c >> 18) & 0x07) | 0xF0;  bits= 12; }

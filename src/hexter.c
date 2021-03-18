@@ -94,7 +94,7 @@ static uint8_t keepLengthInFile();
 #ifdef DILLER
 HEXTER_API
 #endif
-int main(int argc, char** argv)
+int __cdecl main(int argc, char** argv)
 {
 	int s;
 	if ( argc < 2 )
@@ -407,7 +407,7 @@ int parseArgs(int argc, char** argv)
 		{
 			if ( hasValue("-s", i, end_i) )
 			{
-				s = parseUint64Auto(argv[i + 1], &start);
+				s = parseSizeAuto(argv[i + 1], &start);
 				if ( s != 0 )
 				{
 					printf("INFO: Could not parse start. Setting it to %u!\n", 0);
@@ -420,7 +420,7 @@ int parseArgs(int argc, char** argv)
 		{
 			if ( hasValue("-l", i, end_i) )
 			{
-				s = parseUint64Auto(argv[i + 1], &length);
+				s = parseSizeAuto(argv[i + 1], &length);
 				if ( s != 0 )
 				{
 					printf("INFO: Could not parse length. Setting it to 0x%x!\n", DEFAULT_LENGTH);
@@ -499,15 +499,15 @@ int parseArgs(int argc, char** argv)
 
 uint8_t isArgOfType(char* arg, char* type)
 {
-	uint8_t type_ln = strnlen(type, 10);
+	uint8_t type_ln = (uint8_t)strnlen(type, 10);
 	return strnlen(arg, 10) == type_ln && strncmp(arg, type, type_ln) == 0;
 }
 
 uint8_t isFormatArgOfType(char* arg, char* type)
 {
 	uint8_t i, j;
-	uint8_t arg_ln = strnlen(arg, 10);
-	uint8_t type_ln = strnlen(type, 10);
+	uint8_t arg_ln = (uint8_t)strnlen(arg, 10);
+	uint8_t type_ln = (uint8_t)strnlen(type, 10);
 
 	if ( arg_ln <= type_ln )
 		return 0;
@@ -788,13 +788,17 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
 	freopen("conout$", "w", stdout);
 	freopen("conout$", "w", stderr);
 
+	(void) hwnd;
+	(void) hinst;
+	(void) nCmdShow;
+
 	debug_info("the param cmd line: %s\n", lpszCmdLine);
 
 	int i;
 	uint8_t argv_max = 20;
 	uint8_t argc;
 	char* argv[20];
-	argc = splitArgs(lpszCmdLine, argv, argv_max);
+	argc = (uint8_t)splitArgs(lpszCmdLine, argv, argv_max);
 
 	debug_info("argc: %u\n", argc);
 	for ( i = 0; i < argc; i++ )

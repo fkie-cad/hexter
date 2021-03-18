@@ -30,6 +30,7 @@
  */
 void expandFilePath(const char* src, char* dest)
 {
+#if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
 	const char* env_home;
 	if ( src[0] == '~' )
 	{
@@ -44,6 +45,7 @@ void expandFilePath(const char* src, char* dest)
 		}
 	}
 	else
+#endif
 	{
 		snprintf(dest, PATH_MAX, "%s", src);
 	}
@@ -66,6 +68,9 @@ int getTempFile(char* buf, const char* prefix)
 	buf[127] = 0;
 
 	s = mkstemps(buf, 4);
+#else
+	(void)buf;
+	(void)prefix;
 #endif
 	return s;
 }
@@ -77,12 +82,12 @@ int getTempFile(char* buf, const char* prefix)
  * @param file_path char*
  * @param file_name char**
  */
-void getFileNameL(char* file_path, char** file_name)
+void getFileNameL(char* path, char** file_name)
 {
-	if ( strnlen(file_path, PATH_MAX) == 0 ) return;
+	if ( strnlen(path, PATH_MAX) == 0 ) return;
 
-	int64_t offset = getFileNameOffset(file_path);
-	*file_name = &file_path[offset];
+	int64_t offset = getFileNameOffset(path);
+	*file_name = &path[offset];
 }
 
 /**
@@ -90,26 +95,26 @@ void getFileNameL(char* file_path, char** file_name)
  * Copying the found name into file_name.
  * Make sure, file_name char[] has a capacity of PATH_MAX!
  *
- * @param file_path char*
- * @param file_name char*
+ * @param path char*
+ * @param name char*
  */
-void getFileName(const char* file_path, char* file_name)
+void getFileName(const char* path, char* name)
 {
-	int64_t offset;
+	int32_t offset;
 	size_t file_name_ln;
-	size_t file_path_ln = strnlen(file_path, PATH_MAX);
+	int32_t file_path_ln = (int32_t)strnlen(path, PATH_MAX);
 
 	if ( file_path_ln == 0 )
 	{
-		file_name[0] = 0;
+		name[0] = 0;
 		return;
 	}
 
-	offset = getFileNameOffset(file_path);
+	offset = getFileNameOffset(path);
 	file_name_ln = file_path_ln - offset;
 	if ( file_path_ln < offset ) file_name_ln = 0;
-	memcpy(file_name, &file_path[offset], file_name_ln);
-	file_name[file_name_ln] = 0;
+	memcpy(name, &path[offset], file_name_ln);
+	name[file_name_ln] = 0;
 }
 
 /**
@@ -120,19 +125,22 @@ void getFileName(const char* file_path, char* file_name)
  * @param 	file_path char*
  * @return	char* the file name
  */
-char* getFileNameP(const char* file_path)
+char* getFileNameP(const char* path)
 {
-	int64_t offset;
+	int32_t offset;
 	size_t file_name_ln;
 	char* file_name;
-	size_t file_path_ln = strnlen(file_path, PATH_MAX);
+	uint32_t file_path_ln = (uint32_t)strnlen(path, PATH_MAX);
 
-	if ( file_path_ln == 0 ) return NULL;
+	if ( file_path_ln == 0 )
+		return NULL;
 
-	offset = getFileNameOffset(file_path);
+	offset = getFileNameOffset(path);
 	file_name_ln = file_path_ln - offset;
 	file_name = (char*) calloc(file_name_ln+1, sizeof(char));
-	memcpy(file_name, &file_path[offset], file_name_ln);
+	if ( file_name == NULL )
+		return NULL;
+	memcpy(file_name, &path[offset], file_name_ln);
 
 	return file_name;
 }
@@ -143,16 +151,16 @@ char* getFileNameP(const char* file_path)
  * @param file_path char*
  * @param file_name char*
  */
-int64_t getFileNameOffset(const char* file_path)
+int32_t getFileNameOffset(const char* path)
 {
-	size_t file_path_ln = strnlen(file_path, PATH_MAX);
+	size_t file_path_ln = strnlen(path, PATH_MAX);
 	int64_t i = 0;
 	for ( i = file_path_ln-1; i >= 0; i--)
 	{
-		if ( file_path[i] == PATH_SEPARATOR )
+		if ( path[i] == PATH_SEPARATOR )
 			break;
 	}
-	return ( i >= 0 ) ? i+1 : 0;
+	return ( i >= 0 ) ? (int32_t)(i+1) : 0;
 }
 
 /**
@@ -177,6 +185,8 @@ void listFilesOfDir(char* path)
 	}
 	closedir(d);
 	printf("\n");
+#else
+	(void)path;
 #endif
 }
 
@@ -283,7 +293,7 @@ Bool confirmContinueWithNextRegion(char* name, size_t address)
 
 	while ( 1 )
 	{
-		input = _getch();
+		input = (char)_getch();
 //#if defined(_WIN32)
 //		input = _getch();
 //#else

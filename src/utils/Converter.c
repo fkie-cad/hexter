@@ -6,6 +6,20 @@
 
 #include "Converter.h"
 
+
+
+#if defined(_32BIT)
+int parseSizeAuto(const char* arg, uint32_t* value)
+{
+	return parseUint32(arg, value, 0);
+}
+#else
+int parseSizeAuto(const char* arg, uint64_t* value)
+{
+	return parseUint64(arg, value, 0);
+}
+#endif
+
 int parseUint64Auto(const char* arg, uint64_t* value)
 {
 //	uint8_t base = 10;

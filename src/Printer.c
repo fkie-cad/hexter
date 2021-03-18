@@ -33,10 +33,10 @@ void (*printHexValue)(uint8_t);
 static int8_t skip_hex_bytes = 0;
 static int8_t skip_ascii_bytes = 0;
 
-static int16_t highlight_hex_bytes = 0;
-static int16_t highlight_hex_wait = 0;
-static int16_t highlight_ascii_bytes = 0;
-static int16_t highlight_ascii_wait = 0;
+static uint32_t highlight_hex_bytes = 0;
+static uint32_t highlight_hex_wait = 0;
+static uint32_t highlight_ascii_bytes = 0;
+static uint32_t highlight_ascii_wait = 0;
 
 static unsigned char* needle = NULL;
 static uint32_t needle_ln;
@@ -62,9 +62,9 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
 	size_t nr_of_parts = length / block_size;
 	if ( length % block_size != 0 ) nr_of_parts++;
 
-	debug_info("start: 0x%lx\n", start);
+	debug_info("start: 0x%zx\n", start);
 	debug_info("block_size: 0x%x\n", block_size);
-	debug_info("nr_of_parts: 0x%lx\n", nr_of_parts);
+	debug_info("nr_of_parts: 0x%zx\n", nr_of_parts);
 	debug_info("\n");
 
 	errno = 0;
@@ -155,7 +155,7 @@ void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t
 
 	while ( 1 )
 	{
-		input = _getch();
+		input = (char)_getch();
 
 		if ( input == ENTER )
 			block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
@@ -195,18 +195,18 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
 
 	for ( p = 0; p < nr_of_parts; p++ )
 	{
-		debug_info("%lu / %lu\n", (p+1), nr_of_parts);
+		debug_info("%zu / %zu\n", (p+1), nr_of_parts);
 		read_size = block_size;
-		debug_info(" - read_size: 0x%lx\n", read_size);
-		debug_info(" - block_start: 0x%lx\n", read_start);
-		debug_info(" - end: 0x%lx\n", end);
+		debug_info(" - read_size: 0x%zx\n", read_size);
+		debug_info(" - block_start: 0x%zx\n", read_start);
+		debug_info(" - end: 0x%zx\n", end);
 		if ( read_start >= end )
 			break;
 		if ( read_start + read_size > end )
 			read_size = end - read_start;
 		if ( read_size == 0 )
 			break;
-		debug_info(" - read_size: 0x%lx\n", read_size);
+		debug_info(" - read_size: 0x%zx\n", read_size);
 
 		memset(block, 0, block_size);
 		size = readFile(fi, read_start, read_size, block);
@@ -445,13 +445,13 @@ void printAsciiByte(const unsigned char c)
 	}
 }
 
-void Printer_setHighlightBytes(int16_t v)
+void Printer_setHighlightBytes(uint32_t v)
 {
 	highlight_hex_bytes = v;
 	highlight_ascii_bytes = v;
 }
 
-void Printer_setHighlightWait(int16_t v)
+void Printer_setHighlightWait(uint32_t v)
 {
 	highlight_hex_wait = v;
 	highlight_ascii_wait = v;

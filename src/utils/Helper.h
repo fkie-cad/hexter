@@ -32,7 +32,7 @@ int getTempFile(char* buf, const char* prefix);
  * @param file_path char*
  * @param file_name char**
  */
-void getFileNameL(char* file_path, char** file_name);
+void getFileNameL(char* path, char** name);
 
 /**
  * Extract the base file name out of a file_path.
@@ -42,7 +42,7 @@ void getFileNameL(char* file_path, char** file_name);
  * @param file_path char*
  * @param file_name char*
  */
-void getFileName(const char* file_path, char* file_name);
+void getFileName(const char* path, char* name);
 
 /**
  * Extract the base file name out of a file_path.
@@ -52,7 +52,7 @@ void getFileName(const char* file_path, char* file_name);
  * @param 	file_path char*
  * @return	char* the file name
  */
-char* getFileNameP(const char* file_path);
+char* getFileNameP(const char* path);
 
 /**
  * Extract the base file name offset out of a file_path.
@@ -60,7 +60,7 @@ char* getFileNameP(const char* file_path);
  * @param file_path char*
  * @param file_name char*
  */
-int64_t getFileNameOffset(const char* file_path);
+int32_t getFileNameOffset(const char* path);
 
 /**
  * List all files in a directory.

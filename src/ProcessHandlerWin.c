@@ -111,7 +111,7 @@ uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start)
 		if ( *start < (size_t) base_addr )
 			break;
 
-		if ( addressIsInRegionRange(*start, (size_t) base_addr, info.RegionSize) )
+		if ( addressIsInRegionRange(*start, (size_t) base_addr, (DWORD)info.RegionSize) )
 		{
 //			info_line_break = keepLengthInModule(p, &info, process, *start, &length);
 			CloseHandle(process);
@@ -208,7 +208,7 @@ BOOL listProcessThreads(size_t pid)
 	THREADENTRY32 te32;
 	uint16_t i = 0;
 
-	if ( !openSnap(&snap, pid, TH32CS_SNAPTHREAD) )
+	if ( !openSnap(&snap, (uint32_t)pid, TH32CS_SNAPTHREAD) )
 		return FALSE;
 
 	memset(&te32, 0, sizeof(THREADENTRY32));
@@ -355,7 +355,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
 
 		if ( find_f )
 		{
-			found = findNeedleInProcessMemoryBlock(info.BaseAddress, info.RegionSize, base_off, process, p_needle, p_needle_ln);
+			found = findNeedleInProcessMemoryBlock(info.BaseAddress, (DWORD)info.RegionSize, base_off, process, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
 			{
 				setRegionProtection(process, &info, old_protect, &old_protect);
@@ -525,7 +525,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 	uint8_t skip_bytes;
 	int s = 0;
 
-	n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
+	n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
 	base_off += n_size;
 
 	if ( !continuous_f )
@@ -536,13 +536,13 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 
 	while ( n_size > 0 && n_size == length )
 	{
-		input = _getch();
+		input = (char)_getch();
 
 		if ( input == ENTER )
-			n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
+			n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
 		else if ( find_f && input == NEXT )
 		{
-			found = findNeedleInProcessMemoryBlock(base_addr, region_size, found + p_needle_ln, process, p_needle, p_needle_ln);
+			found = findNeedleInProcessMemoryBlock(base_addr, (DWORD)region_size, found + p_needle_ln, process, p_needle, p_needle_ln);
 			if ( found == FIND_FAILURE )
 			{
 				s = 0;
@@ -556,7 +556,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 
 			printf("\n");
 //			SetConsoleTitle();
-			n_size = printMemoryBlock(process, base_addr, base_off, region_size, buffer);
+			n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
 		}
 		else if ( input == QUIT )
 		{
@@ -677,7 +677,7 @@ BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, u
 //		printf(" - - is accessable: 0x%p, 0x%p, 0x%p, \n", address, info->BaseAddress, info->RegionSize);
 		if ( address < (uintptr_t)info->BaseAddress )
 			return FALSE;
-		if ( addressIsInRegionRange(address, (size_t) info->BaseAddress, info->RegionSize) )
+		if ( addressIsInRegionRange(address, (size_t) info->BaseAddress, (DWORD)info->RegionSize) )
 			return TRUE;
 	}
 	return FALSE;
@@ -1140,7 +1140,7 @@ void listProcessHeapBlocks(uint32_t pid, ULONG_PTR base)
 			ptr_c_size+1, "Handle", ptr_c_size + 2, "Address", "BlockSize", "Flags", "#locks", "Resvd", "processId", "HeapId");
 		do
 		{
-			heap_size += he.dwBlockSize;
+			heap_size += (uint32_t)he.dwBlockSize;
 			printf(" - 0x%p | 0x%0*zx | %#9zx | %8s |  %5lu |  %4lu |  %#8lx | 0x%zx \n",
 				   he.hHandle, ptr_c_size, he.dwAddress, he.dwBlockSize, getHEFlagString(he.dwFlags), he.dwLockCount, he.dwResvd,
 				   he.th32ProcessID, he.th32HeapID);

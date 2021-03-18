@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "utils/common_fileio.h"
 #include "Finder.h"
 #include "Globals.h"
 
@@ -36,15 +37,15 @@ void Finder_initFailure(unsigned char* needle, uint32_t needle_ln)
  * @param	offset size_t
  * @return	size_t the offset of the found needle or FIND_FAILURE, if not found
  */
-size_t find(const char* file_path, const unsigned char* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
+size_t find(const char* path, const unsigned char* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
 {
 	size_t found;
 
-	uint16_t* failure = NULL;
-	failure = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
-	computeFailure(needle, needle_ln, failure);
+	uint16_t* f = NULL;
+	f = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
+	computeFailure(needle, needle_ln, f);
 
-	found = findNeedleInFile(file_path, needle, needle_ln, offset, max_offset);
+	found = findNeedleInFile(path, needle, needle_ln, offset, max_offset);
 //	uint8_t remainder = 0;
 
 //	n_found = normalizeOffset(found, &remainder);
@@ -53,7 +54,7 @@ size_t find(const char* file_path, const unsigned char* needle, uint32_t needle_
 //	else
 //		print(n_found, remainder);
 
-	free(failure);
+	free(f);
 
 	return found;
 }
@@ -66,18 +67,18 @@ size_t find(const char* file_path, const unsigned char* needle, uint32_t needle_
  * @param offset size_t
  * @return
  */
-size_t findNeedleInFile(const char* file_path, const unsigned char* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
+size_t findNeedleInFile(const char* path, const unsigned char* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
 {
 //	printf("BLOCKSIZE_LARGE: %u\n",BLOCKSIZE_LARGE);
 	FILE* fi;
 	size_t found;
 
 	errno = 0;
-	fi = fopen(file_path, "rb");
+	fi = fopen(path, "rb");
 	int errsv = errno;
 	if ( !fi )
 	{
-		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
+		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
 		return FIND_FAILURE;
 	}
 
@@ -173,7 +174,7 @@ size_t findNeedleInBlock(const unsigned char* needle, uint32_t needle_ln, const 
  * @param pattern_ln size_t
  * @param failure uint16_t
  */
-void computeFailure(const unsigned char* pattern, size_t pattern_ln, uint16_t* failure)
+void computeFailure(const unsigned char* pattern, size_t pattern_ln, uint16_t* failure_)
 {
 	uint32_t i = 0, j = 0;
 
@@ -181,13 +182,13 @@ void computeFailure(const unsigned char* pattern, size_t pattern_ln, uint16_t* f
 	{
 		while ( j > 0 && pattern[j] != pattern[i] )
 		{
-			j = failure[j - 1];
+			j = failure_[j - 1];
 		}
 		if ( pattern[j] == pattern[i] )
 		{
 			j++;
 		}
-		failure[i] = j;
+		failure_[i] = (uint16_t)j;
 	}
 }
 
