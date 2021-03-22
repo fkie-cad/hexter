@@ -30,8 +30,11 @@
  */
 void expandFilePath(const char* src, char* dest)
 {
-#if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
 	const char* env_home;
+	
+	if ( strlen(src) == 0 ) return;
+
+#if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
 	if ( src[0] == '~' )
 	{
 		env_home = getenv("HOME");

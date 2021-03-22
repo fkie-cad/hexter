@@ -1,6 +1,7 @@
 @echo off
 
-set target=hexter
+set name=hexter
+set target=%name%
 set ct=Application
 set /a bitness=64
 set platform=x64
@@ -49,7 +50,7 @@ GOTO :ParseParams
         goto reParseParams
     )
     IF /i "%~1"=="/pdb" (
-        SET /a pdb=yes
+        SET pdb=yes
         goto reParseParams
     )
     
@@ -80,11 +81,11 @@ if [valid] == [0] (
 )
 
 set valid=0
-if /i [%target%] == [hexter] (
+if /i [%target%] == [%name%] (
     set ct=Application
     set valid=1
 ) else (
-    if /i [%target%] == [hexter_lib] (
+    if /i [%target%] == [%name%_lib] (
         set ct=DynamicLibrary
         set valid=1
     )
@@ -99,6 +100,7 @@ if /i [%mode%] == [debug] (
     if [%rt%] == [1] (
         set rtlib=Debug
     )
+    set pdb=yes
     set valid=1
 ) else (
     if /i [%mode%] == [release] (
@@ -128,7 +130,6 @@ rem architecture = x86, x86_x64, ...
 set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
 
 :build
-    REM cmd /k "mkdir %build_dir% & %vcvars% & %cmake% -S . -B %build_dir% -DCMAKE_BUILD_TYPE=%mode% -DMT=%rt% -DPDB=%pdb% -G "NMake Makefiles" & %cmake% --build %build_dir% --config %mode% --target %target% & exit"
     echo cmd /k "mkdir %build_dir% & %vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct%  & exit"
     cmd /k "mkdir %build_dir% & %vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct%  & exit"
 
@@ -139,7 +140,7 @@ set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
     exit /B 0
 
 :usage
-    @echo Usage: %prog_name% [/t %target%^|%target%_lib] [/b 32^|64] [/m Debug^|Release] [/bt C:\Build\Tools\] [/rt] [/pdb] [/h]
+    @echo Usage: %prog_name% [/t %name%^|%name%_lib] [/b 32^|64] [/m Debug^|Release] [/rt] [/pdb] [/bt C:\Build\Tools\] [/h]
     @echo Default: %prog_name% [/t %target% /b %bitness% /m %mode% /bt %buildTools%]
     exit /B 0
 
@@ -147,10 +148,10 @@ set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
     call :usage
 	echo.
 	echo Options:
-    @echo /t The target name to build. Default: hexter.
-    @echo /b The target bitness. Default: 64.
-    @echo /m The mode (Debug^|Release) to build in. Default: Release.
-    @echo /bt Custom path to Microsoft Visual Studio BuildTools
-    @echo /rt Statically include LIBCMT.lib. Increases file size but may be needed if a "VCRUNTIMExxx.dll not found Error" occurs on the target system.
-    @echo /pdb Include pdb symbols into release build. Default in debug mode. 
+    echo /t The target name to build. Default: hexter.
+    echo /b The target bitness. Default: 64.
+    echo /m The mode (Debug^|Release) to build in. Default: Release.
+    echo /rt Statically include LIBCMT.lib. Increases file size but may be needed if a "VCRUNTIMExxx.dll not found Error" occurs on the target system.
+    echo /pdb Include pdb symbols into release build. Default in debug mode. 
+    echo /bt Custom path to Microsoft Visual Studio BuildTools
     exit /B 0
