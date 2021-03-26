@@ -59,8 +59,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.21";
-static const char* last_changed = "13.01.2021";
+static const char* vs = "1.5.22";
+static const char* last_changed = "25.03.2021";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_UNICODE 'u'
@@ -94,7 +94,11 @@ static uint8_t keepLengthInFile();
 #ifdef DILLER
 HEXTER_API
 #endif
-int __cdecl main(int argc, char** argv)
+int
+#ifdef _WIN32
+__cdecl
+#endif
+main(int argc, char** argv)
 {
 	int s;
 	if ( argc < 2 )
