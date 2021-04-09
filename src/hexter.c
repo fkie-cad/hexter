@@ -59,8 +59,8 @@ static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.22";
-static const char* last_changed = "25.03.2021";
+static const char* vs = "1.5.23";
+static const char* last_changed = "09.04.2021";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_UNICODE 'u'
@@ -746,7 +746,7 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
 #ifdef _WIN32
 	snprintf(file_path, PATH_MAX, "%u", _pid);
 #else
-	snprintf(file_path, PATH_MAX, "%lu", _pid);
+	snprintf(file_path, PATH_MAX, "%u", _pid);
 #endif
 
 	run_mode = RUN_MODE_PID;

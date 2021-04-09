@@ -5,8 +5,8 @@ Compilable under Linux and Windows.
 
 
 ## Version ##
-1.5.22  
-Last changed: 18.03.2021
+1.5.23  
+Last changed: 09.04.2021
 
 
 ## REQUIREMENTS ##
@@ -24,13 +24,19 @@ Last changed: 18.03.2021
 $ ./linuxBuild.sh [-t hexter] [-m Debug|Release] [-h]
 ```
 
-### Windows (MsBuild)###
+### Linux (gcc) ###
+```bash
+$ mkdir build
+$ gcc -o build/hexter -Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Ofast src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c
+```
+
+### Windows (MsBuild) ###
 ```bash
 $ winBuild.bat [/t hexter] [/m Release|Debug] [/b 32|64] [/rt] [/pdb] [/bt a\path] [/h]
 ```
 The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.  
 
-### DLL : Windows (MsBuild) & cmake ### 
+### DLL : Windows (MsBuild) ### 
 ```bash
 $ winBuild.bat /t hexter_lib [/b 64] [/m Release] [/rt] [/pdb] [/bt a\path] [/?]
 ```

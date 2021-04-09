@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <termios.h>
 
 #include "TerminalUtil.h"
 

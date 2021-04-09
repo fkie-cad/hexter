@@ -103,7 +103,7 @@ TEST_F(WriterTest, testOverwriteInFile)
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
-		0,0,222,173,190,239,0,0
+		0,0,0xDE,0xAD,0xBE,0xEF,0,0
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
@@ -145,7 +145,7 @@ TEST_F(WriterTest, testOverwriteOverEndOfFile)
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
-		0,0,222,173,190,239,0,0
+		0,0,0xDE,0xAD,0xBE,0xEF,0,0
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
@@ -191,7 +191,7 @@ TEST_F(WriterTest, testOverwriteOutOfFile)
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
-		255,255,222,173,190,239,0,0
+		255,255,0xDE,0xAD,0xBE,0xEF,0,0
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
@@ -224,7 +224,7 @@ TEST_F(WriterTest, testOverwriteOutOfFile)
 	{
 		unsigned char cs;
 		check_fs.read((char*)(&(cs)), 1);
-		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<dec<<endl;
+        printf("%02u : %02x\n", i, +cs);
 
 		EXPECT_EQ(cs, payload[j++]);
 	}
@@ -234,13 +234,14 @@ TEST_F(WriterTest, testOverwriteOutOfFile)
 
 TEST_F(WriterTest, testInsertInFile)
 {
-	uint64_t binary_size = 64;
+	uint64_t binary_size = 0x40;
 	string src = temp_dir+"/testInsertInFile.hex";
 //	string src = "/tmp/testInsertInFile.tmp";
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
-			222,173,11,234
+			0xDE,0xAD,0x0B,0xAE
+//            0xCC
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
@@ -265,7 +266,7 @@ TEST_F(WriterTest, testInsertInFile)
 	{
 		unsigned char cs;
 		check_fs.read((char*)(&(cs)), 1);
-//		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+payloaded_bytes[i]<<dec<<endl;
+//		printf("%02x : %02x = %02x\n", i, +cs, +payloaded_bytes[i]);
 
 		EXPECT_EQ(cs, payloaded_bytes[i]);
 	}
@@ -282,7 +283,7 @@ TEST_F(WriterTest, testInsertOverFileBounds)
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
-			222,173,11,234
+			0xDE,0xAD,0x0B,0xAE
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);
@@ -320,7 +321,7 @@ TEST_F(WriterTest, testInsertOverFileBounds)
 	{
 		unsigned char cs;
 		check_fs.read((char*)(&(cs)), 1);
-		cout<<setw(2)<<setfill('0') << i <<hex<<" : "<<+cs<<  " = "<<+payloaded_bytes[i]<<dec<<endl;
+        printf("%02u : %02x = %02x\n", i, +cs, +payloaded_bytes[i]);
 
 		EXPECT_EQ(cs, payloaded_bytes[i]);
 	}
@@ -337,7 +338,7 @@ TEST_F(WriterTest, testInsertOutOfFileBounds)
 	vector<uint8_t> bytes = misc.createBinary(src, binary_size);
 
 	unsigned char pl[] = {
-			222,173,11,234
+			0xDE,0xAD,0x0B,0xAE
 	};
 	unsigned char* payload = pl;
 	uint32_t payload_ln = sizeof(pl);

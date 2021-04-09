@@ -1101,7 +1101,7 @@ void processdir(const struct dirent *dir)
 	if ( !getProcStat(pid, &proc_stat) )
 		printf("Failed to parse /proc/pid/stat");
 
-	printf("0x%08x | 0x%08x | %8lu | 0x%08x | 0x%08x | %8s | %s\n",
+	printf("0x%08x | 0x%08x | %8u | 0x%08x | 0x%08x | %8s | %s\n",
 			pid, proc_stat.ppid, proc_stat.num_threads, proc_stat.vsize, proc_stat.rss, getStateString(proc_stat.state), proc_name);
 }
 

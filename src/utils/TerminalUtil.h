@@ -6,6 +6,8 @@
  * Immediately get an inputted char without waiting for ENTER.
  */
 
+#include <termios.h>
+
 void initTermios(int echo, struct termios* old);
 void resetTermios(struct termios* old);
 char getch_(int echo);
