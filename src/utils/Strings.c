@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <ctype.h>
 #include <string.h>
 
@@ -324,7 +328,7 @@ int UTF16LEToUTF8(unsigned char* out, size_t* outlen, const unsigned char* inb, 
         (*inlenb)--;
     inlen = (unsigned int)(*inlenb / 2);
     inend = in + inlen;
-    while ((in < inend) && (out - outstart + 5 < *outlen)) {
+    while ((in < inend) && (out - outstart + 5u < *outlen)) {
         if (le) {
             c= *in++;
         } else {
