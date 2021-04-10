@@ -22,38 +22,38 @@ static const int le = 1;
  */
 size_t split(char* str, const char* delimiter, char** bucket, const size_t bucket_max)
 {
-	char* token;
-	size_t token_id = 0;
+    char* token;
+    size_t token_id = 0;
 
-	if (str == NULL)
-	{
-		printf("ERROR: str is NULL!\n");
-		return 0;
-	}
-	if (bucket == NULL)
-	{
-		printf("ERROR: bucket is NULL!\n");
-		return 0;
-	}
-	if (bucket_max == 0)
-	{
-		printf("ERROR: bucket_max is 0!");
-		return 0;
-	}
+    if (str == NULL)
+    {
+        printf("ERROR: str is NULL!\n");
+        return 0;
+    }
+    if (bucket == NULL)
+    {
+        printf("ERROR: bucket is NULL!\n");
+        return 0;
+    }
+    if (bucket_max == 0)
+    {
+        printf("ERROR: bucket_max is 0!");
+        return 0;
+    }
 
-	token = strtok(str, delimiter);
+    token = strtok(str, delimiter);
 
-	while ( token != NULL )
-	{
-		bucket[token_id] = token;
-		token = strtok(NULL, delimiter);
+    while ( token != NULL )
+    {
+        bucket[token_id] = token;
+        token = strtok(NULL, delimiter);
 
-		token_id++;
-		if (token_id >= bucket_max)
-			break;
-	}
+        token_id++;
+        if (token_id >= bucket_max)
+            break;
+    }
 
-	return token_id;
+    return token_id;
 }
 
 /**
@@ -67,7 +67,7 @@ size_t split(char* str, const char* delimiter, char** bucket, const size_t bucke
  */
 size_t splitArgs(char* buffer, char* argv[], size_t argv_size)
 {
-	return splitArgsCSM(buffer, argv, argv_size, '"', '"');
+    return splitArgsCSM(buffer, argv, argv_size, '"', '"');
 }
 
 /**
@@ -83,66 +83,66 @@ size_t splitArgs(char* buffer, char* argv[], size_t argv_size)
  */
 size_t splitArgsCSM(char* buffer, char* argv[], size_t argv_size, char som, char scm)
 {
-	char* p = NULL;
-	char* start_of_word = NULL;
-	int c;
-	enum states
-	{
-		DULL, IN_WORD, IN_STRING
-	} state = DULL;
-	size_t argc = 0;
-	size_t som_count = 0;
-	size_t scm_count = 0;
+    char* p = NULL;
+    char* start_of_word = NULL;
+    int c;
+    enum states
+    {
+        DULL, IN_WORD, IN_STRING
+    } state = DULL;
+    size_t argc = 0;
+    size_t som_count = 0;
+    size_t scm_count = 0;
 
-	for ( p = buffer; argc < argv_size && *p != '\0'; p++ )
-	{
-		c = (unsigned char) *p;
-		switch ( state )
-		{
-			case DULL:
-				if ( isspace(c) )
-					continue;
+    for ( p = buffer; argc < argv_size && *p != '\0'; p++ )
+    {
+        c = (unsigned char) *p;
+        switch ( state )
+        {
+            case DULL:
+                if ( isspace(c) )
+                    continue;
 
-				if ( c == som )
-				{
-					state = IN_STRING;
-					start_of_word = p + 1;
-					som_count = 1;
-					continue;
-				}
-				state = IN_WORD;
-				start_of_word = p;
-				continue;
+                if ( c == som )
+                {
+                    state = IN_STRING;
+                    start_of_word = p + 1;
+                    som_count = 1;
+                    continue;
+                }
+                state = IN_WORD;
+                start_of_word = p;
+                continue;
 
-			case IN_STRING:
-				if ( c == som && som != scm )
-					som_count++;
+            case IN_STRING:
+                if ( c == som && som != scm )
+                    som_count++;
 
-				if ( c == scm && ++scm_count == som_count )
-				{
-					*p = 0;
-					argv[argc++] = start_of_word;
-					state = DULL;
-					som_count = 0;
-					scm_count = 0;
-				}
-				continue;
+                if ( c == scm && ++scm_count == som_count )
+                {
+                    *p = 0;
+                    argv[argc++] = start_of_word;
+                    state = DULL;
+                    som_count = 0;
+                    scm_count = 0;
+                }
+                continue;
 
-			case IN_WORD:
-				if ( isspace(c))
-				{
-					*p = 0;
-					argv[argc++] = start_of_word;
-					state = DULL;
-				}
-				continue;
-		}
-	}
+            case IN_WORD:
+                if ( isspace(c))
+                {
+                    *p = 0;
+                    argv[argc++] = start_of_word;
+                    state = DULL;
+                }
+                continue;
+        }
+    }
 
-	if ( state != DULL && argc < argv_size )
-		argv[argc++] = start_of_word;
+    if ( state != DULL && argc < argv_size )
+        argv[argc++] = start_of_word;
 
-	return argc;
+    return argc;
 }
 
 /**

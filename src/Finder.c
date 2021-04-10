@@ -16,8 +16,8 @@ static uint16_t* failure = NULL;
 void Finder_initFailure(unsigned char* needle, uint32_t needle_ln)
 {
 //	int i = 0;
-	failure = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
-	computeFailure(needle, needle_ln, failure);
+    failure = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
+    computeFailure(needle, needle_ln, failure);
 //	if ( failure != NULL )
 //	{
 //		printf("failure\n");
@@ -43,13 +43,13 @@ void Finder_initFailure(unsigned char* needle, uint32_t needle_ln)
  */
 size_t find(const char* path, const unsigned char* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
 {
-	size_t found;
+    size_t found;
 
-	uint16_t* f = NULL;
-	f = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
-	computeFailure(needle, needle_ln, f);
+    uint16_t* f = NULL;
+    f = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
+    computeFailure(needle, needle_ln, f);
 
-	found = findNeedleInFile(path, needle, needle_ln, offset, max_offset);
+    found = findNeedleInFile(path, needle, needle_ln, offset, max_offset);
 //	uint8_t remainder = 0;
 
 //	n_found = normalizeOffset(found, &remainder);
@@ -58,9 +58,9 @@ size_t find(const char* path, const unsigned char* needle, uint32_t needle_ln, s
 //	else
 //		print(n_found, remainder);
 
-	free(f);
+    free(f);
 
-	return found;
+    return found;
 }
 
 /**
@@ -74,23 +74,23 @@ size_t find(const char* path, const unsigned char* needle, uint32_t needle_ln, s
 size_t findNeedleInFile(const char* path, const unsigned char* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
 {
 //	printf("BLOCKSIZE_LARGE: %u\n",BLOCKSIZE_LARGE);
-	FILE* fi;
-	size_t found;
+    FILE* fi;
+    size_t found;
 
-	errno = 0;
-	fi = fopen(path, "rb");
-	int errsv = errno;
-	if ( !fi )
-	{
-		printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
-		return FIND_FAILURE;
-	}
+    errno = 0;
+    fi = fopen(path, "rb");
+    int errsv = errno;
+    if ( !fi )
+    {
+        printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
+        return FIND_FAILURE;
+    }
 
-	found = findNeedleInFP(needle, needle_ln, offset, fi, max_offset);
+    found = findNeedleInFP(needle, needle_ln, offset, fi, max_offset);
 
-	fclose(fi);
+    fclose(fi);
 
-	return found;
+    return found;
 }
 
 /**
@@ -105,36 +105,36 @@ size_t findNeedleInFile(const char* path, const unsigned char* needle, uint32_t 
  */
 size_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, size_t offset, FILE* fi, size_t max_offset)
 {
-	unsigned char buf[BLOCKSIZE_LARGE];
-	const uint16_t buf_ln = BLOCKSIZE_LARGE;
-	size_t n = buf_ln;
-	size_t read_size = buf_ln;
-	size_t block_i, j;
-	size_t found = FIND_FAILURE;
+    unsigned char buf[BLOCKSIZE_LARGE];
+    const uint16_t buf_ln = BLOCKSIZE_LARGE;
+    size_t n = buf_ln;
+    size_t read_size = buf_ln;
+    size_t block_i, j;
+    size_t found = FIND_FAILURE;
 //	printf("findNeedleInFP(0x%lx, 0x%lx)\n", offset, max_offset);
 
-	j = 0;
+    j = 0;
 
-	while ( n == buf_ln )
-	{
+    while ( n == buf_ln )
+    {
 //		printf("\r0x%lx", offset);
-		if ( offset + read_size > max_offset )
-			read_size = max_offset - offset;
+        if ( offset + read_size > max_offset )
+            read_size = max_offset - offset;
 
-		fseek(fi, offset, SEEK_SET);
-		n = fread(buf, 1, read_size, fi);
+        fseek(fi, offset, SEEK_SET);
+        n = fread(buf, 1, read_size, fi);
 
-		block_i = findNeedleInBlock(needle, needle_ln, buf, &j, n);
+        block_i = findNeedleInBlock(needle, needle_ln, buf, &j, n);
 
-		if ( j == needle_ln )
-		{
-			found = offset + block_i - needle_ln + 1;
-			break;
-		}
+        if ( j == needle_ln )
+        {
+            found = offset + block_i - needle_ln + 1;
+            break;
+        }
 
-		offset += block_i;
-	}
-	return found;
+        offset += block_i;
+    }
+    return found;
 }
 
 /**
@@ -150,24 +150,24 @@ size_t findNeedleInFP(const unsigned char* needle, uint32_t needle_ln, size_t of
  */
 size_t findNeedleInBlock(const unsigned char* needle, uint32_t needle_ln, const unsigned char* buf, size_t* j, size_t n)
 {
-	size_t i;
+    size_t i;
 
-	for ( i = 0; i < n; i++ )
-	{
-		while ( (*j) > 0 && needle[(*j)] != buf[i] )
-		{
-			(*j) = failure[(*j) - 1];
-		}
-		if ( needle[(*j)] == buf[i] )
-		{
-			(*j)++;
-		}
-		if ( (*j) == needle_ln )
-			break;
-		if ( (*j) == 0 && i > n - needle_ln )
-			break;
-	}
-	return i;
+    for ( i = 0; i < n; i++ )
+    {
+        while ( (*j) > 0 && needle[(*j)] != buf[i] )
+        {
+            (*j) = failure[(*j) - 1];
+        }
+        if ( needle[(*j)] == buf[i] )
+        {
+            (*j)++;
+        }
+        if ( (*j) == needle_ln )
+            break;
+        if ( (*j) == 0 && i > n - needle_ln )
+            break;
+    }
+    return i;
 }
 
 /**
@@ -180,23 +180,23 @@ size_t findNeedleInBlock(const unsigned char* needle, uint32_t needle_ln, const 
  */
 void computeFailure(const unsigned char* pattern, size_t pattern_ln, uint16_t* failure_)
 {
-	uint32_t i = 0, j = 0;
+    uint32_t i = 0, j = 0;
 
-	for ( i = 1; i < pattern_ln; i++ )
-	{
-		while ( j > 0 && pattern[j] != pattern[i] )
-		{
-			j = failure_[j - 1];
-		}
-		if ( pattern[j] == pattern[i] )
-		{
-			j++;
-		}
-		failure_[i] = (uint16_t)j;
-	}
+    for ( i = 1; i < pattern_ln; i++ )
+    {
+        while ( j > 0 && pattern[j] != pattern[i] )
+        {
+            j = failure_[j - 1];
+        }
+        if ( pattern[j] == pattern[i] )
+        {
+            j++;
+        }
+        failure_[i] = (uint16_t)j;
+    }
 }
 
 void Finder_cleanUp()
 {
-	if ( failure != NULL ) free(failure);
+    if ( failure != NULL ) free(failure);
 }

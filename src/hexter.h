@@ -2,18 +2,18 @@
 #define HEXTER_SRC_HEXTER_H
 
 #if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
-	#define HEXTER_API
+    #define HEXTER_API
 #elif defined(HEXTER_EXPORTS)
-	#define HEXTER_API __declspec(dllexport)
+    #define HEXTER_API __declspec(dllexport)
 #else
-	#define HEXTER_API __declspec(dllimport)
+    #define HEXTER_API __declspec(dllimport)
 #endif
 
 #include <limits.h>
 #include <stdint.h>
 
 #ifdef _WIN32
-	#include <windows.h>
+    #include <windows.h>
 #endif
 #include "Globals.h"
 

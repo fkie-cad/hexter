@@ -4,17 +4,17 @@
 
 void initTermios(int echo, struct termios* old)
 {
-	struct termios new_t;
+    struct termios new_t;
 
-	tcgetattr(0, old); /* grab old terminal i/o settings */
-	new_t = *old; /* make new_t settings same as old settings */
-	new_t.c_lflag &= ~ICANON; /* disable buffered i/o */
-	if (echo) {
-		new_t.c_lflag |= ECHO; /* set echo mode */
-	} else {
-		new_t.c_lflag &= ~ECHO; /* set no echo mode */
-	}
-	tcsetattr(0, TCSANOW, &new_t); /* use these new terminal i/o settings now */
+    tcgetattr(0, old); /* grab old terminal i/o settings */
+    new_t = *old; /* make new_t settings same as old settings */
+    new_t.c_lflag &= ~ICANON; /* disable buffered i/o */
+    if (echo) {
+        new_t.c_lflag |= ECHO; /* set echo mode */
+    } else {
+        new_t.c_lflag &= ~ECHO; /* set no echo mode */
+    }
+    tcsetattr(0, TCSANOW, &new_t); /* use these new terminal i/o settings now */
 }
 
 /**
@@ -22,7 +22,7 @@ void initTermios(int echo, struct termios* old)
  */
 void resetTermios(struct termios* old)
 {
-	tcsetattr(0, TCSANOW, old);
+    tcsetattr(0, TCSANOW, old);
 }
 
 /**
@@ -31,12 +31,12 @@ void resetTermios(struct termios* old)
  */
 char getch_(int echo)
 {
-	struct termios old_t;
-	char ch;
-	initTermios(echo, &old_t);
-	ch = getchar();
-	resetTermios(&old_t);
-	return ch;
+    struct termios old_t;
+    char ch;
+    initTermios(echo, &old_t);
+    ch = getchar();
+    resetTermios(&old_t);
+    return ch;
 }
 
 /**
@@ -44,7 +44,7 @@ char getch_(int echo)
  */
 char getch()
 {
-	return getch_(0);
+    return getch_(0);
 }
 
 /**
@@ -52,7 +52,7 @@ char getch()
  */
 char _getch()
 {
-	return getch_(0);
+    return getch_(0);
 }
 
 /**
@@ -60,5 +60,5 @@ char _getch()
  */
 char getche()
 {
-	return getch_(1);
+    return getch_(1);
 }

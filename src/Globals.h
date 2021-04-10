@@ -11,16 +11,16 @@
 #define IS_LINUX (defined(__linux__) || defined(__linux) || defined(linux)) ? 1 : 0
 
 #if defined(_WIN32)
-	#define ENTER (0xd) // aka \r
+    #define ENTER (0xd) // aka \r
 #else
-	#define ENTER (0xa) // aka \n
+    #define ENTER (0xa) // aka \n
 #endif
 
 #define DEBUG_PRINT_INFO (0)
 #define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
 
 #ifndef PATH_MAX
-	#define PATH_MAX _MAX_PATH
+    #define PATH_MAX _MAX_PATH
 #endif
 
 #define BLOCKSIZE (0x200)
@@ -44,7 +44,7 @@
 #define QUIT ('q')
 #define CONTINUE ('c')
 
-#define MAX_PAYLOAD_LN (512)
+#define MAX_PAYLOAD_LN (0x200)
 #define FIND_FAILURE SIZE_MAX
 
 extern size_t file_size;

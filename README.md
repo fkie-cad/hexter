@@ -5,8 +5,8 @@ Compilable under Linux and Windows.
 
 
 ## Version ##
-1.5.23  
-Last changed: 09.04.2021
+1.5.24  
+Last changed: 10.04.2021
 
 
 ## REQUIREMENTS ##
