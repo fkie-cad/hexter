@@ -12,7 +12,6 @@
 //#define _chsize(fp, s) _chsize64(fp, s)
 
 size_t getSize(const char* finame);
-size_t readFile(FILE* fi, size_t begin, size_t size, unsigned char* data);
-int cfio_getErrno();
+size_t readFile(FILE* fi, size_t begin, size_t size, unsigned char* data, int* errsv);
 
 #endif

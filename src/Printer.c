@@ -46,7 +46,6 @@ static unsigned char* needle = NULL;
 static uint32_t needle_ln;
 static size_t found = 0;
 
-static int errsv;
 
 /**
  * Prints the values depending on the mode.
@@ -58,7 +57,8 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
 {
     needle = _needle;
     needle_ln = _needle_ln;
-
+    
+    int errsv;
     FILE* fi;
     unsigned char* block = NULL;
     size_t block_start = start;
@@ -192,6 +192,7 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
     size_t size;
     size_t end = read_start + length;
     uint8_t offset_width = countHexWidth64(end-HEX_COL_SIZE);
+    int errsv = 0;
 
     // adjust end size if it exceeds read_max
     if ( end > read_max )
@@ -213,11 +214,11 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
         debug_info(" - read_size: 0x%zx\n", read_size);
 
         memset(block, 0, block_size);
-        size = readFile(fi, read_start, read_size, block);
+        size = readFile(fi, read_start, read_size, block, &errsv);
 
         if ( !size )
         {
-            printf("ERROR (0x%x): Reading block of bytes failed!\n", cfio_getErrno());
+            printf("ERROR (0x%x): Reading block of bytes failed!\n", errsv);
             read_start = read_max;
             break;
         }

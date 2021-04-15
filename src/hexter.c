@@ -2,12 +2,14 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include "utils/env.h"
+
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(_LINUX)
     #include <unistd.h>
 #endif
 
@@ -23,7 +25,7 @@
 #include "Writer.h"
 #include "utils/Converter.h"
 #include "utils/Helper.h"
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(_LINUX)
     #include "ProcessHandlerLinux.h"
 #elif defined(_WIN32)
     #include <process.h>
