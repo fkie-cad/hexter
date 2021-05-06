@@ -38,9 +38,9 @@ static int8_t skip_hex_bytes = 0;
 static int8_t skip_ascii_bytes = 0;
 
 static uint32_t highlight_hex_bytes = 0;
-static uint32_t highlight_hex_wait = 0;
+static int32_t highlight_hex_wait = 0;
 static uint32_t highlight_ascii_bytes = 0;
-static uint32_t highlight_ascii_wait = 0;
+static int32_t highlight_ascii_wait = 0;
 
 static unsigned char* needle = NULL;
 static uint32_t needle_ln;
