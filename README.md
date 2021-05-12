@@ -41,6 +41,14 @@ The correct path to your build tools may be passed as a parameter or just change
 $ winBuild.bat /t hexter_lib [/b 64] [/m Release] [/rt] [/pdb] [/bt a\path] [/?]
 ```
 
+### Windows Context Menu ###
+It may be convenient to add Hexter to the context menu to be able to right-click a file and hexter it.
+In this scenario, you may use
+```bash
+$ addHeaderHexterToShellCtxtMenu.bat /p "c:\Hexter.exe" [/l "Open in Hexter"]
+```
+
+
 ## USAGE ##
 ```bash
 $ ./hexter [options] -file a/file/name [options]
