@@ -1,7 +1,11 @@
 # Hexter #
 A minimal terminal hex viewer supporting reading, writing and searching in files and processes.
 
-Compilable under Linux and Windows.  
+Compils and runs under
+    - Linux 
+    - Windows (x86/x64).  
+    - OsX may work too, but only the file part.
+    - Android in [Termux][1]:
 
 
 ## Version ##
@@ -15,7 +19,11 @@ Last changed: 06.05.2021
     - Building with cmake requires cmake.  
 - Windows
     - msbuild
+   - [wdk]
 
+**Remarks**  
+The .vcxproj file is using `WindowsApplicationForDrivers10.0` as the `PlatformToolset`, which leads to smaller builds. 
+If the WDK is not installed, the `PlatformToolset` may be changed to `v142` and it should compile without errors.
 
 ## BUILD ##
 
@@ -29,6 +37,8 @@ $ ./linuxBuild.sh [-t hexter] [-m Debug|Release] [-h]
 $ mkdir build
 $ gcc -o build/hexter -Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Ofast src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c
 ```
+
+Use `clang` istead off `gcc` in Termux on Android.
 
 ### Windows (MsBuild) ###
 ```bash
