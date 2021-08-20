@@ -2,15 +2,17 @@
 A minimal terminal hex viewer supporting reading, writing and searching in files and processes.
 
 Compils and runs under
-    - Linux 
-    - Windows (x86/x64).  
-    - OsX may work too, but only the file part.
-    - Android in [Termux][1]:
+- Linux 
+- Windows (x86/x64).  
+- OsX may work too, but only the -file functionality.
+- Android in [Termux][1]
+
+[1]: https://termux.com/
 
 
 ## Version ##
-1.5.26  
-Last changed: 06.05.2021
+1.5.27  
+Last changed: 20.08.2021
 
 
 ## REQUIREMENTS ##
@@ -19,7 +21,7 @@ Last changed: 06.05.2021
     - Building with cmake requires cmake.  
 - Windows
     - msbuild
-   - [wdk]
+    - [wdk]
 
 **Remarks**  
 The .vcxproj file is using `WindowsApplicationForDrivers10.0` as the `PlatformToolset`, which leads to smaller builds. 
