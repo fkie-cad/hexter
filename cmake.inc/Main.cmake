@@ -6,13 +6,13 @@ add_executable(${HEXTER}
 	${HEXTER_FILES}
 	)
 endif (UNIX)
-if (WIN32)
-add_executable(${HEXTER}
-	${CMAKE_CURRENT_SOURCE_DIR}/src/hexter.c
-	${HEXTER_FILES}
-#	${CMAKE_CURRENT_SOURCE_DIR}/res/hexter.rc
-	 )
-endif (WIN32)
+#if (WIN32)
+#add_executable(${HEXTER}
+#	${CMAKE_CURRENT_SOURCE_DIR}/src/hexter.c
+#	${HEXTER_FILES}
+##	${CMAKE_CURRENT_SOURCE_DIR}/res/hexter.rc
+#	 )
+#endif (WIN32)
 
 set(HEXTER_LIB_NAME hexter) # see Libs.cmake
 set(HEXTER_SHARED_LIB hexter_shared)

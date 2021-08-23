@@ -2,6 +2,7 @@
 #define HEXTER_SRC_GLOBALS_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <limits.h>
