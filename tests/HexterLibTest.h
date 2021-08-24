@@ -42,12 +42,9 @@ TEST_F(HexterLibTest, test_hexter_printProcess)
 	uint32_t _pid = 0;
 	size_t _start = 0;
 	size_t _length = 0x100;
-	int _lpm = 1;
-	int _lpx = 1;
-	int _lph = 1;
-	int _lpt = 1;
+	uint32_t flags = PROCESS_LIST_HEAPS | PROCESS_LIST_HEAP_BLOCKS | PROCESS_LIST_MEMORY | PROCESS_LIST_MODULES | PROCESS_LIST_RUNNING_PROCESSES;
 
-	hexter_printProcess(_pid, _start, _length, _lpm, _lpx, _lph, _lpt);
+	hexter_printProcess(_pid, _start, _length, flags);
 }
 
 #endif

@@ -34,13 +34,13 @@ if (UNIX)
 		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerLinux.c
     )
 endif (UNIX)
-if (WIN32)
-    set(HEXTER_FILES
-    	${HEXTER_FILES}
-		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerWin.h
-		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerWin.c
-    )
-endif (WIN32)
+#if (WIN32)
+#    set(HEXTER_FILES
+#    	${HEXTER_FILES}
+#		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerWin.h
+#		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerWin.c
+#    )
+#endif (WIN32)
 
 set(HEXTER_LIB_FILES
 	${HEXTER_FILES}

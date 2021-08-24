@@ -28,10 +28,8 @@
 //    #endif
 //#endif
 
-//#if sizeof(size_t) == 4
 #if UINTPTR_MAX == 0xffffffff
     #define _32BIT
-//#elif sizeof(size_t) == 8
 #elif UINTPTR_MAX == 0xffffffffffffffff
     #define _64BIT
 #else

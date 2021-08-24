@@ -34,7 +34,9 @@
     #include "utils/Strings.h"
 #endif
 
-#define BINARYNAME ("hexter")
+#define BIN_NAME ("hexter")
+#define BIN_VS "1.5.27"
+#define BIN_LAST_CHANGED  "20.08.2021"
 
 size_t file_size;
 char file_path[PATH_MAX];
@@ -54,19 +56,13 @@ uint8_t find_f;
 static uint8_t delete_f;
 uint8_t continuous_f;
 
-Bool list_process_memory_f;
-Bool list_process_modules_f;
-Bool list_process_threads_f;
-int list_process_heaps_f;
-Bool list_running_processes_f;
+uint32_t process_list_flags;
 
-typedef enum RunMode { RUN_MODE_NONE,  RUN_MODE_FILE, RUN_MODE_PID } RunMode;
+typedef enum RunMode { RUN_MODE_NONE, RUN_MODE_FILE, RUN_MODE_PID } RunMode;
 static RunMode run_mode;
 
 static int payload_arg_id;
 
-static const char* vs = "1.5.26";
-static const char* last_changed = "06.05.2021";
 
 #define FORMAT_ASCII 'a'
 #define FORMAT_UNICODE 'u'
@@ -221,21 +217,22 @@ int run(const char payload_format, const char* raw_payload)
     else if ( run_mode == RUN_MODE_PID )
     {
         printf("pid: %u\n", pid);
-        if ( list_running_processes_f )
-        {
+        if ( process_list_flags & PROCESS_LIST_RUNNING_PROCESSES )
             listRunningProcesses();
-            cleanUp(payload);
-            return 0;
-        }
-        if ( list_process_memory_f )
+        if ( process_list_flags & PROCESS_LIST_MEMORY )
             listProcessMemory(pid);
-        if ( list_process_modules_f )
+        if ( process_list_flags & PROCESS_LIST_MODULES )
             listProcessModules(pid);
-        if ( list_process_threads_f )
+        if ( process_list_flags & PROCESS_LIST_THREADS )
             listProcessThreads(pid);
-        if ( list_process_heaps_f )
-            listProcessHeaps(pid, list_process_heaps_f);
-        printProcessRegions(pid, start, skip_bytes, payload, payload_ln);
+        if ( process_list_flags & (PROCESS_LIST_HEAPS | PROCESS_LIST_HEAP_BLOCKS) )
+        {
+            uint32_t flag = (process_list_flags & (PROCESS_LIST_HEAPS|PROCESS_LIST_HEAP_BLOCKS)) >> 3;
+            listProcessHeaps(pid, flag);
+        }
+
+        if ( process_list_flags == 0 )
+            printProcessRegions(pid, start, skip_bytes, payload, payload_ln);
     }
 
     cleanUp(payload);
@@ -263,11 +260,7 @@ void initParameters()
     delete_f = 0;
     payload_arg_id = -1;
 
-    list_process_memory_f = false;
-    list_process_modules_f = false;
-    list_process_threads_f = false;
-    list_process_heaps_f = 0;
-    list_running_processes_f = false;
+    process_list_flags = 0;
 
     clean_printing = 0;
 
@@ -281,11 +274,11 @@ void initParameters()
 
 void printUsage()
 {
-    printf("Usage: %s [options] -file a/file [options]\n", BINARYNAME);
-    printf("Usage: %s [options] -pid 123 [options]\n", BINARYNAME);
+    printf("Usage: %s [options] -file a/file [options]\n", BIN_NAME);
+    printf("Usage: %s [options] -pid 123 [options]\n", BIN_NAME);
     printf("\n");
-    printf("Version: %s\n", vs);
-    printf("Last changed: %s\n", last_changed);
+    printf("Version: %s\n", BIN_VS);
+    printf("Last changed: %s\n", BIN_LAST_CHANGED);
 }
 
 void printHelp()
@@ -327,13 +320,13 @@ void printHelp()
            FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
     );
     printf("\n");
-    printf("Example: ./%s -file path/to/a.file -s 100 -l 128 -x\n", BINARYNAME);
-    printf("Example: ./%s -file path/to/a.file -ih dead -s 0x100\n", BINARYNAME);
-    printf("Example: ./%s -file path/to/a.file -oh 0bea -s 0x100\n", BINARYNAME);
-    printf("Example: ./%s -file path/to/a.file -fh f001 -s 0x100\n", BINARYNAME);
-    printf("Example: ./%s -file path/to/a.file -d -s 0x100 -l 0x8\n", BINARYNAME);
-    printf("Example: ./%s -pid 0 -lrp\n", BINARYNAME);
-    printf("Example: ./%s -pid 1234 -s 0x5000 -lpm\n", BINARYNAME);
+    printf("Example: ./%s -file path/to/a.file -s 100 -l 128 -x\n", BIN_NAME);
+    printf("Example: ./%s -file path/to/a.file -ih dead -s 0x100\n", BIN_NAME);
+    printf("Example: ./%s -file path/to/a.file -oh 0bea -s 0x100\n", BIN_NAME);
+    printf("Example: ./%s -file path/to/a.file -fh f001 -s 0x100\n", BIN_NAME);
+    printf("Example: ./%s -file path/to/a.file -d -s 0x100 -l 0x8\n", BIN_NAME);
+    printf("Example: ./%s -pid 0 -lrp\n", BIN_NAME);
+    printf("Example: ./%s -pid 1234 -s 0x5000 -lpm\n", BIN_NAME);
     printf("\n");
     printf("In continuous mode press ENTER to continue, 'n' to find next or 'q' to quit.\n");
 }
@@ -373,27 +366,27 @@ int parseArgs(int argc, char** argv)
         }
         else if ( isArgOfType(argv[i], "-lpx") )
         {
-            list_process_memory_f = true;
+            process_list_flags |= PROCESS_LIST_MEMORY;
         }
         else if ( isArgOfType(argv[i], "-lpm") )
         {
-            list_process_modules_f = true;
+            process_list_flags |= PROCESS_LIST_MODULES;
         }
         else if ( isArgOfType(argv[i], "-lpt") )
         {
-            list_process_threads_f = true;
+            process_list_flags |= PROCESS_LIST_THREADS;
         }
         else if ( isArgOfType(argv[i], "-lph") )
         {
-            list_process_heaps_f = 1;
+            process_list_flags |= PROCESS_LIST_HEAPS;
         }
         else if ( isArgOfType(argv[i], "-lphb") )
         {
-            list_process_heaps_f = 2;
+            process_list_flags |= PROCESS_LIST_HEAP_BLOCKS;
         }
         else if ( isArgOfType(argv[i], "-lrp") )
         {
-            list_running_processes_f = true;
+            process_list_flags |= PROCESS_LIST_RUNNING_PROCESSES;
         }
         else if ( isArgOfType(argv[i], "-file") )
         {
@@ -742,13 +735,10 @@ HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _l
  * @param _pid
  * @param _start
  * @param _length
- * @param _lpm
- * @param _lpx
- * @param _lph
- * @param _lpt
+ * @param flags
  * @return int status info
  */
-HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length, int _lpm, int _lpx, int _lph, int _lpt)
+HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length, uint32_t flags)
 {
     initParameters();
 #ifdef _WIN32
@@ -762,11 +752,7 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
     length = _length;
     continuous_f = false;
 
-    list_process_memory_f = _lpx;
-    list_process_modules_f = _lpm;
-    list_process_heaps_f = _lph;
-    list_process_threads_f = _lpt;
-//	list_running_processes_f = _lrp;
+    process_list_flags = flags;
 
 //	print_col_mask = print_col_mask | print_hex_mask;
 
