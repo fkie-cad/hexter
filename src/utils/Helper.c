@@ -6,6 +6,7 @@
 
 #if defined(__linux__) || defined(__linux) || defined(linux)
     #include <dirent.h>
+    #include <unistd.h>
     #include "TerminalUtil.h"
 #endif
 #if defined(_WIN32)
@@ -46,6 +47,14 @@ void expandFilePath(const char* src, char* dest)
         {
             snprintf(dest, PATH_MAX, "%s", src);
         }
+    }
+    else if ( src[0] != '/' )
+    {
+        char cwd[PATH_MAX] = {0};
+        if ( getcwd(cwd, PATH_MAX) != NULL )
+            snprintf(dest, PATH_MAX, "%s/%s", cwd, src);
+        else
+            snprintf(dest, PATH_MAX, "%s", src);
     }
     else
 #endif
