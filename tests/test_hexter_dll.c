@@ -1,21 +1,25 @@
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include "../src/hexter.h"
 
+#if defined(_WIN32)
 #pragma warning( disable : 4189 )
+#endif
 
 #ifdef _DEBUG
 #ifdef _WIN64
 #pragma comment(lib, "..\\build\\debug\\64\\Hexter.lib")
-#else
+#elif defined(_WIN32)
 #pragma comment(lib, "..\\build\\debug\\32\\Hexter.lib")
 #endif
 #else
 #ifdef _WIN64
 #pragma comment(lib, "..\\build\\64\\Hexter.lib")
-#else
+#elif defined(_WIN32)
 #pragma comment(lib, "..\\build\\32\\Hexter.lib")
 #endif
 #endif
@@ -34,7 +38,7 @@ int main(int argc, char** argv)
     {
         printf("Usage: test_hexter_dll type path|pid|cmdline -s start -l length -f pflags\n");
         printf("\n");
-        printf("type: 1 = file, 2 = process, 3 = cmdline\n");
+        printf("type: 1 = file, 2 = process, 3 = cmdline (Windows only)\n");
         printf("pflags: PROCESS_LIST_MEMORY (0x01), PROCESS_LIST_MODULES (0x02), PROCESS_LIST_THREADS (0x04), PROCESS_LIST_HEAPS (0x08), PROCESS_LIST_HEAP_BLOCKS (0x10), PROCESS_LIST_RUNNING_PROCESSES (0x20)\n");
         
         return 0;
@@ -93,12 +97,14 @@ int main(int argc, char** argv)
         printf("pid: 0x%x\n", pid);
         hexter_printProcess(pid, start, length, flags);
     }
+#ifdef _Win32
     else if ( type == 3 )
     {
         cmd_line = argv[2];
         printf("cmd_line: %s\n", cmd_line);
         runHexter(NULL, NULL, cmd_line, 0);
     }
+#endif
     else
     {
         printf("Unknown type\n");

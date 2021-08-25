@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <cstdint>
 
-//#include <filesystem>
 #include <fstream>
 #include <sstream>
 
@@ -14,7 +13,6 @@
 #include "../src/hexter.h"
 
 using namespace std;
-//namespace fs = std::filesystem;
 
 class HexterLibTest :public testing::Test
 {
