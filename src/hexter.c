@@ -288,7 +288,7 @@ void printHelp()
     printf("Options:\n");
     printf(" * -file:string A file name to show the hex source of.\n"
            " * -pid:size_t A process id (in hex or dec) to show the hex source of. Pass 0 for your own process.\n"
-           " * -s:size_t Startoffset. Default = 0.\n"
+           " * -s:size_t Start offset. Default = 0.\n"
            " * -l:size_t Length of the part to display. Default = 0x100.\n"
            " * -a ASCII only print.\n"
            " * -x HEX only print.\n"
@@ -314,7 +314,7 @@ void printHelp()
            "   * -lph List all process heaps.\n"
            "   * -lphb List all process heaps and its blocks.\n"
            "   * -lrp List all running processes. Pass any pid or 0 to get it running.\n"
-           " * -b Force breaking, not continuous mode.\n"
+           " * -b Force breaking mode. Will terminate after the first displayed block.\n"
            " * -p Plain, not styled text output.\n"
            " * -h Print this.\n",
            FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD

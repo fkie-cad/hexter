@@ -1,13 +1,11 @@
 # Hexter #
 A minimal terminal hex viewer supporting reading, writing and searching in files and processes.
 
-Compils and runs under
+Compiles and runs under
 - Linux 
 - Windows (x86/x64).  
 - OsX may work too, but only the -file functionality.
-- Android in [Termux][1]
-
-[1]: https://termux.com/
+- Android in Termux
 
 
 ## Version ##
@@ -40,7 +38,7 @@ $ mkdir build
 $ gcc -o build/hexter -Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Ofast src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c
 ```
 
-Use `clang` istead off `gcc` in Termux on Android.
+Use `clang` instead of `gcc` in Termux on Android.
 
 ### Windows (MsBuild) ###
 ```bash
@@ -73,9 +71,9 @@ Optional Parameters:
  * -l uint64_t Length of the part to display in hex or dec. Default = 0x100.
  * -a ASCII only print.
  * -x HEX only print.
- * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)
- * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.
- * -fx Find hex byte sequence. Where x is an format option.
+ * -ix Insert hex byte sequence (destructive!). Where x is a format option. (File mode only.)
+ * -ox Overwrite hex byte sequence (destructive!). Where x is a format option.
+ * -fx Find hex byte sequence. Where x is a format option.
  * Format options: 
    * h: plain bytes, 
    * a: ascii/utf-8 text, 
