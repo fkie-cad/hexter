@@ -46,9 +46,6 @@ uint8_t clean_printing;
 static uint8_t skip_bytes;
 
 uint8_t print_col_mask;
-uint8_t print_offset_mask;
-uint8_t print_hex_mask;
-uint8_t print_ascii_mask;
 
 static uint8_t insert_f;
 static uint8_t overwrite_f;
@@ -265,9 +262,6 @@ void initParameters()
     clean_printing = 0;
 
     print_col_mask = 0;
-    print_offset_mask = 4;
-    print_hex_mask = 2;
-    print_ascii_mask = 1;
 
     run_mode = RUN_MODE_NONE;
 }
@@ -346,11 +340,11 @@ int parseArgs(int argc, char** argv)
 
         if ( isArgOfType(argv[i], "-x") )
         {
-            print_col_mask = print_col_mask | print_hex_mask;
+            print_col_mask = print_col_mask | PRINT_HEX_MASK;
         }
         else if ( isArgOfType(argv[i], "-a") )
         {
-            print_col_mask = print_col_mask | print_ascii_mask;
+            print_col_mask = print_col_mask | PRINT_ASCII_MASK;
         }
         else if ( isArgOfType(argv[i], "-p") )
         {
@@ -576,7 +570,7 @@ void sanitizePrintParams(uint32_t pid)
     uint8_t col_size;
 
     if ( print_col_mask == 0 )
-        print_col_mask = (print_offset_mask | print_ascii_mask | print_hex_mask);
+        print_col_mask = (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK);
 
     if ( insert_f || overwrite_f || delete_f )
         continuous_f = 0;
@@ -722,7 +716,7 @@ HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _l
     length = _length;
     continuous_f = false;
 
-//	print_col_mask = print_col_mask | print_hex_mask;
+//	print_col_mask = print_col_mask | PRINT_HEX_MASK;
 
     run(0, NULL);
 
@@ -754,7 +748,7 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
 
     process_list_flags = flags;
 
-//	print_col_mask = print_col_mask | print_hex_mask;
+//	print_col_mask = print_col_mask | PRINT_HEX_MASK;
 
     run(0, NULL);
 

@@ -282,13 +282,13 @@ size_t normalizeOffset(size_t offset, uint8_t* remainder)
 uint8_t getColSize()
 {
     uint8_t col_size = 0;
-    if ( print_col_mask == (print_offset_mask | print_ascii_mask | print_hex_mask))
+    if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK))
         col_size = TRIPLE_COL_SIZE;
-    else if ( print_col_mask == (print_ascii_mask | print_hex_mask))
+    else if ( print_col_mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK))
         col_size = DOUBLE_COL_SIZE;
-    else if ( print_col_mask == print_ascii_mask )
+    else if ( print_col_mask == PRINT_ASCII_MASK )
         col_size = ASCII_COL_SIZE;
-    else if ( print_col_mask == print_hex_mask )
+    else if ( print_col_mask == PRINT_HEX_MASK )
         col_size = HEX_COL_SIZE;
     return col_size;
 }
