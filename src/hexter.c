@@ -61,14 +61,14 @@ static RunMode run_mode;
 static int payload_arg_id;
 
 
-#define FORMAT_ASCII 'a'
-#define FORMAT_UNICODE 'u'
-#define FORMAT_BYTE 'b'
-#define FORMAT_WORD 'w'
-#define FORMAT_D_WORD 'd'
-#define FORMAT_Q_WORD 'q'
-#define FORMAT_PLAIN_HEX 'h'
-#define FORMAT_FILL_BYTE 'f'
+#define FORMAT_ASCII ('a')
+#define FORMAT_UNICODE ('u')
+#define FORMAT_BYTE ('b')
+#define FORMAT_WORD ('w')
+#define FORMAT_D_WORD ('d')
+#define FORMAT_Q_WORD ('q')
+#define FORMAT_PLAIN_HEX ('h')
+#define FORMAT_FILL_BYTE ('f')
 
 static const char format_types[8] = { FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
 static const uint8_t format_types_ln = 8;
@@ -635,13 +635,13 @@ uint8_t keepLengthInFile()
 {
     if ( start + length > file_size )
     {
-        printf("Info: Start offset 0x%zx plus length 0x%zx is greater then the file size 0x%zx\n"
-            "Printing only to file size.\n",
-        start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
+        //printf("Info: Start offset 0x%zx plus length 0x%zx is greater then the file size 0x%zx\n"
+        //    "Printing only to file size.\n",
+        //start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
 
         length = file_size - start;
         continuous_f = 0;
-        return 1;
+        return 0;
     }
     return 0;
 }
