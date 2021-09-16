@@ -236,13 +236,13 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
 
 void printLine(const unsigned char* block, size_t block_start, size_t size, uint8_t offset_width)
 {
-    if ( print_col_mask == (print_offset_mask | print_ascii_mask | print_hex_mask) )
+    if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK) )
         printTripleCols(block, size, block_start, offset_width);
-    else if ( print_col_mask == (print_ascii_mask | print_hex_mask) )
+    else if ( print_col_mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK) )
         printDoubleCols(block, size);
-    else if ( print_col_mask == print_ascii_mask )
+    else if ( print_col_mask == PRINT_ASCII_MASK )
         printAsciiCols(block, size);
-    else if ( print_col_mask == print_hex_mask )
+    else if ( print_col_mask == PRINT_HEX_MASK )
         printHexCols(block, size);
 }
 

@@ -7,14 +7,9 @@ set(UTILS_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Helper.c
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Strings.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/Strings.c
-	)
-if (UNIX)
-    set(UTILS_FILES
-    	${UTILS_FILES}
-		${CMAKE_CURRENT_SOURCE_DIR}/src/utils/TerminalUtil.h
-		${CMAKE_CURRENT_SOURCE_DIR}/src/utils/TerminalUtil.c
-    )
-endif (UNIX)
+	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/TerminalUtil.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/utils/TerminalUtil.c
+)
 
 set(HEXTER_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Bool.h
@@ -26,21 +21,9 @@ set(HEXTER_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Writer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/src/Writer.c
 	${UTILS_FILES}
-	)
-if (UNIX)
-    set(HEXTER_FILES
-    	${HEXTER_FILES}
-		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerLinux.h
-		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerLinux.c
-    )
-endif (UNIX)
-#if (WIN32)
-#    set(HEXTER_FILES
-#    	${HEXTER_FILES}
-#		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerWin.h
-#		${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerWin.c
-#    )
-#endif (WIN32)
+	${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerLinux.h
+	${CMAKE_CURRENT_SOURCE_DIR}/src/ProcessHandlerLinux.c
+)
 
 set(HEXTER_LIB_FILES
 	${HEXTER_FILES}

@@ -54,9 +54,9 @@ extern char file_path[PATH_MAX];
 extern size_t length;
 
 extern uint8_t print_col_mask;
-extern uint8_t print_offset_mask;
-extern uint8_t print_hex_mask;
-extern uint8_t print_ascii_mask;
+#define PRINT_ASCII_MASK  (0x1)
+#define PRINT_HEX_MASK    (0x2)
+#define PRINT_OFFSET_MASK (0x4)
 
 extern uint8_t clean_printing;
 
