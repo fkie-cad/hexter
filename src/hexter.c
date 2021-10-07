@@ -54,6 +54,7 @@ static uint8_t delete_f;
 uint8_t continuous_f;
 
 uint32_t process_list_flags;
+uint32_t file_mode_flags;
 
 typedef enum RunMode { RUN_MODE_NONE, RUN_MODE_FILE, RUN_MODE_PID } RunMode;
 static RunMode run_mode;
@@ -136,7 +137,7 @@ int run(const char payload_format, const char* raw_payload)
     if ( run_mode == RUN_MODE_FILE )
     {
         file_size = getSize(file_path);
-        if ( file_size == 0 )
+        if ( file_size == 0 && !insert_f )
             return 0;
     }
     else if ( run_mode == RUN_MODE_PID )
