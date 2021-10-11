@@ -191,7 +191,7 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
     size_t read_size = 0;
     size_t size;
     size_t end = read_start + length;
-    uint8_t offset_width = countHexWidth64(end-HEX_COL_SIZE);
+    uint8_t offset_width = countHexWidth64((end>HEX_COL_SIZE)?end-HEX_COL_SIZE:end);
     int errsv = 0;
 
     // adjust end size if it exceeds read_max

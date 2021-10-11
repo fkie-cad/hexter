@@ -35,8 +35,8 @@
 #endif
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.5.27"
-#define BIN_LAST_CHANGED  "20.08.2021"
+#define BIN_VS "1.5.28"
+#define BIN_LAST_CHANGED  "11.10.2021"
 
 size_t file_size;
 char file_path[PATH_MAX];
@@ -144,7 +144,7 @@ int run(const char payload_format, const char* raw_payload)
     {
         s = parseUint32Auto(file_path, &pid);
         if ( s != 0 )
-            return 0;
+            return -1;
 
         if ( pid == 0 )
 #if defined(__linux__) || defined(__linux) || defined(linux)
@@ -154,9 +154,10 @@ int run(const char payload_format, const char* raw_payload)
 #endif
         file_size = getSizeOfProcess(pid);
         if ( file_size == 0 )
-            return 2;
+            return -2;
     }
 
+#ifdef DEBUG_PRINT
     debug_info("file_path: %s\n", file_path);
     debug_info("file_size: 0x%zx\n", file_size);
     debug_info("start: 0x%zx\n", start);
@@ -167,6 +168,7 @@ int run(const char payload_format, const char* raw_payload)
     debug_info("find: %d\n", find_f);
     debug_info("delete: %d\n", delete_f);
     debug_info("\n");
+#endif
 
     if ( (insert_f || overwrite_f || find_f) && payload_format > 0 )
     {
@@ -203,11 +205,13 @@ int run(const char payload_format, const char* raw_payload)
         start = 0;
     }
 
+    if ( file_size == 0 )
+        return -1;
+
     sanitizePrintParams(pid);
     setPrintingStyle();
     if ( run_mode == RUN_MODE_FILE )
     {
-        // recalculate file size, it may has changed due to reading or deleting
         getFileNameL(file_path, &file_name);
         printf("file: %s\n", file_name);
         print(start, skip_bytes, payload, payload_ln);
@@ -785,17 +789,21 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
     (void) hinst;
     (void) nCmdShow;
 
+#ifdef DEBUG_PRINT
     debug_info("the param cmd line: %s\n", lpszCmdLine);
+#endif
 
-    int i;
     uint8_t argv_max = 20;
     uint8_t argc;
     char* argv[20];
     argc = (uint8_t)splitArgs(lpszCmdLine, argv, argv_max);
 
+#ifdef DEBUG_PRINT
+    int i;
     debug_info("argc: %u\n", argc);
     for ( i = 0; i < argc; i++ )
         debug_info("arg%d: %s\n", i, argv[i]);
+#endif
 
     main(argc, argv);
     getchar();

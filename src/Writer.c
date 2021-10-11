@@ -410,13 +410,21 @@ void insert(const char* path, unsigned char* payload, uint32_t payload_ln, size_
         return;
     }
 
-    errno = 0;
+    // "ab+" results in strange behaviour
+    // thats why this construct is used
+    //errno = 0;
     fp = fopen(path, "rb+");
-    int errsv = errno;
+    //int errsv = errno;
     if ( !fp )
     {
-        printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
-        return;
+        errno = 0;
+        fp = fopen(path, "wb+");
+        int errsv = errno;
+        if ( !fp )
+        {
+            printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
+            return;
+        }
     }
 
     while ( n == BLOCKSIZE_LARGE )
@@ -446,9 +454,15 @@ void insert(const char* path, unsigned char* payload, uint32_t payload_ln, size_
         offset += n;
     }
     if ( n > payload_ln )
+    {
+        fseek(fp, offset, SEEK_SET);
         fwrite(payload, 1, payload_ln, fp);
+    }
     else
+    {
+        fseek(fp, offset, SEEK_SET);
         fwrite(payload, 1, n, fp);
+    }
 
     fclose(fp);
 }
