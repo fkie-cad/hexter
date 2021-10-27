@@ -57,9 +57,9 @@ function buildTarget() {
         return 3
     fi
 
-    if [[ ${mode} == "Release" || ${mode} == "release" ]]; then
-        sha256sum ${dir}/${target} | awk '{print $1}' > ${dir}/${target}.sha256
-    fi
+    # if [[ ${mode} == "Release" || ${mode} == "release" ]]; then
+    #     sha256sum ${dir}/${target} | awk '{print $1}' > ${dir}/${target}.sha256
+    # fi
 
     return 0
 }

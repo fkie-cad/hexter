@@ -130,12 +130,12 @@ rem architecture = x86, x86_x64, ...
 set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
 
 :build
-    echo cmd /k "mkdir %build_dir% & %vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct%  & exit"
+    ::echo cmd /k "mkdir %build_dir% & %vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct%  & exit"
     cmd /k "mkdir %build_dir% & %vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct%  & exit"
 
-    if /i [%mode%]==[release] (
-        certutil -hashfile %build_dir%\%target%.exe sha256 | find /i /v "sha256" | find /i /v "certutil" > %build_dir%\%target%.sha256
-    )
+    ::if /i [%mode%]==[release] (
+    ::    certutil -hashfile %build_dir%\%target%.exe sha256 | find /i /v "sha256" | find /i /v "certutil" > %build_dir%\%target%.sha256
+    ::)
 
     exit /B 0
 
