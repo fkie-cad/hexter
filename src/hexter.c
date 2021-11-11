@@ -35,26 +35,23 @@
 #endif
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.5.28"
-#define BIN_LAST_CHANGED  "11.10.2021"
+#define BIN_VS "1.5.29"
+#define BIN_LAST_CHANGED  "11.11.2021"
+
+#define LIN_PARAM_IDENTIFIER ('-')
+#define WIN_PARAM_IDENTIFIER ('/')
+
 
 size_t file_size;
 char file_path[PATH_MAX];
 static size_t start;
 size_t length;
-uint8_t clean_printing;
 static uint8_t skip_bytes;
 
 uint8_t print_col_mask;
 
-static uint8_t insert_f;
-static uint8_t overwrite_f;
-uint8_t find_f;
-static uint8_t delete_f;
-uint8_t continuous_f;
-
 uint32_t process_list_flags;
-uint32_t file_mode_flags;
+uint32_t mode_flags;
 
 typedef enum RunMode { RUN_MODE_NONE, RUN_MODE_FILE, RUN_MODE_PID } RunMode;
 static RunMode run_mode;
@@ -137,7 +134,7 @@ int run(const char payload_format, const char* raw_payload)
     if ( run_mode == RUN_MODE_FILE )
     {
         file_size = getSize(file_path);
-        if ( file_size == 0 && !insert_f )
+        if ( file_size == 0 && !(mode_flags&MODE_FLAG_INSERT) )
             return 0;
     }
     else if ( run_mode == RUN_MODE_PID )
@@ -163,36 +160,36 @@ int run(const char payload_format, const char* raw_payload)
     debug_info("start: 0x%zx\n", start);
     debug_info("length: 0x%zx\n", length);
     debug_info("print_col_mask only: %d\n", print_col_mask);
-    debug_info("insert: %d\n", insert_f);
-    debug_info("overwrite: %d\n", overwrite_f);
-    debug_info("find: %d\n", find_f);
-    debug_info("delete: %d\n", delete_f);
+    debug_info("insert: %d\n", (mode_flags&MODE_FLAG_INSERT));
+    debug_info("overwrite: %d\n", (mode_flags&MODE_FLAG_OVERWRITE));
+    debug_info("find: %d\n", (mode_flags&MODE_FLAG_FIND));
+    debug_info("delete: %d\n", (mode_flags&MODE_FLAG_DELETE));
     debug_info("\n");
 #endif
 
-    if ( (insert_f || overwrite_f || find_f) && payload_format > 0 )
+    if ( (mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_FIND)) && payload_format > 0 )
     {
         payload_ln = parsePayload(payload_format, raw_payload, &payload);
         if ( payload == NULL)
             return 3;
     }
 
-    if ( insert_f )
+    if ( (mode_flags&MODE_FLAG_INSERT) )
     {
         insert(file_path, payload, payload_ln, start);
         file_size = getSize(file_path);
     }
-    else if ( overwrite_f && run_mode == RUN_MODE_FILE )
+    else if ( (mode_flags&MODE_FLAG_OVERWRITE) && run_mode == RUN_MODE_FILE )
     {
         overwrite(file_path, payload, payload_ln, start);
         file_size = getSize(file_path);
     }
-    else if ( overwrite_f && run_mode == RUN_MODE_PID )
+    else if ( (mode_flags&MODE_FLAG_OVERWRITE) && run_mode == RUN_MODE_PID )
     {
         writeProcessMemory(pid, payload, payload_ln, start);
     }
 
-    if ( delete_f )
+    if ( (mode_flags&MODE_FLAG_DELETE) )
     {
         if ( sanitizeDeleteParams() != 0 )
         {
@@ -255,20 +252,12 @@ void initParameters()
     length = DEFAULT_LENGTH;
     skip_bytes = 0;
 
-    continuous_f = 1;
-    insert_f = 0;
-    overwrite_f = 0;
-    find_f = 0;
-    delete_f = 0;
-    payload_arg_id = -1;
-
+    mode_flags = MODE_FLAG_CONTINUOUS_PRINTING;
     process_list_flags = 0;
-
-    clean_printing = 0;
-
     print_col_mask = 0;
-
     run_mode = RUN_MODE_NONE;
+
+    payload_arg_id = -1;
 }
 
 void printUsage()
@@ -340,7 +329,7 @@ int parseArgs(int argc, char** argv)
 
     for ( i = start_i; i < argc; i++ )
     {
-        if ( argv[i][0] != '-' )
+        if ( argv[i][0] != LIN_PARAM_IDENTIFIER && argv[i][0] != WIN_PARAM_IDENTIFIER )
             break;
 
         if ( isArgOfType(argv[i], "-x") )
@@ -353,15 +342,15 @@ int parseArgs(int argc, char** argv)
         }
         else if ( isArgOfType(argv[i], "-p") )
         {
-            clean_printing = 1;
+            mode_flags |= MODE_FLAG_CLEAN_PRINTING;
         }
         else if ( isArgOfType(argv[i], "-d") )
         {
-            delete_f = 1;
+            mode_flags |= MODE_FLAG_DELETE;
         }
         else if ( isArgOfType(argv[i], "-b") )
         {
-            continuous_f = 0;
+            mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
         }
         else if ( isArgOfType(argv[i], "-lpx") )
         {
@@ -437,7 +426,7 @@ int parseArgs(int argc, char** argv)
         {
             if ( hasValue("-i", i, end_i))
             {
-                insert_f = 1;
+                mode_flags |= MODE_FLAG_INSERT;
                 payload_arg_id = i;
                 i++;
             }
@@ -446,7 +435,7 @@ int parseArgs(int argc, char** argv)
         {
             if ( hasValue("-o", i, end_i))
             {
-                overwrite_f = 1;
+                mode_flags |= MODE_FLAG_OVERWRITE;
                 payload_arg_id = i;
                 i++;
             }
@@ -455,7 +444,7 @@ int parseArgs(int argc, char** argv)
         {
             if ( hasValue("-f", i, end_i))
             {
-                find_f = 1;
+                mode_flags |= MODE_FLAG_FIND;
                 payload_arg_id = i;
                 i++;
             }
@@ -472,20 +461,22 @@ int parseArgs(int argc, char** argv)
         printUsage();
         return 1;
     }
-
-    if ( (find_f + overwrite_f + insert_f + delete_f) > 1 )
+    
+    
+    uint32_t f = mode_flags&(MODE_FLAG_FIND|MODE_FLAG_OVERWRITE|MODE_FLAG_INSERT|MODE_FLAG_DELETE);
+    if ( (f & (f-1)) != 0 )
     {
         printf("ERROR: overwrite, insert, delete and find have to be used exclusively!\n");
         return 2;
     }
 
-    if ( delete_f && !length_found )
+    if ( (mode_flags&MODE_FLAG_DELETE) && !length_found )
     {
         printf("ERROR: could not parse length of part to delete!\n");
         return 3;
     }
 
-    if ( run_mode == RUN_MODE_PID && (insert_f + delete_f) > 0 )
+    if ( run_mode == RUN_MODE_PID && (mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_DELETE)) > 0 )
     {
         printf("ERROR: Inserting or deleting is not supported in process mode!\n");
         return 4;
@@ -501,8 +492,19 @@ int parseArgs(int argc, char** argv)
 
 uint8_t isArgOfType(char* arg, char* type)
 {
-    uint8_t type_ln = (uint8_t)strnlen(type, 10);
-    return strnlen(arg, 10) == type_ln && strncmp(arg, type, type_ln) == 0;
+    size_t i;
+    size_t type_ln;
+    if ( arg[0] != LIN_PARAM_IDENTIFIER && arg[0] != WIN_PARAM_IDENTIFIER )
+        return 0;
+
+    type_ln = strlen(type);
+
+    for ( i = 1; i < type_ln; i++ )
+    {
+        if ( arg[i] != type[i] )
+            return 0;
+    }
+    return arg[i] == 0;
 }
 
 uint8_t isFormatArgOfType(char* arg, char* type)
@@ -539,7 +541,7 @@ uint8_t hasValue(char* type, int i, int end_i)
 
 int sanitizeDeleteParams()
 {
-    if ( !delete_f )
+    if ( !(mode_flags&MODE_FLAG_DELETE) )
         return 0;
     
     uint8_t info_line_break = 0;
@@ -573,17 +575,18 @@ int sanitizeDeleteParams()
 void sanitizePrintParams(uint32_t pid)
 {
     uint8_t col_size;
+    uint8_t info_line_break = 0;
 
     if ( print_col_mask == 0 )
         print_col_mask = (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK);
 
-    if ( insert_f || overwrite_f || delete_f )
-        continuous_f = 0;
+    if ( mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_DELETE) )
+        mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
     col_size = getColSize();
 
     // normalize length to block size for continuous printing
-    if ( continuous_f )
+    if ( mode_flags&MODE_FLAG_CONTINUOUS_PRINTING )
     {
         if ( length % col_size != 0 )
         {
@@ -592,7 +595,6 @@ void sanitizePrintParams(uint32_t pid)
         }
     }
 
-    uint8_t info_line_break = 0;
     // check start offset
     if ( run_mode == RUN_MODE_FILE )
         info_line_break = keepStartInFile();
@@ -601,10 +603,10 @@ void sanitizePrintParams(uint32_t pid)
 
     // normalize start offset to block size
     // called after insert and overwrite
-    if ( !find_f && !delete_f )
+    if ( !(mode_flags&(MODE_FLAG_FIND|MODE_FLAG_DELETE)) )
     {
         start = normalizeOffset(start, &skip_bytes);
-        if ( !continuous_f )
+        if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
             length += skip_bytes;
     }
 
@@ -645,7 +647,7 @@ uint8_t keepLengthInFile()
         //start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
 
         length = file_size - start;
-        continuous_f = 0;
+        mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
         return 0;
     }
     return 0;
@@ -719,7 +721,7 @@ HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _l
     run_mode = RUN_MODE_FILE;
     start = _start;
     length = _length;
-    continuous_f = false;
+    mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
 //	print_col_mask = print_col_mask | PRINT_HEX_MASK;
 
@@ -749,7 +751,7 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
     run_mode = RUN_MODE_PID;
     start = _start;
     length = _length;
-    continuous_f = false;
+    mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
     process_list_flags = flags;
 

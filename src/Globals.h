@@ -58,9 +58,14 @@ extern uint8_t print_col_mask;
 #define PRINT_HEX_MASK    (0x2)
 #define PRINT_OFFSET_MASK (0x4)
 
-extern uint8_t clean_printing;
 
-extern uint8_t find_f;
-extern uint8_t continuous_f;
+#define MODE_FLAG_INSERT                (0x01)
+#define MODE_FLAG_OVERWRITE             (0x02)
+#define MODE_FLAG_DELETE                (0x04)
+#define MODE_FLAG_FIND                  (0x08)
+#define MODE_FLAG_CONTINUOUS_PRINTING   (0x10)
+#define MODE_FLAG_CLEAN_PRINTING        (0x20)
+
+extern uint32_t mode_flags;
 
 #endif

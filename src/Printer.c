@@ -90,7 +90,7 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
 
     Printer_setSkipBytes(skip_bytes);
 
-    if ( find_f )
+    if ( mode_flags&MODE_FLAG_FIND )
     {
         Finder_initFailure(needle, needle_ln);
         found = findNeedleInFile(file_path, needle, needle_ln, start, file_size);
@@ -108,7 +108,7 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
 
     block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, file_size);
 
-    if ( continuous_f && block_start < file_size )
+    if ( (mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) && (block_start < file_size) )
         printBlockLoop(nr_of_parts, block, fi, block_size, block_start, file_size);
 
     Printer_cleanUp(block, fi);
@@ -130,7 +130,7 @@ void setPrintingStyle()
     else
         printHexValue = &printAnsiFormatedHexValue;
 #elif defined(_WIN32)
-    if ( clean_printing || !_isatty(_fileno(stdout)) )
+    if ( (mode_flags&MODE_FLAG_CLEAN_PRINTING) || !_isatty(_fileno(stdout)) )
         printHexValue = &printCleanHexValue;
     else
     {
@@ -163,7 +163,7 @@ void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t
 
         if ( input == ENTER )
             block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
-        else if ( find_f && input == NEXT )
+        else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
         {
             found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max);
             if ( found == FIND_FAILURE )

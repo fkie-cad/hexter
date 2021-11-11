@@ -791,7 +791,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
         return false;
     }
 
-    if ( find_f )
+    if ( (mode_flags&MODE_FLAG_FIND) )
         Finder_initFailure(p_needle, p_needle_ln);
 
     while ( queryNextRegion(fp, &entry) )
@@ -841,7 +841,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsig
         if ( print_s == 1 )
             printRegionInfo(&entry, file_name);
 
-        if ( find_f )
+        if ( (mode_flags&MODE_FLAG_FIND) )
         {
             found = findNeedleInProcessMemoryBlock(pid, entry.address, entry.size, base_off, p_needle, p_needle_ln);
             if ( found == FIND_FAILURE )
@@ -994,7 +994,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
         base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end);
 //	printf(" - base_off: 0x%lx\n", base_off);
 
-    if ( !continuous_f )
+    if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
     {
         fclose(fp);
         return 1;
@@ -1008,7 +1008,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
             base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end);
 //			printf(" -- base_off: 0x%lx\n", base_off);
         }
-        else if ( find_f && input == NEXT )
+        else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
         {
             found = findNeedleInProcessMemoryBlock(pid, base_addr, size, found + p_needle_ln, p_needle, p_needle_ln);
             if ( found == FIND_FAILURE )
