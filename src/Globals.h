@@ -33,6 +33,7 @@
 #define TRIPLE_COL_SIZE (0x10)
 #define DOUBLE_COL_SIZE (0x10)
 #define ASCII_COL_SIZE (0x40)
+#define UNICODE_COL_SIZE (0x80)
 #define HEX_COL_SIZE (0x10)
 
 #define MIN_PRINTABLE_ASCII_RANGE (0x20)
@@ -54,9 +55,10 @@ extern char file_path[PATH_MAX];
 extern size_t length;
 
 extern uint8_t print_col_mask;
-#define PRINT_ASCII_MASK  (0x1)
-#define PRINT_HEX_MASK    (0x2)
-#define PRINT_OFFSET_MASK (0x4)
+#define PRINT_ASCII_MASK    (0x1)
+#define PRINT_UNICODE_MASK  (0x2)
+#define PRINT_HEX_MASK      (0x4)
+#define PRINT_OFFSET_MASK   (0x8)
 
 
 #define MODE_FLAG_INSERT                (0x01)

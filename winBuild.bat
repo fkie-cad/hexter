@@ -25,22 +25,22 @@ GOTO :ParseParams
     if [%1]==[/h] goto help
     if [%1]==[/help] goto help
 
-    IF "%~1"=="/t" (
+    IF /i "%~1"=="/t" (
         SET target=%2
         SHIFT
         goto reParseParams
     )
-    IF "%~1"=="/b" (
+    IF /i "%~1"=="/b" (
         SET /a bitness=%~2
         SHIFT
         goto reParseParams
     )
-    IF "%~1"=="/m" (
+    IF /i "%~1"=="/m" (
         SET mode=%~2
         SHIFT
         goto reParseParams
     )
-    IF "%~1"=="/bt" (
+    IF /i "%~1"=="/bt" (
         SET buildTools=%~2
         SHIFT
         goto reParseParams
@@ -52,6 +52,8 @@ GOTO :ParseParams
     IF /i "%~1"=="/pdb" (
         SET pdb=1
         goto reParseParams
+    ) ELSE (
+        echo Unknown option : "%~1"
     )
     
     :reParseParams

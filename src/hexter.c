@@ -35,8 +35,8 @@
 #endif
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.5.29"
-#define BIN_LAST_CHANGED  "11.11.2021"
+#define BIN_VS "1.6.0"
+#define BIN_LAST_CHANGED  "20.12.2021"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -79,7 +79,7 @@ static uint8_t isArgOfType(char* arg, char* type);
 static uint8_t isFormatArgOfType(char* arg, char* type);
 static uint8_t hasValue(char* type, int i, int end_i);
 static int sanitizeDeleteParams();
-static void sanitizePrintParams(uint32_t pid);
+static int sanitizePrintParams(uint32_t pid);
 static uint32_t parsePayload(const char format, const char* value, unsigned char** payload);
 
 static int run(const char payload_format, const char* raw_payload);
@@ -205,7 +205,10 @@ int run(const char payload_format, const char* raw_payload)
     if ( file_size == 0 )
         return -1;
 
-    sanitizePrintParams(pid);
+    s = sanitizePrintParams(pid);
+    if ( s != 0 )
+        return -1;
+
     setPrintingStyle();
     if ( run_mode == RUN_MODE_FILE )
     {
@@ -279,6 +282,7 @@ void printHelp()
            " * -s:size_t Start offset. Default = 0.\n"
            " * -l:size_t Length of the part to display. Default = 0x100.\n"
            " * -a ASCII only print.\n"
+           " * -u UNICODE (utf-16) only print.\n"
            " * -x HEX only print.\n"
            " * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)\n"
            " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
@@ -329,8 +333,8 @@ int parseArgs(int argc, char** argv)
 
     for ( i = start_i; i < argc; i++ )
     {
-        if ( argv[i][0] != LIN_PARAM_IDENTIFIER && argv[i][0] != WIN_PARAM_IDENTIFIER )
-            break;
+        //if ( argv[i][0] != LIN_PARAM_IDENTIFIER && argv[i][0] != WIN_PARAM_IDENTIFIER )
+        //    break;
 
         if ( isArgOfType(argv[i], "-x") )
         {
@@ -339,6 +343,10 @@ int parseArgs(int argc, char** argv)
         else if ( isArgOfType(argv[i], "-a") )
         {
             print_col_mask = print_col_mask | PRINT_ASCII_MASK;
+        }
+        else if ( isArgOfType(argv[i], "-u") )
+        {
+            print_col_mask = print_col_mask | PRINT_UNICODE_MASK;
         }
         else if ( isArgOfType(argv[i], "-p") )
         {
@@ -459,7 +467,7 @@ int parseArgs(int argc, char** argv)
     {
 //		printf("ERROR: You have to specify either a -file or a -pid!\n");
         printUsage();
-        return 1;
+        return -1;
     }
     
     
@@ -467,19 +475,28 @@ int parseArgs(int argc, char** argv)
     if ( (f & (f-1)) != 0 )
     {
         printf("ERROR: overwrite, insert, delete and find have to be used exclusively!\n");
-        return 2;
+        return -2;
+    }
+
+    
+    f = print_col_mask;
+    if ( print_col_mask & PRINT_UNICODE_MASK && print_col_mask != PRINT_UNICODE_MASK )
+    if ( (f & (f-1)) != 0 )
+    {
+        printf("ERROR: Unicode print currently can't be combined with other print flags!\n");
+        return -5;
     }
 
     if ( (mode_flags&MODE_FLAG_DELETE) && !length_found )
     {
         printf("ERROR: could not parse length of part to delete!\n");
-        return 3;
+        return -3;
     }
 
     if ( run_mode == RUN_MODE_PID && (mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_DELETE)) > 0 )
     {
         printf("ERROR: Inserting or deleting is not supported in process mode!\n");
-        return 4;
+        return -4;
     }
 
     if ( run_mode == RUN_MODE_FILE )
@@ -572,7 +589,7 @@ int sanitizeDeleteParams()
     return 0;
 }
 
-void sanitizePrintParams(uint32_t pid)
+int sanitizePrintParams(uint32_t pid)
 {
     uint8_t col_size;
     uint8_t info_line_break = 0;
@@ -584,6 +601,11 @@ void sanitizePrintParams(uint32_t pid)
         mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
     col_size = getColSize();
+    if ( col_size == 0 )
+    {
+        printf("ERROR: col size error!\n");
+        return -1;
+    }
 
     // normalize length to block size for continuous printing
     if ( mode_flags&MODE_FLAG_CONTINUOUS_PRINTING )
@@ -625,6 +647,8 @@ void sanitizePrintParams(uint32_t pid)
 
     if ( info_line_break )
         printf("\n");
+
+    return 0;
 }
 
 uint8_t keepStartInFile()

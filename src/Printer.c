@@ -25,8 +25,16 @@
 
 #define HEX_GAP "   "
 #define ASCII_GAP " "
+#define UNICODE_GAP " "
 
-void printAsciiByte(const unsigned char c);
+static void printAsciiChar(
+    const unsigned char c
+);
+
+static void printUnicodeChar(
+    const wchar_t c
+);
+
 void (*printHexValue)(uint8_t);
 
 #if defined(_WIN32)
@@ -36,11 +44,14 @@ void (*printHexValue)(uint8_t);
 
 static int8_t skip_hex_bytes = 0;
 static int8_t skip_ascii_bytes = 0;
+static int8_t skip_unicode_bytes = 0;
 
 static uint32_t highlight_hex_bytes = 0;
 static int32_t highlight_hex_wait = 0;
 static uint32_t highlight_ascii_bytes = 0;
+static uint32_t highlight_unicode_bytes = 0;
 static int32_t highlight_ascii_wait = 0;
+static int32_t highlight_unicode_wait = 0;
 
 static unsigned char* needle = NULL;
 static uint32_t needle_ln;
@@ -65,11 +76,13 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
     uint16_t block_size = BLOCKSIZE_LARGE;
     size_t nr_of_parts = length / block_size;
     if ( length % block_size != 0 ) nr_of_parts++;
-
+    
+#ifdef DEBUG_PRINT
     debug_info("start: 0x%zx\n", start);
     debug_info("block_size: 0x%x\n", block_size);
     debug_info("nr_of_parts: 0x%zx\n", nr_of_parts);
     debug_info("\n");
+#endif
 
     errno = 0;
     fi = fopen(file_path, "rb");
@@ -117,7 +130,7 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
 void Printer_setSkipBytes(uint8_t skip_bytes)
 {
     if ( skip_bytes > 0 )
-        skip_hex_bytes = skip_ascii_bytes = skip_bytes;
+        skip_hex_bytes = skip_ascii_bytes = skip_unicode_bytes = skip_bytes;
 }
 
 void setPrintingStyle()
@@ -200,18 +213,22 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
 
     for ( p = 0; p < nr_of_parts; p++ )
     {
-        debug_info("%zu / %zu\n", (p+1), nr_of_parts);
         read_size = block_size;
+#ifdef DEBUG_PRINT
+        debug_info("%zu / %zu\n", (p+1), nr_of_parts);
         debug_info(" - read_size: 0x%zx\n", read_size);
         debug_info(" - block_start: 0x%zx\n", read_start);
         debug_info(" - end: 0x%zx\n", end);
+#endif
         if ( read_start >= end )
             break;
         if ( read_start + read_size > end )
             read_size = end - read_start;
         if ( read_size == 0 )
             break;
+#ifdef DEBUG_PRINT
         debug_info(" - read_size: 0x%zx\n", read_size);
+#endif
 
         memset(block, 0, block_size);
         size = readFile(fi, read_start, read_size, block, &errsv);
@@ -241,9 +258,11 @@ void printLine(const unsigned char* block, size_t block_start, size_t size, uint
     else if ( print_col_mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK) )
         printDoubleCols(block, size);
     else if ( print_col_mask == PRINT_ASCII_MASK )
-        printAsciiCols(block, size);
+        printAsciiCols(block, size, ASCII_COL_SIZE);
     else if ( print_col_mask == PRINT_HEX_MASK )
         printHexCols(block, size);
+    else if ( print_col_mask == PRINT_UNICODE_MASK )
+        printUnicodeCols(block, size, UNICODE_COL_SIZE);
 }
 
 void printDoubleCols(const unsigned char* block, size_t size)
@@ -305,18 +324,18 @@ void fillGap(uint8_t k)
     }
 }
 
-void printAsciiCols(const unsigned char* block, size_t size)
+void printAsciiCols(const unsigned char* block, size_t size, uint16_t col_size)
 {
     size_t i;
 
-    for ( i = 0; i < size; i += ASCII_COL_SIZE )
+    for ( i = 0; i < size; i += col_size )
     {
-        printAsciiCol(block, i, size, ASCII_COL_SIZE);
+        printAsciiCol(block, i, size, col_size);
         printf("\n");
     }
 }
 
-void printAsciiCol(const unsigned char* block, size_t i, size_t size, uint8_t col_size)
+void printAsciiCol(const unsigned char* block, size_t i, size_t size, uint16_t col_size)
 {
     size_t k = 0;
     size_t temp_i;
@@ -334,9 +353,46 @@ void printAsciiCol(const unsigned char* block, size_t i, size_t size, uint8_t co
             continue;
         }
 
-        printAsciiByte(block[temp_i]);
+        printAsciiChar(block[temp_i]);
     }
 }
+
+
+
+void printUnicodeCols(const unsigned char* block, size_t size, uint16_t col_size)
+{
+    size_t i;
+
+    for ( i = 0; i < size; i += col_size )
+    {
+        printUnicodeCol(block, i, size, col_size);
+        printf("\n");
+    }
+}
+
+void printUnicodeCol(const unsigned char* block, size_t i, size_t size, uint16_t col_size)
+{
+    size_t k = 0;
+    size_t temp_i;
+
+    for ( k = 0; k < col_size; k+=2 )
+    {
+        temp_i = i + k;
+        if ( temp_i+1 >= size )
+            break;
+
+        if ( skip_unicode_bytes > 0 )
+        {
+            printf(UNICODE_GAP);
+            skip_unicode_bytes-=2;
+            continue;
+        }
+
+        printUnicodeChar(*(wchar_t*)&block[temp_i]);
+    }
+}
+
+
 
 void printHexCols(const unsigned char* block, size_t size)
 {
@@ -423,7 +479,7 @@ void printWinFormatedHexValue(const unsigned char b)
 }
 #endif
 
-void printAsciiByte(const unsigned char c)
+void printAsciiChar(const unsigned char c)
 {
     if ( highlight_ascii_bytes > 0  && highlight_ascii_wait <= 0 )
     {
@@ -450,10 +506,36 @@ void printAsciiByte(const unsigned char c)
     }
 }
 
+void printUnicodeChar(const wchar_t c)
+{
+    if ( highlight_unicode_bytes > 0  && highlight_unicode_wait <= 0 )
+    {
+#ifdef _WIN32
+        SetConsoleTextAttribute(hStdout, BACKGROUND_INTENSITY);
+#else
+        printf(HIGHLIGHT_HEX_STYLE);
+#endif
+    }
+
+    printf("%C", c);
+
+    if ( highlight_unicode_bytes > 0 && highlight_unicode_wait <= 0)
+    {
+        highlight_unicode_bytes -= 2;
+#ifdef _WIN32
+        SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+#else
+        resetAnsiFormat();
+#endif
+    }
+    highlight_unicode_wait -= 2;
+}
+
 void Printer_setHighlightBytes(uint32_t v)
 {
     highlight_hex_bytes = v;
     highlight_ascii_bytes = v;
+    highlight_unicode_bytes = v;
 }
 
 void Printer_setHighlightWait(uint32_t v)

@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version ##
-1.5.29  
-Last changed: 11.11.2021
+1.6.0  
+Last changed: 20.12.2021
 
 
 ## REQUIREMENTS ##
@@ -70,6 +70,7 @@ Optional Parameters:
  * -s uint64_t Start offset in hex or dec. Default = 0.
  * -l uint64_t Length of the part to display in hex or dec. Default = 0x100.
  * -a ASCII only print.
+ * -u UNICODE (utf-16) only print.
  * -x HEX only print.
  * -ix Insert hex byte sequence (destructive!). Where x is a format option. (File mode only.)
  * -ox Overwrite hex byte sequence (destructive!). Where x is a format option.
