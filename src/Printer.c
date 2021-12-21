@@ -27,12 +27,37 @@
 #define ASCII_GAP " "
 #define UNICODE_GAP " "
 
+
+static void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block_size, size_t block_start, size_t block_max);
+
+static void printDoubleCols(const uint8_t* block, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t));
+
+static void printTripleCols(const uint8_t* block, size_t size, size_t offset, uint8_t width, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t));
+
+static void fillGap(uint8_t k);
+
+static void printAsciiCols(const uint8_t* block, size_t size, uint16_t col_size);
+static void printAsciiCol(const uint8_t* block, size_t i, size_t size, uint16_t col_size);
+
+static void printUnicodeCols(const uint8_t* block, size_t size, uint16_t col_size);
+static void printUnicodeCol(const uint8_t* block, size_t i, size_t size, uint16_t col_size);
+
+static void printHexCols(const uint8_t* block, size_t size);
+static uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_size);
+
+static void printOffsetCol(size_t offset, uint8_t width);
+static void printCleanHexValue(uint8_t b);
+static void printAnsiFormatedHexValue(const unsigned char b);
+#ifdef _WIN32
+static void printWinFormatedHexValue(const unsigned char b);
+#endif
+
 static void printAsciiChar(
     const unsigned char c
 );
 
 static void printUnicodeChar(
-    const wchar_t c
+    const uint16_t c
 );
 
 void (*printHexValue)(uint8_t);
@@ -138,7 +163,7 @@ void setPrintingStyle()
 #ifdef CLEAN_PRINTING
     printHexValue = &printCleanHexValue;
 #elif defined(__linux__) || defined(__linux) || defined(linux)
-    if ( clean_printing || !isatty(fileno(stdout)) )
+    if ( (mode_flags&MODE_FLAG_CLEAN_PRINTING) || !isatty(fileno(stdout)) )
         printHexValue = &printCleanHexValue;
     else
         printHexValue = &printAnsiFormatedHexValue;
@@ -392,7 +417,7 @@ void printUnicodeCol(const uint8_t* block, size_t i, size_t size, uint16_t col_s
             continue;
         }
 
-        printUnicodeChar(*(wchar_t*)&block[temp_i]);
+        printUnicodeChar(*(uint16_t*)&block[temp_i]);
     }
 }
 
@@ -510,7 +535,7 @@ void printAsciiChar(const unsigned char c)
     }
 }
 
-void printUnicodeChar(const wchar_t c)
+void printUnicodeChar(const uint16_t c)
 {
     if ( highlight_unicode_bytes > 0  && highlight_unicode_wait <= 0 )
     {
@@ -521,7 +546,10 @@ void printUnicodeChar(const wchar_t c)
 #endif
     }
 
-    printf("%C", c);
+    if ( c == 0 || c == '\n' || c == '\r' || c == '\t')
+        printf("%lc", NO_PRINT_UC_SUBSTITUTION);
+    else
+        printf("%lc", c);
 
     if ( highlight_unicode_bytes > 0 && highlight_unicode_wait <= 0)
     {

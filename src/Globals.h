@@ -41,6 +41,7 @@
 
 #define COL_SEPARATOR ('|')
 #define NO_PRINT_ASCII_SUBSTITUTION ('.')
+#define NO_PRINT_UC_SUBSTITUTION ('.')
 
 #define NEXT ('n')
 #define QUIT ('q')
