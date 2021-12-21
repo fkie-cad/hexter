@@ -47,13 +47,13 @@ static uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t 
 
 static void printOffsetCol(size_t offset, uint8_t width);
 static void printCleanHexValue(uint8_t b);
-static void printAnsiFormatedHexValue(const unsigned char b);
+static void printAnsiFormatedHexValue(const uint8_t b);
 #ifdef _WIN32
-static void printWinFormatedHexValue(const unsigned char b);
+static void printWinFormatedHexValue(const uint8_t b);
 #endif
 
 static void printAsciiChar(
-    const unsigned char c
+    const uint8_t c
 );
 
 static void printUnicodeChar(
@@ -464,7 +464,7 @@ void printCleanHexValue(uint8_t b)
     printf("%02X ", b);
 }
 
-void printAnsiFormatedHexValue(const unsigned char b)
+void printAnsiFormatedHexValue(const uint8_t b)
 {
     if ( highlight_hex_bytes > 0 && highlight_hex_wait-- <= 0 )
     {
@@ -486,7 +486,7 @@ void printAnsiFormatedHexValue(const unsigned char b)
 }
 
 #ifdef _WIN32
-void printWinFormatedHexValue(const unsigned char b)
+void printWinFormatedHexValue(const uint8_t b)
 {
     if ( highlight_hex_bytes > 0 && highlight_hex_wait-- <= 0 )
     {
@@ -508,7 +508,7 @@ void printWinFormatedHexValue(const unsigned char b)
 }
 #endif
 
-void printAsciiChar(const unsigned char c)
+void printAsciiChar(const uint8_t c)
 {
     if ( highlight_ascii_bytes > 0  && highlight_ascii_wait <= 0 )
     {

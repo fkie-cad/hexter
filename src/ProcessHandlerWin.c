@@ -18,15 +18,15 @@
 
 typedef int (*MemInfoCallback)(HANDLE, MEMORY_BASIC_INFORMATION*);
 
-size_t getModuleSize(unsigned char* p, MEMORY_BASIC_INFORMATION info, HANDLE process);
+size_t getModuleSize(uint8_t* p, MEMORY_BASIC_INFORMATION info, HANDLE process);
 size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, size_t n_size, HANDLE process,
-                        unsigned char* block);
-BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char* file_name, int print_s, PVOID last_base);
-BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
-BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
-BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info);
-size_t printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_size, unsigned char* buffer);
-size_t findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, const unsigned char* needle, uint32_t needle_ln);
+                        uint8_t* block);
+BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, uint8_t** p, char* file_name, int print_s, PVOID last_base);
+BOOL queryNextRegion(HANDLE process, uint8_t** p, MEMORY_BASIC_INFORMATION* info);
+BOOL queryNextAccessibleRegion(HANDLE process, uint8_t** p, MEMORY_BASIC_INFORMATION* info);
+BOOL queryNextAccessibleBaseRegion(HANDLE process, uint8_t** p, MEMORY_BASIC_INFORMATION* info);
+size_t printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_size, uint8_t* buffer);
+size_t findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, const uint8_t* needle, uint32_t needle_ln);
 BOOL openSnapAndME(HANDLE* snap, MODULEENTRY32* me32, uint32_t pid, DWORD dwFlags);
 BOOL openSnap(HANDLE* snap, uint32_t pid, DWORD dwFlags);
 BOOL openME(HANDLE* snap, MODULEENTRY32* me32);
@@ -46,16 +46,16 @@ int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfo
 const char* getMemoryStateString(DWORD state);
 const char* getMemoryTypeString(DWORD type);
 int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found);
-BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char* info_p);
+BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, uint8_t* info_p);
 BOOL getRegionName(HANDLE process, PVOID base, char* file_name);
 //BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
 BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect);
-//BOOL keepLengthInModule(unsigned char* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length);
-void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name, unsigned char* p, HANDLE process);
+//BOOL keepLengthInModule(uint8_t* p, MEMORY_BASIC_INFORMATION* info, HANDLE process, size_t start, size_t* length);
+void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name, uint8_t* p, HANDLE process);
 void printRunningProcessInfo(PROCESSENTRY32* pe32);
 
-static unsigned char* p_needle = NULL;
+static uint8_t* p_needle = NULL;
 static uint32_t p_needle_ln;
 
 static HANDLE hStdout;
@@ -90,7 +90,7 @@ size_t getSizeOfProcess(uint32_t pid)
  */
 uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start)
 {
-    unsigned char *p = NULL;
+    uint8_t *p = NULL;
     MEMORY_BASIC_INFORMATION info;
     HANDLE process = NULL;
     PVOID base_addr;
@@ -150,7 +150,7 @@ uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start)
  * @param process 
  * @return 
  */
-size_t getModuleSize(unsigned char* p, MEMORY_BASIC_INFORMATION info, HANDLE process)
+size_t getModuleSize(uint8_t* p, MEMORY_BASIC_INFORMATION info, HANDLE process)
 {
     size_t module_size = info.RegionSize;
     size_t module_base = (uintptr_t) info.AllocationBase;
@@ -240,11 +240,11 @@ BOOL listProcessThreads(size_t pid)
     return TRUE;
 }
 
-int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln, size_t start)
+int writeProcessMemory(uint32_t pid, uint8_t* payload, uint32_t payload_ln, size_t start)
 {
     HANDLE process;
     MEMORY_BASIC_INFORMATION info;
-    unsigned char* info_p = NULL;
+    uint8_t* info_p = NULL;
 
     PVOID base_addr = (PVOID) start;
     BOOL s;
@@ -309,13 +309,13 @@ int writeProcessMemory(uint32_t pid, unsigned char* payload, uint32_t payload_ln
  * @param needle_ln
  * @return
  */
-BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln)
+BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, uint8_t* needle, uint32_t needle_ln)
 {
     HANDLE process;
     MEMORY_BASIC_INFORMATION info;
     BOOL s;
     int print_s = 0;
-    unsigned char *info_p = NULL;
+    uint8_t *info_p = NULL;
     PVOID last_base = 0;
     DWORD old_protect = 0;
 
@@ -396,7 +396,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, unsigne
     return TRUE;
 }
 
-void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name, unsigned char* p, HANDLE process)
+void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name, uint8_t* p, HANDLE process)
 {
     size_t module_size = getModuleSize(p, *info, process);
     printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) ((uintptr_t) info->AllocationBase + module_size));
@@ -421,7 +421,7 @@ BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD n
     return TRUE;
 }
 
-BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char** p, char* file_name,
+BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, uint8_t** p, char* file_name,
                             int print_s, PVOID last_base)
 {
     BOOL s;
@@ -443,7 +443,7 @@ BOOL getNextPrintableRegion(HANDLE process, MEMORY_BASIC_INFORMATION* info, unsi
     return TRUE;
 }
 
-BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info)
+BOOL queryNextAccessibleRegion(HANDLE process, uint8_t** p, MEMORY_BASIC_INFORMATION* info)
 {
     BOOL s;
     s = queryNextRegion(process, p, info);
@@ -458,7 +458,7 @@ BOOL queryNextAccessibleRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_I
     return s;
 }
 
-BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info)
+BOOL queryNextAccessibleBaseRegion(HANDLE process, uint8_t** p, MEMORY_BASIC_INFORMATION* info)
 {
     BOOL s;
     PVOID old_base;
@@ -476,7 +476,7 @@ BOOL queryNextAccessibleBaseRegion(HANDLE process, unsigned char** p, MEMORY_BAS
     return s;
 }
 
-BOOL queryNextRegion(HANDLE process, unsigned char** p, MEMORY_BASIC_INFORMATION* info)
+BOOL queryNextRegion(HANDLE process, uint8_t** p, MEMORY_BASIC_INFORMATION* info)
 {
     SIZE_T query_size = 0;
 
@@ -520,7 +520,7 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found)
 {
     size_t n_size = 0;
-    unsigned char buffer[BLOCKSIZE_LARGE] = {0};
+    uint8_t buffer[BLOCKSIZE_LARGE] = {0};
     char input;
     uint8_t skip_bytes;
     int s = 0;
@@ -582,11 +582,11 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
  * @param base_addr BYTE*
  * @param base_off size_t
  * @param region_size DWORD
- * @param buffer unsigned char*
+ * @param buffer uint8_t*
  * @return
  */
 size_t
-printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_size, unsigned char* buffer)
+printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_size, uint8_t* buffer)
 {
 //	size_t n_size = 0;
     size_t n_read = 0;
@@ -631,11 +631,11 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
  * @param	region_size DWORD size of module region
  * @param	n_size size_t number of bytes to read
  * @param	process HANDLE target process
- * @param	block unsigned char* pre-allocated block to store read bytes in
+ * @param	block uint8_t* pre-allocated block to store read bytes in
  * @return size_t number of read bytes
  */
 size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, size_t n_size, HANDLE process,
-                        unsigned char* block)
+                        uint8_t* block)
 {
     SIZE_T bytes_read = 0;
     BOOL s;
@@ -668,7 +668,7 @@ size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, siz
  * @param info MEMORY_BASIC_INFORMATION*
  * @return BOOL
  */
-BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, unsigned char* info_p)
+BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, uint8_t* info_p)
 {
     for ( info_p = NULL;
           VirtualQueryEx(process, info_p, info, sizeof(*info)) == sizeof(*info);
@@ -724,14 +724,14 @@ BOOL addressIsInRegionRange(size_t address, size_t base, DWORD size)
  * @return size_t absolute found address
  */
 size_t
-findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, const unsigned char* needle, uint32_t needle_ln)
+findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, const uint8_t* needle, uint32_t needle_ln)
 {
     size_t found = FIND_FAILURE;
     size_t block_i;
     size_t j = 0;
     size_t base_off = offset;
     size_t n_size = BLOCKSIZE_LARGE;
-    unsigned char find_buf[BLOCKSIZE_LARGE] = {0};
+    uint8_t find_buf[BLOCKSIZE_LARGE] = {0};
     
 #ifdef DEBUG_PRINT
     debug_info("Find: ");
@@ -848,7 +848,7 @@ void ProcessHandler_cleanUp(HANDLE snap, HANDLE process)
 
 int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb)
 {
-    unsigned char *p = NULL;
+    uint8_t *p = NULL;
     int s = 0;
 
     for ( p = NULL;

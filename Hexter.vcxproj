@@ -26,7 +26,9 @@
     <Platform Condition="'$(Platform)' == ''">x64</Platform>
     <ReadOnlyProject>true</ReadOnlyProject>
   </PropertyGroup>
+  
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  
   <PropertyGroup Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
     <TargetPlatform>Desktop</TargetPlatform>
@@ -133,12 +135,11 @@
     <ClCompile Include="src\utils\common_fileio.c;src\utils\Converter.c;src\utils\Helper.c;src\utils\Strings.c" />
     <ClCompile Include="src\Finder.c;src\Printer.c;src\Writer.c;src\ProcessHandlerWin.c" />
   </ItemGroup>
-  <ItemGroup>
-    <None Exclude="@(None)" Include="*.ico;*.cur;*.bmp;*.dlg;*.rct;*.gif;*.jpg;*.jpeg;*.wav;*.jpe;*.tiff;*.tif;*.png;*.rc2" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Exclude="@(ClInclude)" Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd" />
-  </ItemGroup>
+  
+  <!--<ItemGroup>
+    <ResourceCompile Include="res\hexter.rc" />
+  </ItemGroup>-->
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   
   <Target Name="DisplayMessages" AfterTargets="Build">

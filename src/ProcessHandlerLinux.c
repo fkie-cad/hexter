@@ -125,7 +125,7 @@ static Bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t
 static Bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base);
 static Bool queryNextRegion(FILE* fp, ProcMapsEntry* entry);
 static int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s);
-static uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const unsigned char* needle, uint32_t needle_ln);
+static uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const uint8_t* needle, uint32_t needle_ln);
 
 static int filter(const struct dirent *dir);
 static void processdir(const struct dirent *dir);
@@ -134,7 +134,7 @@ static const uint8_t map_entry_col_width[6] = { 16, 5, 8, 5, 8, 8 };
 #define LINE_BUFFER_SPACE 513
 static const uint16_t line_size = 512;
 
-static unsigned char* p_needle = NULL;
+static uint8_t* p_needle = NULL;
 static uint32_t p_needle_ln;
 static int errsv = 0;
 
@@ -737,7 +737,7 @@ int printProcessHeap(ProcMapsEntry* entry, uint32_t last_module_inode, size_t li
 /**
  * Writing is only possible as root.
  */
-int writeProcessMemory(uint32_t pid, unsigned char *payload, uint32_t payload_ln, uint64_t start)
+int writeProcessMemory(uint32_t pid, uint8_t *payload, uint32_t payload_ln, uint64_t start)
 {
     char file[64];
     sprintf(file, "/proc/%u/%s", pid, "mem");
@@ -758,7 +758,7 @@ int writeProcessMemory(uint32_t pid, unsigned char *payload, uint32_t payload_ln
  * @param needle_ln
  * @return
  */
-Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, unsigned char* needle, uint32_t needle_ln)
+Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, uint8_t* needle, uint32_t needle_ln)
 {
     FILE* fp;
     ProcMapsEntry entry;
@@ -925,7 +925,7 @@ Bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base)
  * @return uint64_t absolute found address
  */
 uint64_t
-findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const unsigned char* needle, uint32_t needle_ln)
+findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const uint8_t* needle, uint32_t needle_ln)
 {
     FILE* fp;
     uint64_t found = FIND_FAILURE;
@@ -955,7 +955,7 @@ findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_s
 int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s)
 {
     FILE* fp;
-    unsigned char block[BLOCKSIZE_LARGE] = {0};
+    uint8_t block[BLOCKSIZE_LARGE] = {0};
     char input;
     uint8_t skip_bytes;
     int s = 0;
