@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version ##
-1.6.0  
-Last changed: 20.12.2021
+1.7.0  
+Last changed: 21.12.2021
 
 
 ## REQUIREMENTS ##
@@ -69,32 +69,35 @@ Optional Parameters:
  * -pid uint32_t A process id.
  * -s uint64_t Start offset in hex or dec. Default = 0.
  * -l uint64_t Length of the part to display in hex or dec. Default = 0x100.
- * -a ASCII only print.
- * -u UNICODE (utf-16) only print.
- * -x HEX only print.
- * -ix Insert hex byte sequence (destructive!). Where x is a format option. (File mode only.)
- * -ox Overwrite hex byte sequence (destructive!). Where x is a format option.
- * -fx Find hex byte sequence. Where x is a format option.
- * Format options: 
-   * h: plain bytes, 
-   * a: ascii/utf-8 text, 
-   * u: unicode (windows utf-16) text, 
-   * b: byte, 
-   * f: fill byte (will be inserted -l times), 
-   * w: word, 
-   * d: double word, 
-   * q: quad word.  
-   Expect for the string types, all values have to be passed as hex values, omitting `0x`.  
- * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
- * -pid only.
+ * -b Force breaking, not continuous mode and print just one block.
+ * Printing format:
+   * -pa ASCII only print.
+   * -pu UNICODE (utf-16) only print.
+   * -px HEX only print.
+   * -po Print address (only valid in combination with the other options).
+   * -p Plain, not styled text output. 
+ * File manipulation/examination.
+   * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
+   * -ix Insert hex byte sequence (destructive!). Where x is a format option. (File mode only.)
+   * -ox Overwrite hex byte sequence (destructive!). Where x is a format option.
+   * -fx Find hex byte sequence. Where x is a format option.
+   * Format options: 
+     * h: plain bytes, 
+     * a: ascii/utf-8 text, 
+     * u: unicode (windows utf-16) text, 
+     * b: byte, 
+     * f: fill byte (will be inserted -l times), 
+     * w: word, 
+     * d: double word, 
+     * q: quad word.  
+     Expect for the string types, all values have to be passed as hex values, omitting `0x`.  
+ * -pid only:
    * -lpx List entire process memory layout.
    * -lpm List all process modules.
    * -lpt List all process threads.
    * -lph List all process heaps.
    * -lphb List all process heaps and its blocks.
    * -lrp List all running processes. Pass any pid or 0 to get it running.
- * -b Force breaking, not continuous mode and print just one block.
- * -p Plain, not styled text output. 
  * -h Print this.
 
 Either use -file or -pid, not both. 

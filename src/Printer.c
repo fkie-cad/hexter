@@ -53,7 +53,7 @@ static uint32_t highlight_unicode_bytes = 0;
 static int32_t highlight_ascii_wait = 0;
 static int32_t highlight_unicode_wait = 0;
 
-static unsigned char* needle = NULL;
+static uint8_t* needle = NULL;
 static uint32_t needle_ln;
 static size_t found = 0;
 
@@ -64,14 +64,14 @@ static size_t found = 0;
  * If block_size % col_size != 0 some more adjustments have to be taken to the col printings.
  * I.e. the index has to be passed and returned and the new line has to check for block and size.
  */
-void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _needle_ln)
+void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_ln)
 {
     needle = _needle;
     needle_ln = _needle_ln;
     
     int errsv;
     FILE* fi;
-    unsigned char* block = NULL;
+    uint8_t* block = NULL;
     size_t block_start = start;
     uint16_t block_size = BLOCKSIZE_LARGE;
     size_t nr_of_parts = length / block_size;
@@ -93,7 +93,7 @@ void print(size_t start, uint8_t skip_bytes, unsigned char* _needle, uint32_t _n
         return;
     }
 
-    block = (unsigned char*) malloc(block_size);
+    block = (uint8_t*) malloc(block_size);
     if ( !block )
     {
         printf("Malloc block failed.\n");
@@ -158,14 +158,14 @@ void setPrintingStyle()
 #endif
 }
 
-void Printer_cleanUp(unsigned char* block, FILE* fi)
+void Printer_cleanUp(uint8_t* block, FILE* fi)
 {
     free(block);
     fclose(fi);
     Finder_cleanUp();
 }
 
-void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, size_t block_start, size_t block_max)
+void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block_size, size_t block_start, size_t block_max)
 {
     char input;
     uint8_t skip_bytes = 0;
@@ -198,7 +198,7 @@ void printBlockLoop(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t
     }
 }
 
-size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t block_size, size_t read_start, size_t read_max)
+size_t printBlock(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block_size, size_t read_start, size_t read_max)
 {
     size_t p;
     size_t read_size = 0;
@@ -251,12 +251,16 @@ size_t printBlock(size_t nr_of_parts, unsigned char* block, FILE* fi, uint16_t b
     return read_start;
 }
 
-void printLine(const unsigned char* block, size_t block_start, size_t size, uint8_t offset_width)
+void printLine(const uint8_t* block, size_t block_start, size_t size, uint8_t offset_width)
 {
     if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK) )
-        printTripleCols(block, size, block_start, offset_width);
+        printTripleCols(block, size, block_start, offset_width, printAsciiCol);
+    if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_UNICODE_MASK | PRINT_HEX_MASK) )
+        printTripleCols(block, size, block_start, offset_width, printUnicodeCol);
     else if ( print_col_mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK) )
-        printDoubleCols(block, size);
+        printDoubleCols(block, size, printAsciiCol);
+    else if ( print_col_mask == (PRINT_UNICODE_MASK | PRINT_HEX_MASK) )
+        printDoubleCols(block, size, printUnicodeCol);
     else if ( print_col_mask == PRINT_ASCII_MASK )
         printAsciiCols(block, size, ASCII_COL_SIZE);
     else if ( print_col_mask == PRINT_HEX_MASK )
@@ -265,7 +269,7 @@ void printLine(const unsigned char* block, size_t block_start, size_t size, uint
         printUnicodeCols(block, size, UNICODE_COL_SIZE);
 }
 
-void printDoubleCols(const unsigned char* block, size_t size)
+void printDoubleCols(const uint8_t* block, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t))
 {
     size_t i;
     uint8_t k = 0;
@@ -278,13 +282,13 @@ void printDoubleCols(const unsigned char* block, size_t size)
 
         printf("%c ", COL_SEPARATOR);
 
-        printAsciiCol(block, i, size, DOUBLE_COL_SIZE);
+        printCol(block, i, size, DOUBLE_COL_SIZE);
 
         printf("\n");
     }
 }
 
-void printTripleCols(const unsigned char* block, size_t size, size_t offset, uint8_t width)
+void printTripleCols(const uint8_t* block, size_t size, size_t offset, uint8_t width, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t))
 {
     size_t i;
     uint8_t k = 0;
@@ -298,8 +302,8 @@ void printTripleCols(const unsigned char* block, size_t size, size_t offset, uin
         fillGap(k);
 
         printf("%c ", COL_SEPARATOR);
-
-        printAsciiCol(block, i, size, TRIPLE_COL_SIZE);
+        
+        printCol(block, i, size, TRIPLE_COL_SIZE);
 
         printf("\n");
 
@@ -324,7 +328,7 @@ void fillGap(uint8_t k)
     }
 }
 
-void printAsciiCols(const unsigned char* block, size_t size, uint16_t col_size)
+void printAsciiCols(const uint8_t* block, size_t size, uint16_t col_size)
 {
     size_t i;
 
@@ -335,7 +339,7 @@ void printAsciiCols(const unsigned char* block, size_t size, uint16_t col_size)
     }
 }
 
-void printAsciiCol(const unsigned char* block, size_t i, size_t size, uint16_t col_size)
+void printAsciiCol(const uint8_t* block, size_t i, size_t size, uint16_t col_size)
 {
     size_t k = 0;
     size_t temp_i;
@@ -359,7 +363,7 @@ void printAsciiCol(const unsigned char* block, size_t i, size_t size, uint16_t c
 
 
 
-void printUnicodeCols(const unsigned char* block, size_t size, uint16_t col_size)
+void printUnicodeCols(const uint8_t* block, size_t size, uint16_t col_size)
 {
     size_t i;
 
@@ -370,7 +374,7 @@ void printUnicodeCols(const unsigned char* block, size_t size, uint16_t col_size
     }
 }
 
-void printUnicodeCol(const unsigned char* block, size_t i, size_t size, uint16_t col_size)
+void printUnicodeCol(const uint8_t* block, size_t i, size_t size, uint16_t col_size)
 {
     size_t k = 0;
     size_t temp_i;
@@ -394,7 +398,7 @@ void printUnicodeCol(const unsigned char* block, size_t i, size_t size, uint16_t
 
 
 
-void printHexCols(const unsigned char* block, size_t size)
+void printHexCols(const uint8_t* block, size_t size)
 {
     size_t i;
 
@@ -406,7 +410,7 @@ void printHexCols(const unsigned char* block, size_t size)
     }
 }
 
-uint8_t printHexCol(const unsigned char* block, size_t i, size_t size, uint8_t col_size)
+uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_size)
 {
     uint8_t k = 0;
     size_t temp_i;

@@ -285,7 +285,11 @@ uint8_t getColSize()
     
     if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK))
         col_size = TRIPLE_COL_SIZE;
+    else if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_UNICODE_MASK | PRINT_HEX_MASK))
+        col_size = TRIPLE_COL_SIZE;
     else if ( print_col_mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK))
+        col_size = DOUBLE_COL_SIZE;
+    else if ( print_col_mask == (PRINT_UNICODE_MASK | PRINT_HEX_MASK))
         col_size = DOUBLE_COL_SIZE;
     else if ( print_col_mask == PRINT_ASCII_MASK )
         col_size = ASCII_COL_SIZE;

@@ -35,8 +35,8 @@
 #endif
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.6.0"
-#define BIN_LAST_CHANGED  "20.12.2021"
+#define BIN_VS "1.7.0"
+#define BIN_LAST_CHANGED  "21.12.2021"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -80,10 +80,10 @@ static uint8_t isFormatArgOfType(char* arg, char* type);
 static uint8_t hasValue(char* type, int i, int end_i);
 static int sanitizeDeleteParams();
 static int sanitizePrintParams(uint32_t pid);
-static uint32_t parsePayload(const char format, const char* value, unsigned char** payload);
+static uint32_t parsePayload(const char format, const char* value, uint8_t** payload);
 
 static int run(const char payload_format, const char* raw_payload);
-void cleanUp(unsigned char* payload);
+void cleanUp(uint8_t* payload);
 
 static uint8_t keepStartInFile();
 static uint8_t keepLengthInFile();
@@ -127,7 +127,7 @@ int run(const char payload_format, const char* raw_payload)
 {
     uint32_t pid = 0;
     int s;
-    unsigned char* payload = NULL;
+    uint8_t* payload = NULL;
     uint32_t payload_ln = 0;
     char* file_name = NULL;
 
@@ -242,7 +242,7 @@ int run(const char payload_format, const char* raw_payload)
     return 0;
 }
 
-void cleanUp(unsigned char* payload)
+void cleanUp(uint8_t* payload)
 {
     if ( payload != NULL )
         free(payload);
@@ -281,24 +281,29 @@ void printHelp()
            " * -pid:size_t A process id (in hex or dec) to show the hex source of. Pass 0 for your own process.\n"
            " * -s:size_t Start offset. Default = 0.\n"
            " * -l:size_t Length of the part to display. Default = 0x100.\n"
-           " * -a ASCII only print.\n"
-           " * -u UNICODE (utf-16) only print.\n"
-           " * -x HEX only print.\n"
-           " * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)\n"
-           " * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
-           " * -fx Find hex byte sequence. Where x is an format option.\n"
-           " * Format options:\n"
-           "   * %c: plain bytes\n"
-           "   * %c: ascii/utf-8 text\n"
-           "   * %c: unicode (windows utf16) text.\n"
-           "   * %c: byte\n"
-           "   * %c: fill byte (will be inserted -l times)\n"
-           "   * %c: word\n"
-           "   * %c: double word\n"
-           "   * %c: quad word.\n"
-           "   Expect for the string types, all values have to be passed as hex values, omitting `0x`.\n"
+           " * -b Force breaking mode. Will terminate after the first displayed block.\n"
+           " * Printing format:\n"
+           "   * -pa ASCII only print.\n"
+           "   * -pu UNICODE (utf-16) only print.\n"
+           "   * -px HEX only print.\n"
+           "   * -po Print address (only valid in combination with the other options).\n"
+           "   * -p Plain, not styled text output.\n"
+           " * File manipulation/examination.\n"
+           "   * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
+           "   * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)\n"
+           "   * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
+           "   * -fx Find hex byte sequence. Where x is an format option.\n"
+           "   * Format options:\n"
+           "     * %c: plain bytes\n"
+           "     * %c: ascii/utf-8 text\n"
+           "     * %c: unicode (windows utf16) text.\n"
+           "     * %c: byte\n"
+           "     * %c: fill byte (will be inserted -l times)\n"
+           "     * %c: word\n"
+           "     * %c: double word\n"
+           "     * %c: quad word.\n"
+           "     Expect for the string types, all values have to be passed as hex values, omitting `0x`.\n"
 //		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
-           " * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
            " * -pid only options:\n"
            "   * -lpx List entire process memory layout.\n"
            "   * -lpm List all process modules.\n"
@@ -306,8 +311,6 @@ void printHelp()
            "   * -lph List all process heaps.\n"
            "   * -lphb List all process heaps and its blocks.\n"
            "   * -lrp List all running processes. Pass any pid or 0 to get it running.\n"
-           " * -b Force breaking mode. Will terminate after the first displayed block.\n"
-           " * -p Plain, not styled text output.\n"
            " * -h Print this.\n",
            FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
     );
@@ -336,17 +339,21 @@ int parseArgs(int argc, char** argv)
         //if ( argv[i][0] != LIN_PARAM_IDENTIFIER && argv[i][0] != WIN_PARAM_IDENTIFIER )
         //    break;
 
-        if ( isArgOfType(argv[i], "-x") )
+        if ( isArgOfType(argv[i], "-px") )
         {
             print_col_mask = print_col_mask | PRINT_HEX_MASK;
         }
-        else if ( isArgOfType(argv[i], "-a") )
+        else if ( isArgOfType(argv[i], "-pa") )
         {
             print_col_mask = print_col_mask | PRINT_ASCII_MASK;
         }
-        else if ( isArgOfType(argv[i], "-u") )
+        else if ( isArgOfType(argv[i], "-pu") )
         {
             print_col_mask = print_col_mask | PRINT_UNICODE_MASK;
+        }
+        else if ( isArgOfType(argv[i], "-po") )
+        {
+            print_col_mask = print_col_mask | PRINT_OFFSET_MASK;
         }
         else if ( isArgOfType(argv[i], "-p") )
         {
@@ -474,22 +481,27 @@ int parseArgs(int argc, char** argv)
     uint32_t f = mode_flags&(MODE_FLAG_FIND|MODE_FLAG_OVERWRITE|MODE_FLAG_INSERT|MODE_FLAG_DELETE);
     if ( (f & (f-1)) != 0 )
     {
-        printf("ERROR: overwrite, insert, delete and find have to be used exclusively!\n");
+        printf("ERROR: Overwrite, insert, delete and find have to be used exclusively!\n");
         return -2;
     }
 
     
-    f = print_col_mask;
-    if ( print_col_mask & PRINT_UNICODE_MASK && print_col_mask != PRINT_UNICODE_MASK )
+    f = print_col_mask&(PRINT_UNICODE_MASK|PRINT_ASCII_MASK);
     if ( (f & (f-1)) != 0 )
     {
-        printf("ERROR: Unicode print currently can't be combined with other print flags!\n");
+        printf("ERROR: Ascii and unicode printing can't be combined!\n");
         return -5;
     }
+    if ( print_col_mask == PRINT_OFFSET_MASK )
+    {
+        printf("ERROR: Printing only offsets is not provided! Please select one or more of -pa, -pu, -px.\n");
+        return -6;
+    }
+
 
     if ( (mode_flags&MODE_FLAG_DELETE) && !length_found )
     {
-        printf("ERROR: could not parse length of part to delete!\n");
+        printf("ERROR: Could not parse length of part to delete! Pass -l 0, if you want to delete from -s to the end of file.\n");
         return -3;
     }
 
@@ -685,7 +697,7 @@ uint8_t keepLengthInFile()
  * @param payload char** the array to store the formated payload in
  * @return uint32_t length of parsed payload.
  */
-uint32_t parsePayload(const char format, const char* value, unsigned char** payload)
+uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
 {
     uint32_t ln = 0;
 
@@ -778,8 +790,6 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
     mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
     process_list_flags = flags;
-
-//	print_col_mask = print_col_mask | PRINT_HEX_MASK;
 
     run(0, NULL);
 
