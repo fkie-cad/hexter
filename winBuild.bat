@@ -14,12 +14,13 @@ set platform=x64
 set mode=Release
 set /a rtl=0
 set pdb=0
+
+:: adjust this path, if you're using another version or path.
 set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools"
 set pts=v142
 :: set pts=WindowsApplicationForDrivers10.0
 
 set /a verbose=0
-
 
 :: default
 if [%1]==[] goto main
@@ -149,6 +150,11 @@ GOTO :ParseParams
     :: WHERE %msbuild% >nul 2>nul
     :: IF %ERRORLEVEL% NEQ 0 set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
     if [%VisualStudioVersion%] EQU [] (
+        if not exist %buildTools% (
+            echo [e] No build tools found in %buildTools%!
+            echo     Please set the correct path in this script or with the /bt option.
+            exit /b -1
+        )
         set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
     )
 

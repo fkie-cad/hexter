@@ -40,8 +40,21 @@ Use `clang` instead of `gcc` in Termux on Android.
 ```bash
 $ winBuild.bat [/app] [/m Release|Debug] [/b 32|64] [/rt] [/pdb] [/pts <toolset>] [/bt <path>] [/h]
 ```
-The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.  
-The Platformtoolset defaults to v142, but may be changed with the `/pts` option.
+
+This will run in a normal cmd.  
+
+The correct path to your build tools may be passed with the `/bt` parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.  
+
+The PlatformToolset defaults to "v142", but may be changed with the `/pts` option.
+"v142" is used for VS 2019 version, "v143" would be used in VS 2022, 
+or you could also use "WindowsApplicationForDrivers10.0" with WDK10 installed, 
+as this creates the smallest and cleanest builds.
+
+In a developer cmd you can also type:
+```bash
+$devcmd> msbuild Hexter.vcxproj /p:Configuration=<Release|Debug> /p:Platform=<x64|x86> [/p:PlatformToolset=<v142|v143|WindowsApplicationForDrivers10.0>]
+```
+
 
 ### DLL : Windows (MsBuild) ### 
 ```bash

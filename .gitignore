@@ -22,3 +22,5 @@ TODO
 #!build/64/hexter.sha256
 #!build/32/hexter.exe
 #!build/32/hexter.sha256
+
+*.vcxproj.user
