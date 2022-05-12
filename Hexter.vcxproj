@@ -33,7 +33,8 @@
     <TargetVersion>Windows10</TargetVersion>
     <TargetPlatform>Desktop</TargetPlatform>
     <!--<DriverTargetPlatform>Desktop</DriverTargetPlatform>-->
-    <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset> <!-- smaller build than v142 -->
+    <!-- <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset> smaller build than v142 -->
+    <PlatformToolset>v142</PlatformToolset>
     <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Release'">

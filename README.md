@@ -19,11 +19,7 @@ Last changed: 21.12.2021
     - Building with cmake requires cmake.  
 - Windows
     - msbuild
-    - [wdk]
 
-**Remarks**  
-The .vcxproj file is using `WindowsApplicationForDrivers10.0` as the `PlatformToolset`, which leads to smaller builds. 
-If the WDK is not installed, the `PlatformToolset` may be changed to `v142` and it should compile without errors.
 
 ## BUILD ##
 
@@ -145,6 +141,7 @@ $ ./hexter -pid 0 -lrp
 
 ## TESTS ##
 (Currently Gtests run linux only) 
+
 ### REQUIREMENTS ###
  - The google c++ testing framework gtest [1]  
  - A c++ compiler available to cmake
@@ -157,6 +154,7 @@ The test may be built with the target_name=hexter_tests which is the name of the
 
 ## COPYRIGHT, CREDITS & CONTACT ##
 Published under [GNU GENERAL PUBLIC LICENSE](LICENSE).   
+
 #### Author ####
 - Henning Braun ([henning.braun@fkie.fraunhofer.de](henning.braun@fkie.fraunhofer.de)) 
 
