@@ -38,13 +38,14 @@ Use `clang` instead of `gcc` in Termux on Android.
 
 ### Windows (MsBuild) ###
 ```bash
-$ winBuild.bat [/t hexter] [/m Release|Debug] [/b 32|64] [/rt] [/pdb] [/bt a\path] [/h]
+$ winBuild.bat [/app] [/m Release|Debug] [/b 32|64] [/rt] [/pdb] [/pts <toolset>] [/bt <path>] [/h]
 ```
 The correct path to your build tools may be passed as a parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.  
+The Platformtoolset defaults to v142, but may be changed with the `/pts` option.
 
 ### DLL : Windows (MsBuild) ### 
 ```bash
-$ winBuild.bat /t hexter_lib [/b 64] [/m Release] [/rt] [/pdb] [/bt a\path] [/?]
+$ winBuild.bat /lib [/b 64] [/m Release] [/rt] [/pdb] [/pts <toolset>] [/bt a\path] [/?]
 ```
 
 ### Windows Context Menu ###
