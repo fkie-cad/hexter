@@ -1,7 +1,7 @@
 #!/bin/bash
 
 name=hexter
-def_target=${name}
+def_target=app
 pos_targets="app|lib|pck|cln"
 target=${def_target}
 def_mode=Release
