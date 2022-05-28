@@ -47,8 +47,7 @@ The correct path to your build tools may be passed with the `/bt` parameter or j
 
 The PlatformToolset defaults to "v142", but may be changed with the `/pts` option.
 "v142" is used for VS 2019 version, "v143" would be used in VS 2022, 
-or you could also use "WindowsApplicationForDrivers10.0" with WDK10 installed, 
-as this creates the smallest and cleanest builds.
+or you could also use "WindowsApplicationForDrivers10.0" with WDK10 installed.
 
 In a developer cmd you can also type:
 ```bash
@@ -60,6 +59,11 @@ $devcmd> msbuild Hexter.vcxproj /p:Configuration=<Release|Debug> /p:Platform=<x6
 ```bash
 $ winBuild.bat /lib [/b 64] [/m Release] [/rt] [/pdb] [/pts <toolset>] [/bt a\path] [/?]
 ```
+
+### Runtime Errors (Windows)
+If a "VCRUNTIMExxx.dll not found Error" occurs on the target system, statically including runtime libs is a solution.  
+This is done by using the `/p:RunTimeLib=Debug|Release` (msbuild) or `[/rtl]` (winBuild) flags.
+
 
 ### Windows Context Menu ###
 It may be convenient to add Hexter to the context menu to be able to right-click a file and hexter it.
@@ -77,8 +81,8 @@ $ ./hexter [options] -pid xx [options]
 Optional Parameters:
  * -file string A path to file.
  * -pid uint32_t A process id.
- * -s uint64_t Start offset in hex or dec. Default = 0.
- * -l uint64_t Length of the part to display in hex or dec. Default = 0x100.
+ * -s size_t Start offset in hex or dec. Default = 0.
+ * -l size_t Length of the part to display in hex or dec. Default = 0x100.
  * -b Force breaking, not continuous mode and print just one block.
  * Printing format:
    * -pa ASCII only print.

@@ -8,6 +8,7 @@ set name=hexter
 
 set /a app=0
 set /a lib=0
+set /a cln=0
 
 set /a bitness=64
 set platform=x64
@@ -40,6 +41,10 @@ GOTO :ParseParams
     )
     IF /i "%~1"=="/lib" (
         SET /a lib=1
+        goto reParseParams
+    )
+    IF /i "%~1"=="/cln" (
+        SET /a cln=1
         goto reParseParams
     )
 
@@ -90,43 +95,43 @@ GOTO :ParseParams
 
     :: set platform
     set /a valid=0
-    if [%bitness%] == [32] (
+    if %bitness% == 32 (
         set platform=x86
-        set valid=1
+        set /a valid=1
     ) else (
-        if [%bitness%] == [64] (
+        if %bitness% == 64 (
             set platform=x64
             set valid=1
         )
     )
-    if [%valid%] == [0] (
+    if %valid% == 0 (
         goto help
     )
 
     :: test valid targets
-    set /a "valid=%app%+%lib%"
+    set /a "valid=%app%+%lib%+%cln%"
     if %valid% == 0 (
         set /a app=1
     )
     
     :: set runtime lib
     set rtlib=No
-    set valid=0
+    set /a valid=0
     if /i [%mode%] == [debug] (
-        if [%rt%] == [1] (
+        if %rtl% == 1 (
             set rtlib=Debug
         )
-        set pdb=1
-        set valid=1
+        set /a pdb=1
+        set /a valid=1
     ) else (
         if /i [%mode%] == [release] (
-            if [%rt%] == [1] (
+            if %rtl% == 1 (
                 set rtlib=Release
             )
-            set valid=1
+            set /a valid=1
         )
     )
-    if [%valid%] == [0] (
+    if %valid% == 0 (
         goto help
     )
 
@@ -143,12 +148,10 @@ GOTO :ParseParams
         echo proj=%proj%
     )
 
-    rem vcvarsall.bat [architecture] [platform_type] [winsdk_version] [ -vcvars_ver= vcversion]
-    rem architecture = x86, x86_x64, ... 
     
-    set vcvars=call :: pseudo nop command to prevent if else bug in :build
-    :: WHERE %msbuild% >nul 2>nul
-    :: IF %ERRORLEVEL% NEQ 0 set vcvars="%buildTools:~1,-1%\VC\Auxiliary\Build\vcvars%bitness%.bat"
+    :: set vcvars, if necessary
+    :: pseudo nop command to prevent if else bug in :build
+    set vcvars=call
     if [%VisualStudioVersion%] EQU [] (
         if not exist %buildTools% (
             echo [e] No build tools found in %buildTools%!
@@ -159,6 +162,9 @@ GOTO :ParseParams
     )
 
     :: build targets
+    if %cln% == 1 (
+        rmdir /s /q build
+    )
     if %app% == 1 (
         call :build Hexter.vcxproj Application
     ) 
