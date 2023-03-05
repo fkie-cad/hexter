@@ -6,8 +6,8 @@ set my_dir="%~dp0"
 
 set name=hexter
 
-set /a app=0
-set /a lib=0
+set /a exe=0
+set /a dll=0
 set /a cln=0
 
 set /a bitness=64
@@ -36,12 +36,12 @@ GOTO :ParseParams
     if [%1]==[/h] goto help
     if [%1]==[/help] goto help
     
-    IF /i "%~1"=="/app" (
-        SET /a app=1
+    IF /i "%~1"=="/exe" (
+        SET /a exe=1
         goto reParseParams
     )
-    IF /i "%~1"=="/lib" (
-        SET /a lib=1
+    IF /i "%~1"=="/dll" (
+        SET /a dll=1
         goto reParseParams
     )
     IF /i "%~1"=="/cln" (
@@ -114,9 +114,9 @@ GOTO :ParseParams
     )
 
     :: test valid targets
-    set /a "valid=%app%+%lib%+%cln%"
+    set /a "valid=%exe%+%dll%+%cln%"
     if %valid% == 0 (
-        set /a app=1
+        set /a exe=1
     )
     
     :: set runtime lib
@@ -142,8 +142,8 @@ GOTO :ParseParams
 
     :: verbose print
     if [%verbose%] == [1] (
-        echo app=%app%
-        echo lib=%lib%
+        echo exe=%exe%
+        echo dll=%dll%
         echo bitness=%bitness%
         echo platform=%platform%
         echo mode=%mode%
@@ -171,10 +171,10 @@ GOTO :ParseParams
     if %cln% == 1 (
         rmdir /s /q build
     )
-    if %app% == 1 (
+    if %exe% == 1 (
         call :build Hexter.vcxproj Application
     ) 
-    if %lib% == 1 (
+    if %dll% == 1 (
         call :build Hexter.vcxproj DynamicLibrary
     ) 
 
@@ -193,16 +193,16 @@ GOTO :ParseParams
     exit /B 0
 
 :usage
-    @echo Usage: %my_name% [/app] [/lib] [/b 32^|64] [/m Debug^|Release] [/rtl] [/pdb] [/pts ^<toolset^>] [/bt ^<path^>] [/v] [/h]
-    @echo Default: %my_name% [/app /b %bitness% /m %mode% /pts %pts% /bt %buildTools%]
+    @echo Usage: %my_name% [/exe] [/dll] [/b 32^|64] [/m Debug^|Release] [/rtl] [/pdb] [/pts ^<toolset^>] [/bt ^<path^>] [/v] [/h]
+    @echo Default: %my_name% [/exe /b %bitness% /m %mode% /pts %pts% /bt %buildTools%]
     exit /B 0
 
 :help
     call :usage
     echo.
     echo Targets:
-    echo /app Build Hexter.exe application.
-    echo /lib Build Hexter.dll library.
+    echo /exe Build Hexter.exe application.
+    echo /dll Build Hexter.dll library.
 	echo.
 	echo Options:
     echo /b Target bitness: 32^|64. Default: 64.

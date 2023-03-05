@@ -25,7 +25,7 @@ Last changed: 21.12.2021
 
 ### Linux (gcc) & cmake ###
 ```bash
-$ ./linuxBuild.sh [-t hexter] [-m Debug|Release] [-h]
+$ ./linuxBuild.sh [-t exe] [-m Debug|Release] [-h]
 ```
 
 ### Linux (gcc) ###
@@ -38,7 +38,7 @@ Use `clang` instead of `gcc` in Termux on Android.
 
 ### Windows (MsBuild) ###
 ```bash
-$ winBuild.bat [/app] [/m Release|Debug] [/b 32|64] [/rt] [/pdb] [/pts <toolset>] [/bt <path>] [/h]
+$ winBuild.bat [/exe] [/m Release|Debug] [/b 32|64] [/rt] [/pdb] [/pts <toolset>] [/bt <path>] [/h]
 ```
 
 This will run in a normal cmd.  
@@ -46,8 +46,7 @@ This will run in a normal cmd.
 The correct path to your build tools may be passed with the `/bt` parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.  
 
 The PlatformToolset defaults to "v142", but may be changed with the `/pts` option.
-"v142" is used for VS 2019 version, "v143" would be used in VS 2022, 
-or you could also use "WindowsApplicationForDrivers10.0" with WDK10 installed.
+"v142" is used for VS 2019 version, "v143" would be used in VS 2022.
 
 In a developer cmd you can also type:
 ```bash

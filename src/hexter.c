@@ -76,6 +76,7 @@ void printHelp();
 static void initParameters();
 static int parseArgs(int argc, char** argv);
 static uint8_t isArgOfType(char* arg, char* type);
+static uint8_t isCallForHelp(const char* arg1);
 static uint8_t isFormatArgOfType(char* arg, char* type);
 static uint8_t hasValue(char* type, int i, int end_i);
 static int sanitizeDeleteParams();
@@ -104,10 +105,10 @@ main(int argc, char** argv)
         return -1;
     }
 
-    if ( isArgOfType(argv[1], "-h") )
+    if ( isCallForHelp(argv[1]) )
     {
         printHelp();
-        return 0;
+        return 1;
     }
 
     initParameters();
@@ -534,6 +535,12 @@ uint8_t isArgOfType(char* arg, char* type)
             return 0;
     }
     return arg[i] == 0;
+}
+
+uint8_t isCallForHelp(const char* arg1)
+{
+    return isArgOfType(arg1, "/h") || 
+           isArgOfType(arg1, "/?");
 }
 
 uint8_t isFormatArgOfType(char* arg, char* type)
