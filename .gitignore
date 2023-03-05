@@ -12,7 +12,7 @@ updateBin.bat
 update_usr_lib.sh
 CMakeSettings.json
 .vs
-res
+#res
 TODO
 
 #!build/hexter

@@ -14,14 +14,15 @@ set /a bitness=64
 set platform=x64
 set mode=Release
 set /a rtl=0
-set pdb=0
+set /a pdb=0
+set /a ico=1
+set /a verbose=0
 
 :: adjust this path, if you're using another version or path.
 set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools"
 set pts=v142
 :: set pts=WindowsApplicationForDrivers10.0
 
-set /a verbose=0
 
 :: default
 if [%1]==[] goto main
@@ -73,12 +74,16 @@ GOTO :ParseParams
         goto reParseParams
     )
     IF /i "%~1"=="/pdb" (
-        SET pdb=1
+        SET /a pdb=1
+        goto reParseParams
+    )
+    IF /i "%~1"=="/xi" (
+        SET /a ico=0
         goto reParseParams
     )
     
     IF /i "%~1"=="/v" (
-        SET verbose=1
+        SET /a verbose=1
         goto reParseParams
     ) ELSE (
         echo Unknown option : "%~1"
@@ -145,6 +150,7 @@ GOTO :ParseParams
         echo buildTools=%buildTools%
         echo rtlib=%rtlib%
         echo pts=%pts%
+        echo ico=%ico%
         echo proj=%proj%
     )
 
@@ -181,7 +187,7 @@ GOTO :ParseParams
         set proj=%1
         set ct=%2
         
-        cmd /k "%vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:PlatformToolset=%pts% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct%  & exit"
+        cmd /k "%vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:PlatformToolset=%pts% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct% /p:Icon=%ico% & exit"
         
     endlocal
     exit /B 0

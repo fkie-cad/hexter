@@ -137,9 +137,9 @@
     <ClCompile Include="src\Finder.c;src\Printer.c;src\Writer.c;src\ProcessHandlerWin.c" />
   </ItemGroup>
   
-  <!--<ItemGroup>
+  <ItemGroup Condition="'$(Icon)'=='1'">
     <ResourceCompile Include="res\hexter.rc" />
-  </ItemGroup>-->
+  </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   
@@ -147,10 +147,10 @@
     <Message Text="PlatformToolset = $(PlatformToolset)" />
     <Message Text="Project Name = $(MSBuildProjectName)" />
     <Message Text="Project File Name = $(MSBuildProjectFile)" />
-	<Message Text="ConfigurationType = $(ConfigurationType)" />
-	<Message Text="Configuration = $(Configuration)" />
-	<Message Text="Platform = $(Platform)" />
-	<Message Text="RunTimeLib = $(RunTimeLib)" />
+    <Message Text="ConfigurationType = $(ConfigurationType)" />
+    <Message Text="Configuration = $(Configuration)" />
+    <Message Text="Platform = $(Platform)" />
+    <Message Text="RunTimeLib = $(RunTimeLib)" />
     <Message Text="IntDir = $(IntDir)" />
     <Message Text="OutDir = $(OutDir)" />
     <Message Text="TargetPath = $(TargetPath)" />
