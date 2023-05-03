@@ -18,6 +18,8 @@
 #include "Writer.h"
 #include "utils/Helper.h"
 
+#define MAX_PROC_MAP_PATH_NAME (0x400)
+
 typedef struct ProcMapsEntry
 {
     uint64_t base;
@@ -27,7 +29,7 @@ typedef struct ProcMapsEntry
     uint64_t offset;
     char dev[6];
     uint32_t inode;
-    char pathname[1024];
+    char pathname[MAX_PROC_MAP_PATH_NAME];
 } ProcMapsEntry;
 
 /**
@@ -376,7 +378,7 @@ uint64_t getModuleEndAddress(ProcMapsEntry *module, FILE* fp)
             break;
 
         // possible breaks in module
-        if ( !entry.pathname || entry.pathname[0] == 0 || entry.inode == 0 )
+        if ( entry.pathname[0] == 0 || entry.inode == 0 )
             continue;
         if ( entry.pathname[0] == '[' )
             break;
@@ -436,7 +438,7 @@ uint64_t getSizeOfProcess(uint32_t pid)
         if ( !parseProcMapsLine(line, &entry) )
             break;
 
-        if ( entry.pathname && entry.pathname[0] == 0 )
+        if ( entry.pathname[0] == 0 )
             continue;
 
         getFileNameL(entry.pathname, &module_name);
@@ -532,9 +534,9 @@ Bool getProcStat(uint32_t pid, ProcStat* proc_stat)
     parseUint32(bucket[3], &proc_stat->ppid, 10);
     proc_stat->state = bucket[2][0];
     parseUint16(bucket[8], &proc_stat->flags, 10);
-    parseUint32(bucket[19], &proc_stat->num_threads, 10);
+    parseUint32(bucket[19], (uint32_t*)&proc_stat->num_threads, 10);
     parseUint32(bucket[22], &proc_stat->vsize, 10);
-    parseUint32(bucket[23], &proc_stat->rss, 10);
+    parseUint32(bucket[23], (uint32_t*)&proc_stat->rss, 10);
 
     return true;
 }
@@ -722,7 +724,7 @@ void printProcessHeapsTableHeader()
 
 int printProcessHeap(ProcMapsEntry* entry, uint32_t last_module_inode, size_t line_nr)
 {
-    if ( !entry->pathname || strnlen(entry->pathname, PATH_MAX) == 0 )
+    if ( strnlen(entry->pathname, MAX_PROC_MAP_PATH_NAME) == 0 )
         return 1;
     if ( strncmp(entry->pathname, "[heap]", 10) != 0 )
         return 2;
