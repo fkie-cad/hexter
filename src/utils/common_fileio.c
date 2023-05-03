@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "common_fileio.h"
+#include "../print.h"
 
 //static int errsv;
 
@@ -24,9 +25,7 @@ size_t getSize(const char* finame)
     errsv = errno;
     if ( !fi )
     {
-#ifdef ERROR_PRINT
-        printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, finame);
-#endif
+        EPrint("Could not open \"%s\"! (0x%x)\n", finame, errsv);
         return 0;
     }
 
@@ -36,9 +35,7 @@ size_t getSize(const char* finame)
     errsv = errno;
     if ( s != 0 )
     {
-#ifdef ERROR_PRINT
-        printf("ERROR (0x%x): FSeek in \"%s\".\n", errsv, finame);
-#endif
+        EPrint("FSeek in \"%s\"! (0x%x)\n", finame, errsv);
         Filesize = 0;
         goto clean;
     }
@@ -47,14 +44,10 @@ size_t getSize(const char* finame)
     errsv = errno;
     if ( errsv != 0 )
     {
-#ifdef ERROR_PRINT
-        printf("ERROR (0x%x): FTell in \"%s\".\n", errsv, finame);
-#endif
+        EPrint("FTell in \"%s\"! (0x%x)\n", finame, errsv);
         if ( errsv == 0x16 )
         {
-#ifdef ERROR_PRINT
-            printf("The file may be too big.\n");
-#endif
+            EPrint("The file may be too big.\n");
         }
         Filesize = 0;
     }

@@ -17,8 +17,10 @@
     #define ENTER (0xa) // aka \n
 #endif
 
-#define DEBUG_PRINT_INFO (0)
-#define debug_info(...) if (DEBUG_PRINT_INFO) fprintf(stdout, __VA_ARGS__)
+//#define DEBUG_PRINT_INFO (0)
+
+#include "print.h"
+
 
 #ifndef PATH_MAX
     #define PATH_MAX _MAX_PATH

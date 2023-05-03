@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version ##
-1.7.0  
-Last changed: 21.12.2021
+1.7.1  
+Last changed: 03.05.2023
 
 
 ## REQUIREMENTS ##
@@ -91,9 +91,9 @@ Optional Parameters:
    * -p Plain, not styled text output. 
  * File manipulation/examination.
    * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
-   * -ix Insert hex byte sequence (destructive!). Where x is a format option. (File mode only.)
-   * -ox Overwrite hex byte sequence (destructive!). Where x is a format option.
-   * -fx Find hex byte sequence. Where x is a format option.
+   * -i* Insert hex byte sequence (destructive!). Where * is a format option. (File mode only.)
+   * -o* Overwrite hex byte sequence (destructive!). Where * is a format option.
+   * -f* Find hex byte sequence. Where * is a format option.
    * Format options: 
      * h: plain bytes, 
      * a: ascii/utf-8 text, 
@@ -121,6 +121,7 @@ If searching something in continuous mode, type "n" to find next occurrence.
 The length value will be padded to fit a block size in continuous mode.  
 
 ### EXAMPLES ###
+**files**  
 Print 100 bytes from offset 20 in hex only style.
 ```bash
 $ ./hexter -file a/file/name -s 20 -l 100 -x
@@ -146,6 +147,12 @@ Delete 16 bytes from offset 16
 $ ./hexter -file a/file/name -d -s 16 -l 16
 ```
 
+Create file with 8 bytes 
+```bash
+$ ./hexter -file a/file/name -ih 0102030405060708
+```
+
+**processes**  
 Print my process (0) and a list of its modules
 ```bash
 $ ./hexter -pid 0 -lpm

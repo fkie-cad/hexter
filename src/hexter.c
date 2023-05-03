@@ -35,8 +35,8 @@
 #endif
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.7.0"
-#define BIN_LAST_CHANGED  "21.12.2021"
+#define BIN_VS "1.7.1"
+#define BIN_LAST_CHANGED  "03.05.2023"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -75,7 +75,7 @@ static void printUsage();
 void printHelp();
 static void initParameters();
 static int parseArgs(int argc, char** argv);
-static uint8_t isArgOfType(char* arg, char* type);
+static uint8_t isArgOfType(const char* arg, const char* type);
 static uint8_t isCallForHelp(const char* arg1);
 static uint8_t isFormatArgOfType(char* arg, char* type);
 static uint8_t hasValue(char* type, int i, int end_i);
@@ -117,11 +117,11 @@ main(int argc, char** argv)
         return -2;
 
     if ( payload_arg_id > 0 )
-        run(argv[payload_arg_id][2], argv[payload_arg_id + 1]);
+        s = run(argv[payload_arg_id][2], argv[payload_arg_id + 1]);
     else
-        run(0, NULL);
+        s = run(0, NULL);
 
-    return 0;
+    return s;
 }
 
 int run(const char payload_format, const char* raw_payload)
@@ -155,7 +155,6 @@ int run(const char payload_format, const char* raw_payload)
             return -2;
     }
 
-#ifdef DEBUG_PRINT
     debug_info("file_path: %s\n", file_path);
     debug_info("file_size: 0x%zx\n", file_size);
     debug_info("start: 0x%zx\n", start);
@@ -166,7 +165,6 @@ int run(const char payload_format, const char* raw_payload)
     debug_info("find: %d\n", (mode_flags&MODE_FLAG_FIND));
     debug_info("delete: %d\n", (mode_flags&MODE_FLAG_DELETE));
     debug_info("\n");
-#endif
 
     if ( (mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_FIND)) && payload_format > 0 )
     {
@@ -291,9 +289,9 @@ void printHelp()
            "   * -p Plain, not styled text output.\n"
            " * File manipulation/examination.\n"
            "   * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
-           "   * -ix Insert hex byte sequence (destructive!). Where x is an format option. (File mode only.)\n"
-           "   * -ox Overwrite hex byte sequence (destructive!). Where x is an format option.\n"
-           "   * -fx Find hex byte sequence. Where x is an format option.\n"
+           "   * -i* Insert hex byte sequence (destructive!). Where * is a format option. (File mode only.)\n"
+           "   * -o* Overwrite hex byte sequence (destructive!). Where * is a format option.\n"
+           "   * -f* Find hex byte sequence. Where * is a format option.\n"
            "   * Format options:\n"
            "     * %c: plain bytes\n"
            "     * %c: ascii/utf-8 text\n"
@@ -304,7 +302,7 @@ void printHelp()
            "     * %c: double word\n"
            "     * %c: quad word.\n"
            "     Expect for the string types, all values have to be passed as hex values, omitting `0x`.\n"
-//		   " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
+//         " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
            " * -pid only options:\n"
            "   * -lpx List entire process memory layout.\n"
            "   * -lpm List all process modules.\n"
@@ -473,7 +471,7 @@ int parseArgs(int argc, char** argv)
 
     if ( run_mode == RUN_MODE_NONE )
     {
-//		printf("ERROR: You have to specify either a -file or a -pid!\n");
+//      printf("ERROR: You have to specify either a -file or a -pid!\n");
         printUsage();
         return -1;
     }
@@ -482,7 +480,7 @@ int parseArgs(int argc, char** argv)
     uint32_t f = mode_flags&(MODE_FLAG_FIND|MODE_FLAG_OVERWRITE|MODE_FLAG_INSERT|MODE_FLAG_DELETE);
     if ( (f & (f-1)) != 0 )
     {
-        printf("ERROR: Overwrite, insert, delete and find have to be used exclusively!\n");
+        EPrint("Overwrite, insert, delete and find have to be used exclusively!\n");
         return -2;
     }
 
@@ -490,25 +488,25 @@ int parseArgs(int argc, char** argv)
     f = print_col_mask&(PRINT_UNICODE_MASK|PRINT_ASCII_MASK);
     if ( (f & (f-1)) != 0 )
     {
-        printf("ERROR: Ascii and unicode printing can't be combined!\n");
+        EPrint("Ascii and unicode printing can't be combined!\n");
         return -5;
     }
     if ( print_col_mask == PRINT_OFFSET_MASK )
     {
-        printf("ERROR: Printing only offsets is not provided! Please select one or more of -pa, -pu, -px.\n");
+        EPrint("Printing only offsets is not provided! Please select one or more of -pa, -pu, -px.\n");
         return -6;
     }
 
 
     if ( (mode_flags&MODE_FLAG_DELETE) && !length_found )
     {
-        printf("ERROR: Could not parse length of part to delete! Pass -l 0, if you want to delete from -s to the end of file.\n");
+        EPrint("Could not parse length of part to delete! Pass -l 0, if you want to delete from -s to the end of file.\n");
         return -3;
     }
 
     if ( run_mode == RUN_MODE_PID && (mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_DELETE)) > 0 )
     {
-        printf("ERROR: Inserting or deleting is not supported in process mode!\n");
+        EPrint("Inserting or deleting is not supported in process mode!\n");
         return -4;
     }
 
@@ -520,7 +518,7 @@ int parseArgs(int argc, char** argv)
     return 0;
 }
 
-uint8_t isArgOfType(char* arg, char* type)
+uint8_t isArgOfType(const char* arg, const char* type)
 {
     size_t i;
     size_t type_ln;
@@ -654,8 +652,8 @@ int sanitizePrintParams(uint32_t pid)
     // check length
     if ( run_mode == RUN_MODE_FILE )
         info_line_break = keepLengthInFile();
-//	else if ( type == RUN_MODE_PID )
-//		info_line_break = keepLengthInModule(pid);
+//  else if ( type == RUN_MODE_PID )
+//      info_line_break = keepLengthInModule(pid);
 
     if ( length == 0 )
     {
@@ -714,7 +712,9 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
         return 0;
     }
     if ( format == FORMAT_BYTE )
+    {
         ln = payloadParseByte(value, payload);
+    }
     else if ( format == FORMAT_FILL_BYTE )
     {
         if ( length > MAX_PAYLOAD_LN )
@@ -735,8 +735,8 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
         ln = payloadParseUtf8(value, payload);
     else if ( format == FORMAT_UNICODE )
         ln = payloadParseUtf16(value, payload);
-//	else if ( format == 'r' )
-//		ln = payloadParseReversedPlainBytes(arg, payload);
+//  else if ( format == 'r' )
+//      ln = payloadParseReversedPlainBytes(arg, payload);
     else if ( format == FORMAT_PLAIN_HEX )
         ln = payloadParsePlainBytes(value, payload);
     else
@@ -766,7 +766,7 @@ HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _l
     length = _length;
     mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
-//	print_col_mask = print_col_mask | PRINT_HEX_MASK;
+//  print_col_mask = print_col_mask | PRINT_HEX_MASK;
 
     run(0, NULL);
 
@@ -821,9 +821,9 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
 HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
 {
     AllocConsole();
-//	AttachConsole(GetCurrentProcessId());
-//	AttachConsole(-1);
-//	AttachConsole(_getpid());
+//  AttachConsole(GetCurrentProcessId());
+//  AttachConsole(-1);
+//  AttachConsole(_getpid());
     freopen("conin$", "r", stdin);
     freopen("conout$", "w", stdout);
     freopen("conout$", "w", stderr);
@@ -832,9 +832,7 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
     (void) hinst;
     (void) nCmdShow;
 
-#ifdef DEBUG_PRINT
     debug_info("the param cmd line: %s\n", lpszCmdLine);
-#endif
 
     uint8_t argv_max = 20;
     uint8_t argc;

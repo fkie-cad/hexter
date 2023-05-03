@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "Strings.h"
+#include "../print.h"
 
 static const int le = 1;
 
@@ -27,17 +28,17 @@ size_t split(char* str, const char* delimiter, char** bucket, const size_t bucke
 
     if (str == NULL)
     {
-        printf("ERROR: str is NULL!\n");
+        EPrint("str is NULL!\n");
         return 0;
     }
     if (bucket == NULL)
     {
-        printf("ERROR: bucket is NULL!\n");
+        EPrint("bucket is NULL!\n");
         return 0;
     }
     if (bucket_max == 0)
     {
-        printf("ERROR: bucket_max is 0!");
+        EPrint("bucket_max is 0!");
         return 0;
     }
 
@@ -182,7 +183,7 @@ int UTF8ToUTF16LE(unsigned char* outb, size_t* outlen, const unsigned char* in, 
             *outlen = 2;
             *inlen = 0;
 #ifdef DEBUG_ENCODING
-            xmlGenericError(xmlGenericErrorContext,
+            debug_info(xmlGenericErrorContext,
             "Added FFFE Byte Order Mark\n");
 #endif
             return (2);

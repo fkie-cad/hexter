@@ -17,6 +17,7 @@ set /a rtl=0
 set /a pdb=0
 set /a ico=1
 set /a verbose=0
+set /a dp=0
 
 :: adjust this path, if you're using another version or path.
 set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools"
@@ -79,6 +80,10 @@ GOTO :ParseParams
     )
     IF /i "%~1"=="/xi" (
         SET /a ico=0
+        goto reParseParams
+    )
+    IF /i "%~1"=="/dp" (
+        SET /a dp=1
         goto reParseParams
     )
     
@@ -187,7 +192,7 @@ GOTO :ParseParams
         set proj=%1
         set ct=%2
         
-        cmd /k "%vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:PlatformToolset=%pts% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct% /p:Icon=%ico% & exit"
+        cmd /k "%vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:PlatformToolset=%pts% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct% /p:DebugPrint=%dp% /p:Icon=%ico% & exit"
         
     endlocal
     exit /B 0

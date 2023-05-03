@@ -130,6 +130,12 @@
       <AdditionalOptions>/NOCOFFGRPINFO %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
+  
+  <ItemDefinitionGroup Condition="'$(DebugPrint)'!='0' And '$(DebugPrint)'!=''">
+    <ClCompile>
+      <PreprocessorDefinitions>DEBUG_PRINT=$(DebugPrint);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
 
   <ItemGroup>
     <ClCompile Include="src\hexter.c" />

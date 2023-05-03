@@ -2,6 +2,7 @@
 !/build/**/
 
 venv/
+desktop.ini
 .idea
 tests/sources
 *.7z
