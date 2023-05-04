@@ -3,6 +3,7 @@ setlocal
 
 set my_name=%~n0
 set my_dir="%~dp0"
+set "my_dir=%my_dir:~1,-2%"
 
 set name=hexter
 
@@ -12,12 +13,14 @@ set /a cln=0
 
 set /a bitness=64
 set platform=x64
-set mode=Release
+set /a debug=0
+set /a release=0
+
 set /a rtl=0
+set /a dp=0
 set /a pdb=0
 set /a ico=1
 set /a verbose=0
-set /a dp=0
 
 :: adjust this path, if you're using another version or path.
 set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools"
@@ -55,9 +58,12 @@ GOTO :ParseParams
         SHIFT
         goto reParseParams
     )
-    IF /i "%~1"=="/m" (
-        SET mode=%~2
-        SHIFT
+    IF /i "%~1"=="/d" (
+        SET /a debug=1
+        goto reParseParams
+    )
+    IF /i "%~1"=="/r" (
+        SET /a release=1
         goto reParseParams
     )
     IF /i "%~1"=="/bt" (
@@ -78,12 +84,12 @@ GOTO :ParseParams
         SET /a pdb=1
         goto reParseParams
     )
-    IF /i "%~1"=="/xi" (
-        SET /a ico=0
-        goto reParseParams
-    )
     IF /i "%~1"=="/dp" (
         SET /a dp=1
+        goto reParseParams
+    )
+    IF /i "%~1"=="/xi" (
+        SET /a ico=0
         goto reParseParams
     )
     
@@ -123,35 +129,38 @@ GOTO :ParseParams
     if %valid% == 0 (
         set /a exe=1
     )
-    
+
+    :: set release default
+    set /a "valid=%release%+%debug%"
+    if not %valid% == 1 (
+        set /a release=1
+        set /a debug=0
+    )
+
+
     :: set runtime lib
     set rtlib=No
-    set /a valid=0
-    if /i [%mode%] == [debug] (
+    if %debug% == 1 (
         if %rtl% == 1 (
             set rtlib=Debug
         )
         set /a pdb=1
-        set /a valid=1
     ) else (
-        if /i [%mode%] == [release] (
+        if %release% == 1 (
             if %rtl% == 1 (
                 set rtlib=Release
             )
-            set /a valid=1
         )
-    )
-    if %valid% == 0 (
-        goto help
     )
 
     :: verbose print
-    if [%verbose%] == [1] (
+    if %verbose% == 1 (
         echo exe=%exe%
         echo dll=%dll%
         echo bitness=%bitness%
         echo platform=%platform%
-        echo mode=%mode%
+        echo debug=%debug%
+        echo release=%release%
         echo buildTools=%buildTools%
         echo rtlib=%rtlib%
         echo pts=%pts%
@@ -174,7 +183,8 @@ GOTO :ParseParams
 
     :: build targets
     if %cln% == 1 (
-        rmdir /s /q build
+        echo removing "%my_dir%\build"
+        rmdir /s /q "%my_dir%\build" >nul 2>&1 
     )
     if %exe% == 1 (
         call :build Hexter.vcxproj Application
@@ -184,21 +194,27 @@ GOTO :ParseParams
     ) 
 
     endlocal
-    exit /B 0
+    exit /B %errorlevel%
 
 
 :build
     setlocal
         set proj=%1
         set ct=%2
+        set conf=
+        if %debug% EQU 1 (
+            set conf=Debug
+        ) else (
+            if %release% EQU 1 set conf=Release
+        )
         
-        cmd /k "%vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:PlatformToolset=%pts% /p:Configuration=%mode% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct% /p:DebugPrint=%dp% /p:Icon=%ico% & exit"
+        cmd /k "%vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:PlatformToolset=%pts% /p:Configuration=%conf% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct% /p:DebugPrint=%dp% /p:Icon=%ico% & exit"
         
     endlocal
     exit /B 0
 
 :usage
-    @echo Usage: %my_name% [/exe] [/dll] [/b 32^|64] [/m Debug^|Release] [/rtl] [/pdb] [/pts ^<toolset^>] [/bt ^<path^>] [/v] [/h]
+    @echo Usage: %my_name% [/exe] [/dll] [/b 32^|64] [/d|/r] [/rtl] [/pdb] [/pts ^<toolset^>] [/bt ^<path^>] [/xi] [/v] [/h]
     @echo Default: %my_name% [/exe /b %bitness% /m %mode% /pts %pts% /bt %buildTools%]
     exit /B 0
 
@@ -211,11 +227,13 @@ GOTO :ParseParams
 	echo.
 	echo Options:
     echo /b Target bitness: 32^|64. Default: 64.
-    echo /m Build mode: Debug^|Release. Default: Release.
+    echo /d Build in debug mode.
+    echo /r Build in release mode (default). 
     echo /rtl Statically include runtime libs. Increases file size but may be needed if a "VCRUNTIMExxx.dll not found Error" occurs on the target system.
     echo /pdb Include pdb symbols into release build. Default in debug mode. 
     echo /bt Custom path to Microsoft Visual Studio BuildTools
     echo /pts Platformtoolset. Defaults to "v142".
+    echo /xi No icon for the exe.
     echo.
     echo /v more verbose output
     echo /h print this
