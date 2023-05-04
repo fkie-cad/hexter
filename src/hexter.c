@@ -35,8 +35,8 @@
 #endif
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.7.1"
-#define BIN_LAST_CHANGED  "03.05.2023"
+#define BIN_VS "1.7.2"
+#define BIN_LAST_CHANGED  "04.05.2023"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
