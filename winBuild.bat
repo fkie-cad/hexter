@@ -214,7 +214,7 @@ GOTO :ParseParams
     exit /B 0
 
 :usage
-    @echo Usage: %my_name% [/exe] [/dll] [/b 32^|64] [/d|/r] [/rtl] [/pdb] [/pts ^<toolset^>] [/bt ^<path^>] [/xi] [/v] [/h]
+    @echo Usage: %my_name% [/exe] [/dll] [/b 32^|64] [/r^|/d] [/rtl] [/pdb] [/pts ^<toolset^>] [/bt ^<path^>] [/xi] [/v] [/h]
     @echo Default: %my_name% [/exe /b %bitness% /m %mode% /pts %pts% /bt %buildTools%]
     exit /B 0
 
