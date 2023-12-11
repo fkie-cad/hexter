@@ -76,6 +76,7 @@
   
   <ItemDefinitionGroup>
     <Link>
+      <AdditionalOptions>/GUARD:cf %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>%(AdditionalDependencies);ntdll.lib;</AdditionalDependencies>
     </Link>
     <ClCompile>
@@ -89,6 +90,7 @@
       <!--<IntrinsicFunctions>true</IntrinsicFunctions>-->
       <!--<PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>-->
       <!--<LanguageStandard>c99</LanguageStandard>-->
+      <AdditionalOptions>/GS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>

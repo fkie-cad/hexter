@@ -35,8 +35,8 @@
 #endif
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.7.2"
-#define BIN_LAST_CHANGED  "04.05.2023"
+#define BIN_VS "1.7.3"
+#define BIN_LAST_CHANGED  "01.12.2023"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -145,11 +145,11 @@ int run(const char payload_format, const char* raw_payload)
             return -1;
 
         if ( pid == 0 )
-#if defined(__linux__) || defined(__linux) || defined(linux)
             pid = getpid();
-#elif defined(_WIN32)
-            pid = _getpid();
-#endif
+//#if defined(__linux__) || defined(__linux) || defined(linux)
+//            pid = getpid();
+//#elif defined(_WIN32)
+//#endif
         file_size = getSizeOfProcess(pid);
         if ( file_size == 0 )
             return -2;
@@ -277,7 +277,7 @@ void printHelp()
     printf("\n");
     printf("Options:\n");
     printf(" * -file:string A file name to show the hex source of.\n"
-           " * -pid:size_t A process id (in hex or dec) to show the hex source of. Pass 0 for your own process.\n"
+           " * -pid:size_t A process id to print the virtuel memory and process info. Pass 0 for your own process.\n"
            " * -s:size_t Start offset. Default = 0.\n"
            " * -l:size_t Length of the part to display. Default = 0x100.\n"
            " * -b Force breaking mode. Will terminate after the first displayed block.\n"
@@ -286,21 +286,21 @@ void printHelp()
            "   * -pu UNICODE (utf-16) only print.\n"
            "   * -px HEX only print.\n"
            "   * -po Print address (only valid in combination with the other options).\n"
-           "   * -p Plain, not styled text output.\n"
+           "   * -pp Print plain, not console styled output.\n"
            " * File manipulation/examination.\n"
            "   * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
            "   * -i* Insert hex byte sequence (destructive!). Where * is a format option. (File mode only.)\n"
            "   * -o* Overwrite hex byte sequence (destructive!). Where * is a format option.\n"
            "   * -f* Find hex byte sequence. Where * is a format option.\n"
            "   * Format options:\n"
-           "     * %c: plain bytes\n"
+           "     * %c: plain byte string, i.e. C007C0FF33\n"
            "     * %c: ascii/utf-8 text\n"
            "     * %c: unicode (windows utf16) text.\n"
-           "     * %c: byte\n"
+           "     * %c: byte (uint8)\n"
            "     * %c: fill byte (will be inserted -l times)\n"
-           "     * %c: word\n"
-           "     * %c: double word\n"
-           "     * %c: quad word.\n"
+           "     * %c: word (uint16)\n"
+           "     * %c: double word (uint32)\n"
+           "     * %c: quad word (uint64).\n"
            "     Expect for the string types, all values have to be passed as hex values, omitting `0x`.\n"
 //         " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
            " * -pid only options:\n"
@@ -339,7 +339,7 @@ int parseArgs(int argc, char** argv)
         //    break;
 
         if ( isArgOfType(argv[i], "-px") )
-        {
+        { 
             print_col_mask = print_col_mask | PRINT_HEX_MASK;
         }
         else if ( isArgOfType(argv[i], "-pa") )
@@ -354,7 +354,7 @@ int parseArgs(int argc, char** argv)
         {
             print_col_mask = print_col_mask | PRINT_OFFSET_MASK;
         }
-        else if ( isArgOfType(argv[i], "-p") )
+        else if ( isArgOfType(argv[i], "-pp") )
         {
             mode_flags |= MODE_FLAG_CLEAN_PRINTING;
         }

@@ -27,6 +27,9 @@
 #define ASCII_GAP " "
 #define UNICODE_GAP " "
 
+#define BLANK_GAP_C ' '
+#define SEPARATOR_GAP_C '-'
+
 
 static void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block_size, size_t block_start, size_t block_max);
 
@@ -46,10 +49,10 @@ static void printHexCols(const uint8_t* block, size_t size);
 static uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_size);
 
 static void printOffsetCol(size_t offset, uint8_t width);
-static void printCleanHexValue(uint8_t b);
-static void printAnsiFormatedHexValue(const uint8_t b);
+static void printCleanHexValue(const uint8_t b, const char gap);
+static void printAnsiFormatedHexValue(const uint8_t b, const char gap);
 #ifdef _WIN32
-static void printWinFormatedHexValue(const uint8_t b);
+static void printWinFormatedHexValue(const uint8_t b, const char gap);
 #endif
 
 static void printAsciiChar(
@@ -60,7 +63,7 @@ static void printUnicodeChar(
     const uint16_t c
 );
 
-void (*printHexValue)(uint8_t);
+void (*printHexValue)(const uint8_t, const char);
 
 #if defined(_WIN32)
     HANDLE hStdout;
@@ -132,6 +135,7 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
     {
         Finder_initFailure(needle, needle_ln);
         found = findNeedleInFile(file_path, needle, needle_ln, start, file_size);
+        //found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, file_size);
         if ( found == FIND_FAILURE )
         {
             Printer_cleanUp(block, fi);
@@ -439,8 +443,10 @@ uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_siz
 {
     uint8_t k = 0;
     size_t temp_i;
+    char gap = BLANK_GAP_C;
+    uint8_t gap_ctr = 0;
 
-    for ( k = 0; k < col_size; k++ )
+    for ( k = 0, gap_ctr=0; k < col_size; k++, gap_ctr++ )
     {
         temp_i = i + k;
         if ( temp_i >= size )
@@ -453,57 +459,64 @@ uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_siz
             continue;
         }
 
-        (*printHexValue)(block[temp_i]);
+        if ( (gap_ctr+1) == col_size/2 )
+            gap = SEPARATOR_GAP_C;
+        else 
+            gap = BLANK_GAP_C;
+        if ( (gap_ctr+1) == col_size )
+            gap_ctr = 0;
+
+        (*printHexValue)(block[temp_i], gap);
     }
 
     return k;
 }
 
-void printCleanHexValue(uint8_t b)
+void printCleanHexValue(const uint8_t b, const char gap)
 {
-    printf("%02X ", b);
+    printf("%02X%c", b, gap);
 }
 
-void printAnsiFormatedHexValue(const uint8_t b)
+void printAnsiFormatedHexValue(const uint8_t b, const char gap)
 {
     if ( highlight_hex_bytes > 0 && highlight_hex_wait-- <= 0 )
     {
         setAnsiFormat(HIGHLIGHT_HEX_STYLE);
         highlight_hex_bytes--;
-        printf("%02X ", b);
+        printf("%02X%c", b, gap);
         resetAnsiFormat();
     }
     else if ( b == 0 )
     {
-        printf("%02X ", b);
+        printf("%02X%c", b, gap);
     }
     else
     {
         setAnsiFormat(POS_HEX_STYLE);
-        printf("%02X ", b);
+        printf("%02X%c", b, gap);
         resetAnsiFormat();
     }
 }
 
 #ifdef _WIN32
-void printWinFormatedHexValue(const uint8_t b)
-{
+void printWinFormatedHexValue(const uint8_t b, const char gap)
+{    
     if ( highlight_hex_bytes > 0 && highlight_hex_wait-- <= 0 )
     {
         SetConsoleTextAttribute(hStdout, BACKGROUND_INTENSITY);
         highlight_hex_bytes--;
-        printf("%02X ", b);
+        printf("%02X%c", b, gap);
         SetConsoleTextAttribute(hStdout, wOldColorAttrs);
     }
     else if ( b == 0 )
     {
         SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
-        printf("%02X ", b);
+        printf("%02X%c", b, gap);
         SetConsoleTextAttribute(hStdout, wOldColorAttrs);
     }
     else
     {
-        printf("%02X ", b);
+        printf("%02X%c", b, gap);
     }
 }
 #endif

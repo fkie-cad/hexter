@@ -166,7 +166,7 @@ uint32_t payloadParseDWord(const char* arg, uint8_t** payload)
     }
     if ( arg_ln > 8 )
     {
-        printf("Error: Payload double word is too big!\n");
+        printf("Error: Payload dword is too big!\n");
         return 0;
     }
     arg_ln = 4;  // 4 bytes

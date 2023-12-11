@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version ##
-1.7.1  
-Last changed: 03.05.2023
+1.7.3  
+Last changed: 01.12.2023
 
 
 ## REQUIREMENTS ##
@@ -88,7 +88,7 @@ Optional Parameters:
    * -pu UNICODE (utf-16) only print.
    * -px HEX only print.
    * -po Print address (only valid in combination with the other options).
-   * -p Plain, not styled text output. 
+   * -pp Print plain, not console styled output. 
  * File manipulation/examination.
    * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
    * -i* Insert hex byte sequence (destructive!). Where * is a format option. (File mode only.)
@@ -180,8 +180,8 @@ The test may be built with the target_name=hexter_tests which is the name of the
 Published under [GNU GENERAL PUBLIC LICENSE](LICENSE).   
 
 #### Author ####
-- Henning Braun ([henning.braun@fkie.fraunhofer.de](henning.braun@fkie.fraunhofer.de)) 
+- Henning Braun ([henning.braun@fkie.fraunhofer.de](mailto:henning.braun@fkie.fraunhofer.de)) 
 
 #### Co-Author ####
 common_codeio.c
-- Viviane Zwanger ([viviane.zwanger@fkie.fraunhofer.de](viviane.zwanger@fkie.fraunhofer.de))
+- Viviane Zwanger ([viviane.zwanger@fkie.fraunhofer.de](mailto:viviane.zwanger@fkie.fraunhofer.de))

@@ -17,6 +17,11 @@
     #define ENTER (0xa) // aka \n
 #endif
 
+
+#if defined(_WIN32)
+    #define getpid _getpid
+#endif
+
 //#define DEBUG_PRINT_INFO (0)
 
 #include "print.h"

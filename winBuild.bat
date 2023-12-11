@@ -54,7 +54,7 @@ GOTO :ParseParams
     )
 
     IF /i "%~1"=="/b" (
-        SET /a bitness=%~2
+        SET /a bitness="%~2"
         SHIFT
         goto reParseParams
     )
@@ -67,12 +67,12 @@ GOTO :ParseParams
         goto reParseParams
     )
     IF /i "%~1"=="/bt" (
-        SET buildTools=%~2
+        SET buildTools="%~2"
         SHIFT
         goto reParseParams
     )
     IF /i "%~1"=="/pts" (
-        SET pts=%~2
+        SET pts="%~2"
         SHIFT
         goto reParseParams
     )
