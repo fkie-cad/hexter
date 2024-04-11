@@ -65,11 +65,14 @@ static int payload_arg_id;
 #define FORMAT_WORD ('w')
 #define FORMAT_D_WORD ('d')
 #define FORMAT_Q_WORD ('q')
-#define FORMAT_PLAIN_HEX ('h')
+#define FORMAT_PLAIN_HEX_1 ('h')
+#define FORMAT_PLAIN_HEX_2 ('x')
 #define FORMAT_FILL_BYTE ('f')
 
-static const char format_types[8] = { FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX };
-static const uint8_t format_types_ln = 8;
+#define format_types_ln 9
+static const char format_types[format_types_ln] = { 
+    FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX_1, FORMAT_PLAIN_HEX_2 
+};
 
 static void printUsage();
 void printHelp();
@@ -313,7 +316,7 @@ void printHelp()
            "   * -lphb List all process heaps and its blocks.\n"
            "   * -lrp List all running processes. Pass any pid or 0 to get it running.\n"
            " * -h Print this.\n",
-           FORMAT_PLAIN_HEX, FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
+           FORMAT_PLAIN_HEX_2, FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD
     );
     printf("\n");
     printf("Example: ./%s -file path/to/a.file -s 100 -l 128 -x\n", BIN_NAME);
@@ -743,7 +746,7 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
         ln = payloadParseUtf16(value, payload);
 //  else if ( format == 'r' )
 //      ln = payloadParseReversedPlainBytes(arg, payload);
-    else if ( format == FORMAT_PLAIN_HEX )
+    else if ( format == FORMAT_PLAIN_HEX_1 || format == FORMAT_PLAIN_HEX_2 )
         ln = payloadParsePlainBytes(value, payload);
     else
     {
