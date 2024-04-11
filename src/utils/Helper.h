@@ -5,15 +5,13 @@
 
 #include "../Bool.h"
 
-// Files => FilesUtils.h
+
 /**
- * Expand a leading '~' in src to a full file path in dest.
- * dest has be size of PATH_MAX.
  *
  * @param src char*
  * @param dest char*
  */
-void expandFilePath(const char* src, char* dest);
+int expandFilePath(const char* src, char* dest);
 
 /**
  * Create a temporary file and store its name in buf.

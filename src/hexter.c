@@ -35,8 +35,8 @@
 #endif
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.7.3"
-#define BIN_LAST_CHANGED  "01.12.2023"
+#define BIN_VS "1.7.4"
+#define BIN_LAST_CHANGED  "11.04.2024"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -171,6 +171,8 @@ int run(const char payload_format, const char* raw_payload)
         payload_ln = parsePayload(payload_format, raw_payload, &payload);
         if ( payload == NULL)
             return 3;
+        //if ( caseIndepentend )
+        //    toLowerCase(payload, payload_ln)
     }
 
     if ( (mode_flags&MODE_FLAG_INSERT) )
@@ -511,7 +513,11 @@ int parseArgs(int argc, char** argv)
     }
 
     if ( run_mode == RUN_MODE_FILE )
-        expandFilePath(source, file_path);
+    {
+        s = expandFilePath(source, file_path);
+        if ( s != 0 )
+            return s;
+    }    
     else
         snprintf(file_path, PATH_MAX, "%s", source);
     
@@ -759,7 +765,9 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
 HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _length)
 {
     initParameters();
-    expandFilePath(_file_name, file_path);
+    int s = expandFilePath(_file_name, file_path);
+    if ( s != 0 )
+        return s;
 
     run_mode = RUN_MODE_FILE;
     start = _start;

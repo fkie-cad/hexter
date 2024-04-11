@@ -11,6 +11,8 @@
 #endif
 #if defined(_WIN32)
     #include <conio.h>
+    
+    uint32_t GetFullPathNameA(char* lpFileName,uint32_t nBufferLength,char* lpBuffer,char** lpFilePart);
 #endif
 
 #include "Helper.h"
@@ -23,57 +25,38 @@
 #endif
 
 /**
- * Expand a leading '~' in src to a full file path in dest.
- * dest has be size of PATH_MAX.
+ * Expand the file path:
  *
- * @param src char*
- * @param dest char*
+ * @param src char* the source string
+ * @param dest char* the preallocated destination buffer
  */
-void expandFilePath(const char* src, char* dest)
+int expandFilePath(const char* src, char* dest)
 {
     const char* env_home;
-    
+
     if ( !src || src[0] == 0 )
-        return;
+        return -1;
     size_t cch = strlen(src);
     if ( cch >= PATH_MAX )
-        return;
+        return -1;
 
 #if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
-    if ( src[0] == '~' && src[1] == '/' && src[2] != 0 )
+    dest = realpath(src, dest);
+    if ( dest == NULL )
+        return -1;
+#elif defined(_WIN32)
+    int fpl = GetFullPathNameA((char*)src, PATH_MAX, dest, NULL);
+    if ( !fpl || fpl >= PATH_MAX )
     {
-        env_home = getenv("HOME");
-        if ( env_home != NULL )
-        {
-            cch = snprintf(dest, PATH_MAX, "%s/%s", env_home, &src[2]);
-            if ( cch >= PATH_MAX )
-                snprintf(dest, PATH_MAX, "%s", src);
-        }
-        else
-        {
-            snprintf(dest, PATH_MAX, "%s", src);
-        }
+        return -1;
     }
-    else if ( src[0] != '/' )
-    {
-        char cwd[PATH_MAX] = {0};
-        if ( getcwd(cwd, PATH_MAX) != NULL )
-        {
-            cch = snprintf(dest, PATH_MAX, "%s/%s", cwd, src);
-            if ( cch >= PATH_MAX )
-                snprintf(dest, PATH_MAX, "%s", src);
-        }
-        else
-        {
-            snprintf(dest, PATH_MAX, "%s", src);
-        }
-    }
-    else
+#else
+    snprintf(dest, PATH_MAX, "%s", src);
 #endif
-    {
-        snprintf(dest, PATH_MAX, "%s", src);
-    }
+
     dest[PATH_MAX-1] = 0;
+    
+    return 0;
 }
 
 /**
