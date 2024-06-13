@@ -35,8 +35,8 @@
 #endif
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.7.4"
-#define BIN_LAST_CHANGED  "11.04.2024"
+#define BIN_VS "1.8.0"
+#define BIN_LAST_CHANGED  "13.06.2024"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -69,10 +69,15 @@ static int payload_arg_id;
 #define FORMAT_PLAIN_HEX_2 ('x')
 #define FORMAT_FILL_BYTE ('f')
 
-#define format_types_ln 9
-static const char format_types[format_types_ln] = { 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) \
+  ( sizeof(a) / sizeof(*(a)) )
+#endif
+
+static const char format_types[] = { 
     FORMAT_ASCII, FORMAT_UNICODE, FORMAT_BYTE, FORMAT_FILL_BYTE, FORMAT_WORD, FORMAT_D_WORD, FORMAT_Q_WORD, FORMAT_PLAIN_HEX_1, FORMAT_PLAIN_HEX_2 
 };
+#define format_types_ln (ARRAY_SIZE(format_types))
 
 static void printUsage();
 void printHelp();
@@ -174,8 +179,11 @@ int run(const char payload_format, const char* raw_payload)
         payload_ln = parsePayload(payload_format, raw_payload, &payload);
         if ( payload == NULL)
             return 3;
-        //if ( caseIndepentend )
-        //    toLowerCase(payload, payload_ln)
+        if ( ((mode_flags & (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE))
+            && payload_format == FORMAT_ASCII )
+        {
+            toUpperCaseA(payload, payload_ln);
+        }
     }
 
     if ( (mode_flags&MODE_FLAG_INSERT) )
@@ -307,6 +315,8 @@ void printHelp()
            "     * %c: double word (uint32)\n"
            "     * %c: quad word (uint64).\n"
            "     Expect for the string types, all values have to be passed as hex values, omitting `0x`.\n"
+           "   * Find options:\n"
+           "     * -ci: case insensitive (for ascii search only).\n"
 //         " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
            " * -pid only options:\n"
            "   * -lpx List entire process memory layout.\n"
@@ -468,6 +478,10 @@ int parseArgs(int argc, char** argv)
                 i++;
             }
         }
+        else if ( isArgOfType(argv[i], "-ci") )
+        {
+            mode_flags |= MODE_FLAG_CASE_INSENSITIVE;
+        }
         else
         {
             printf("INFO: Unknown arg type \"%s\"\n", argv[i]);
@@ -559,7 +573,10 @@ uint8_t isFormatArgOfType(char* arg, char* type)
     if ( arg_ln <= type_ln )
         return 0;
 
-    for ( i = 0; i < type_ln; i++ )
+    if ( arg[0] != LIN_PARAM_IDENTIFIER && arg[0] != WIN_PARAM_IDENTIFIER )
+        return 0;
+
+    for ( i = 1; i < type_ln; i++ )
         if ( arg[i] != type[i] )
             return 0;
 

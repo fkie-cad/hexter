@@ -1,6 +1,11 @@
 #ifndef HEXTER_SRC_FINDER_H
 #define HEXTER_SRC_FINDER_H
 
+
+#define FIND_FLAG_CASE_INSENSITIVE (0x1)
+#define FIND_FLAG_ASCII            (0x2)
+
+
 void Finder_initFailure(
     uint8_t* needle, 
     uint32_t needle_ln
@@ -12,7 +17,8 @@ size_t find(
     const uint8_t* needle, 
     uint32_t needle_ln, 
     size_t offset, 
-    size_t max_offset
+    size_t max_offset, 
+    uint32_t flags
 );
 
 size_t findNeedleInFile(
@@ -20,7 +26,8 @@ size_t findNeedleInFile(
     const uint8_t* needle, 
     uint32_t needle_ln, 
     size_t offset, 
-    size_t max_offset
+    size_t max_offset, 
+    uint32_t flags
 );
 
 size_t findNeedleInFP(
@@ -28,7 +35,8 @@ size_t findNeedleInFP(
     uint32_t needle_ln, 
     size_t offset, 
     FILE* fi, 
-    size_t max_offset
+    size_t max_offset, 
+    uint32_t flags
 );
 
 size_t findNeedleInBlock(

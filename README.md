@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version ##
-1.7.4  
-Last changed: 11.04.2024
+1.8.0  
+Last changed: 13.06.2024
 
 
 ## REQUIREMENTS ##
@@ -104,6 +104,8 @@ Optional Parameters:
      * d: double word, 
      * q: quad word.  
      Expect for the string types, all values have to be passed as hex values, omitting `0x`.  
+   * Find options:
+     * -ci: case independed (for ascii search only).
  * -pid only:
    * -lpx List entire process memory layout.
    * -lpm List all process modules.

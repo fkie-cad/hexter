@@ -126,8 +126,8 @@ static void printRegionInfo(ProcMapsEntry* entry, const char* file_name);
 static Bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t printed_module_base);
 static Bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base);
 static Bool queryNextRegion(FILE* fp, ProcMapsEntry* entry);
-static int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s);
-static uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const uint8_t* needle, uint32_t needle_ln);
+static int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s, uint32_t find_flags);
+static uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const uint8_t* needle, uint32_t needle_ln, uint32_t flags);
 
 static int filter(const struct dirent *dir);
 static void processdir(const struct dirent *dir);
@@ -778,6 +778,10 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, uint8
 
     p_needle = needle;
     p_needle_ln = needle_ln;
+    uint32_t find_flags = 0;
+    
+    if ( (mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INDEPENDENT)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INDEPENDENT) )
+        find_flags = (FIND_FLAG_CASE_INDEPENDENT|FIND_FLAG_ASCII);
 
     // check if /proc/pid/mem is accessible
     if ( !fopenProcessMemory(pid, &fp, "r") )
@@ -845,7 +849,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, uint8
 
         if ( (mode_flags&MODE_FLAG_FIND) )
         {
-            found = findNeedleInProcessMemoryBlock(pid, entry.address, entry.size, base_off, p_needle, p_needle_ln);
+            found = findNeedleInProcessMemoryBlock(pid, entry.address, entry.size, base_off, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )
             {
                 printed_module_base = entry.base;
@@ -864,7 +868,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, uint8
         }
 
 //		Printer_setSkipBytes(skip_bytes);
-        print_s = printRegionProcessMemory(pid, entry.address, base_off, entry.size, found, print_s);
+        print_s = printRegionProcessMemory(pid, entry.address, base_off, entry.size, found, print_s, find_flags);
 
         printed_module_base = entry.base;
         base_off = 0;
@@ -927,7 +931,7 @@ Bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base)
  * @return uint64_t absolute found address
  */
 uint64_t
-findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const uint8_t* needle, uint32_t needle_ln)
+findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const uint8_t* needle, uint32_t needle_ln, uint32_t flags)
 {
     FILE* fp;
     uint64_t found = FIND_FAILURE;
@@ -938,7 +942,7 @@ findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_s
         printf("ERROR (%x): Could not open process %u memory.\n", errsv, pid);
         return false;
     }
-    found = findNeedleInFP(needle, needle_ln, base_addr+offset, fp, base_addr+base_size);
+    found = findNeedleInFP(needle, needle_ln, base_addr+offset, fp, base_addr+base_size, flags);
 
     fclose(fp);
     return found;
@@ -954,7 +958,7 @@ findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_s
  * @param print_s int auto print flag
  * @return 0 if end of block is reached, 1 if forced to quit
  */
-int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s)
+int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s, uint32_t find_flags)
 {
     FILE* fp;
     uint8_t block[BLOCKSIZE_LARGE] = {0};
@@ -1012,7 +1016,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
         }
         else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
         {
-            found = findNeedleInProcessMemoryBlock(pid, base_addr, size, found + p_needle_ln, p_needle, p_needle_ln);
+            found = findNeedleInProcessMemoryBlock(pid, base_addr, size, found + p_needle_ln, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )
             {
                 s = 0;

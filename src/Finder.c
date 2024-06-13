@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "utils/common_fileio.h"
+#include "utils/Strings.h"
 #include "Finder.h"
 #include "Globals.h"
 
@@ -41,7 +42,7 @@ void Finder_initFailure(uint8_t* needle, uint32_t needle_ln)
  * @param	offset size_t
  * @return	size_t the offset of the found needle or FIND_FAILURE, if not found
  */
-size_t find(const char* path, const uint8_t* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
+size_t find(const char* path, const uint8_t* needle, uint32_t needle_ln, size_t offset, size_t max_offset, uint32_t flags)
 {
     size_t found;
 
@@ -49,7 +50,7 @@ size_t find(const char* path, const uint8_t* needle, uint32_t needle_ln, size_t 
     f = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
     computeFailure(needle, needle_ln, f);
 
-    found = findNeedleInFile(path, needle, needle_ln, offset, max_offset);
+    found = findNeedleInFile(path, needle, needle_ln, offset, max_offset, flags);
 //	uint8_t remainder = 0;
 
 //	n_found = normalizeOffset(found, &remainder);
@@ -71,7 +72,7 @@ size_t find(const char* path, const uint8_t* needle, uint32_t needle_ln, size_t 
  * @param offset size_t
  * @return
  */
-size_t findNeedleInFile(const char* path, const uint8_t* needle, uint32_t needle_ln, size_t offset, size_t max_offset)
+size_t findNeedleInFile(const char* path, const uint8_t* needle, uint32_t needle_ln, size_t offset, size_t max_offset, uint32_t flags)
 {
 //	printf("BLOCKSIZE_LARGE: %u\n",BLOCKSIZE_LARGE);
     FILE* fi;
@@ -86,7 +87,7 @@ size_t findNeedleInFile(const char* path, const uint8_t* needle, uint32_t needle
         return FIND_FAILURE;
     }
 
-    found = findNeedleInFP(needle, needle_ln, offset, fi, max_offset);
+    found = findNeedleInFP(needle, needle_ln, offset, fi, max_offset, flags);
 
     fclose(fi);
 
@@ -101,9 +102,9 @@ size_t findNeedleInFile(const char* path, const uint8_t* needle, uint32_t needle
  * @param offset
  * @param failure
  * @param fi
- * @return	size_t the found offset or FIND_FAILURE
+ * @return size_t the found offset or FIND_FAILURE
  */
-size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, FILE* fi, size_t max_offset)
+size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, FILE* fi, size_t max_offset, uint32_t flags)
 {
     uint8_t buf[BLOCKSIZE_LARGE];
     const uint16_t buf_ln = BLOCKSIZE_LARGE;
@@ -111,7 +112,9 @@ size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, 
     size_t read_size = buf_ln;
     size_t block_i, j;
     size_t found = FIND_FAILURE;
-//	printf("findNeedleInFP(0x%lx, 0x%lx)\n", offset, max_offset);
+
+    //debug_info("findNeedleInFP(0x%zx, 0x%zx)\n", offset, max_offset);
+    //debug_info("  flags: 0x%x\n", flags);
 
     j = 0;
 
@@ -123,6 +126,11 @@ size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, 
 
         fseek(fi, offset, SEEK_SET);
         n = fread(buf, 1, read_size, fi);
+        
+        if ( (flags&(FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII)) == (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII) )
+        {
+            toUpperCaseA((char*)buf, n);
+        };
 
         block_i = findNeedleInBlock(needle, needle_ln, buf, &j, n);
 
@@ -150,24 +158,28 @@ size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, 
  */
 size_t findNeedleInBlock(const uint8_t* needle, uint32_t needle_ln, const uint8_t* buf, size_t* j, size_t n)
 {
-    size_t i;
+    size_t buf_i;
+    size_t needle_i = *j;
 
-    for ( i = 0; i < n; i++ )
+    for ( buf_i = 0; buf_i < n; buf_i++ )
     {
-        while ( (*j) > 0 && needle[(*j)] != buf[i] )
+        while ( needle_i > 0 && needle[needle_i] != buf[buf_i] )
         {
-            (*j) = failure[(*j) - 1];
+            needle_i = failure[needle_i - 1];
         }
-        if ( needle[(*j)] == buf[i] )
+        if ( needle[needle_i] == buf[buf_i] )
         {
-            (*j)++;
+            needle_i++;
         }
-        if ( (*j) == needle_ln )
+        if ( needle_i == needle_ln )
             break;
-        if ( (*j) == 0 && i > n - needle_ln )
+        if ( needle_i == 0 && buf_i > n - needle_ln )
             break;
     }
-    return i;
+    
+    *j = needle_i;
+
+    return buf_i;
 }
 
 /**

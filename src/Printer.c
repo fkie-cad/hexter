@@ -30,10 +30,12 @@
 #define BLANK_GAP_C ' '
 #define SEPARATOR_GAP_C '-'
 
+typedef void (*PRINT_COL)(const uint8_t*, size_t, size_t, uint16_t);
 
 static void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block_size, size_t block_start, size_t block_max);
 
-static void printDoubleCols(const uint8_t* block, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t));
+//static void printDoubleCols(const uint8_t* block, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t));
+static void printDoubleCols(const uint8_t* block, size_t size, PRINT_COL printCol);
 
 static void printTripleCols(const uint8_t* block, size_t size, size_t offset, uint8_t width, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t));
 
@@ -47,6 +49,7 @@ static void printUnicodeCol(const uint8_t* block, size_t i, size_t size, uint16_
 
 static void printHexCols(const uint8_t* block, size_t size);
 static uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_size);
+static uint8_t printHexCol16(const uint8_t* block, size_t i, size_t size, uint8_t col_size);
 
 static void printOffsetCol(size_t offset, uint8_t width);
 static void printCleanHexValue(const uint8_t b, const char gap);
@@ -84,6 +87,7 @@ static int32_t highlight_unicode_wait = 0;
 static uint8_t* needle = NULL;
 static uint32_t needle_ln;
 static size_t found = 0;
+static uint32_t find_flags = 0;
 
 
 /**
@@ -104,13 +108,16 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
     uint16_t block_size = BLOCKSIZE_LARGE;
     size_t nr_of_parts = length / block_size;
     if ( length % block_size != 0 ) nr_of_parts++;
-    
-#ifdef DEBUG_PRINT
+
+    if ( (mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
+        find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
+
     debug_info("start: 0x%zx\n", start);
     debug_info("block_size: 0x%x\n", block_size);
     debug_info("nr_of_parts: 0x%zx\n", nr_of_parts);
+    debug_info("mode_flags: 0x%x\n", mode_flags);
+    debug_info("find_flags: 0x%x\n", find_flags);
     debug_info("\n");
-#endif
 
     errno = 0;
     fi = fopen(file_path, "rb");
@@ -134,7 +141,7 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
     if ( mode_flags&MODE_FLAG_FIND )
     {
         Finder_initFailure(needle, needle_ln);
-        found = findNeedleInFile(file_path, needle, needle_ln, start, file_size);
+        found = findNeedleInFile(file_path, needle, needle_ln, start, file_size, find_flags);
         //found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, file_size);
         if ( found == FIND_FAILURE )
         {
@@ -207,7 +214,7 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block
             block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
         else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
         {
-            found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max);
+            found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max, find_flags);
             if ( found == FIND_FAILURE )
                 break;
 
@@ -298,20 +305,21 @@ void printLine(const uint8_t* block, size_t block_start, size_t size, uint8_t of
         printUnicodeCols(block, size, UNICODE_COL_SIZE);
 }
 
-void printDoubleCols(const uint8_t* block, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t))
+//void printDoubleCols(const uint8_t* block, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t))
+void printDoubleCols(const uint8_t* block, size_t size, PRINT_COL printCol)
 {
     size_t i;
     uint8_t k = 0;
 
-    for ( i = 0; i < size; i += DOUBLE_COL_SIZE )
+    for ( i = 0; i < size; i += HEX_COL_SIZE )
     {
-        k = printHexCol(block, i, size, DOUBLE_COL_SIZE);
+        k = printHexCol(block, i, size, HEX_COL_SIZE);
 
         fillGap(k);
 
         printf("%c ", COL_SEPARATOR);
 
-        printCol(block, i, size, DOUBLE_COL_SIZE);
+        printCol(block, i, size, HEX_COL_SIZE);
 
         printf("\n");
     }
@@ -442,14 +450,14 @@ void printHexCols(const uint8_t* block, size_t size)
 uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_size)
 {
     uint8_t k = 0;
-    size_t temp_i;
+    size_t block_offset;
     char gap = BLANK_GAP_C;
     uint8_t gap_ctr = 0;
 
     for ( k = 0, gap_ctr=0; k < col_size; k++, gap_ctr++ )
     {
-        temp_i = i + k;
-        if ( temp_i >= size )
+        block_offset = i + k;
+        if ( block_offset >= size )
             break;
 
         if ( skip_hex_bytes > 0 )
@@ -466,11 +474,44 @@ uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_siz
         if ( (gap_ctr+1) == col_size )
             gap_ctr = 0;
 
-        (*printHexValue)(block[temp_i], gap);
+        printHexValue(block[block_offset], gap);
     }
 
     return k;
 }
+
+//uint8_t printHexCol16(const uint8_t* block, size_t i, size_t size, uint8_t col_size)
+//{
+//    uint8_t k = 0;
+//    size_t block_offset;
+//    char gap = BLANK_GAP_C;
+//    uint8_t gap_ctr = 0;
+//
+//    for ( k = 0, gap_ctr=0; k < col_size; k+=2, gap_ctr+=2 )
+//    {
+//        block_offset = i + k;
+//        if ( block_offset >= size )
+//            break;
+//
+//        if ( skip_hex_bytes > 0 )
+//        {
+//            printf(HEX_GAP);
+//            skip_hex_bytes--;
+//            continue;
+//        }
+//
+//        if ( (gap_ctr+1) == col_size/2 )
+//            gap = SEPARATOR_GAP_C;
+//        else 
+//            gap = BLANK_GAP_C;
+//        if ( (gap_ctr+1) == col_size )
+//            gap_ctr = 0;
+//
+//        printHexValue(block[block_offset], gap);
+//    }
+//
+//    return k;
+//}
 
 void printCleanHexValue(const uint8_t b, const char gap)
 {

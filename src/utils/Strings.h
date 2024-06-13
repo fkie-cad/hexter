@@ -7,6 +7,10 @@ size_t split(char* str, const char* delimiter, char** bucket, const size_t bucke
 size_t splitArgs(char *buffer, char *argv[], size_t argv_size);
 size_t splitArgsCSM(char *buffer, char *argv[], size_t argv_size, char som, char scm);
 
+//int toLowerCaseA(char* buffer, size_t size);
+int toUpperCaseCA(char* c);
+int toUpperCaseA(char* buffer, size_t size);
+
 
 int UTF8ToUTF16LE(unsigned char* outb, size_t* outlen, const unsigned char* in, size_t* inlen);
 int UTF16LEToUTF8(unsigned char* out, size_t* outlen, const unsigned char* inb, size_t* inlenb);

@@ -75,6 +75,7 @@ extern uint8_t print_col_mask;
 #define MODE_FLAG_FIND                  (0x08)
 #define MODE_FLAG_CONTINUOUS_PRINTING   (0x10)
 #define MODE_FLAG_CLEAN_PRINTING        (0x20)
+#define MODE_FLAG_CASE_INSENSITIVE      (0x40)
 
 extern uint32_t mode_flags;
 

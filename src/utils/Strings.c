@@ -146,6 +146,59 @@ size_t splitArgsCSM(char* buffer, char* argv[], size_t argv_size, char som, char
     return argc;
 }
 
+
+ #define IS_LC_CHAR_A(__char__) \
+     ( (__char__) >= 'a' && (__char__) <= 'z' )
+ #define IS_UC_CHAR_A(__char__) \
+     ( (__char__) >= 'A' && (__char__) <= 'Z' )
+ #define LC_TO_UC_CHAR_A(__char_ptr__) \
+     (*(__char_ptr__)) -= 0x20
+ #define UC_TO_LC_CHAR_A(__char_ptr__) \
+     (*(__char_ptr__)) += 0x20
+
+// int toLowerCaseA(char* buffer, size_t size)
+// {
+    // size_t i;
+    // char* end = buffer + size;
+    // char* ptr = buffer;
+//
+    // while ( ptr < end )
+    // {
+        // if ( IS_UC_CHAR(*ptr) )
+        // {
+            // UC_TO_LC_CHAR(ptr);
+        // }
+        // ++ptr;
+    // }
+    // return 0;
+// }
+
+int toUpperCaseCA(char* c)
+{
+    if ( IS_LC_CHAR_A(*c) )
+    {
+        LC_TO_UC_CHAR_A(c);
+    }
+    return 0;
+}
+
+int toUpperCaseA(char* buffer, size_t size)
+{
+    size_t i;
+    char* end = buffer + size;
+    char* ptr = buffer;
+
+    while ( ptr < end )
+    {
+        if ( IS_LC_CHAR_A(*ptr) )
+        {
+            LC_TO_UC_CHAR_A(ptr);
+        }
+        ++ptr;
+    }
+    return 0;
+}
+
 /**
  * UTF8ToUTF16LE:
  * @outb:  a pointer to an array of bytes to store the result

@@ -1,5 +1,4 @@
-/build/**
-!/build/**/
+build/
 
 venv/
 desktop.ini
@@ -16,12 +15,6 @@ CMakeSettings.json
 #res
 TODO
 
-#!build/hexter
-#!build/hexter.sha256
-
-#!build/64/hexter.exe
-#!build/64/hexter.sha256
-#!build/32/hexter.exe
-#!build/32/hexter.sha256
-
+.gitignore
 *.vcxproj.user
+TODO.txt
