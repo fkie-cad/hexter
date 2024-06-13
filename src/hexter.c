@@ -31,8 +31,8 @@
     #include <process.h>
     #include <time.h>
     #include "ProcessHandlerWin.h"
-    #include "utils/Strings.h"
 #endif
+#include "utils/Strings.h"
 
 #define BIN_NAME ("hexter")
 #define BIN_VS "1.8.0"

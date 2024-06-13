@@ -636,8 +636,8 @@ int printProcModule(ProcMapsEntry* entry, size_t module_nr)
     getFileNameL(entry->pathname, &name);
 
     printf("%lu. Module: %s\n", module_nr, name);
-    printf(" - Path = %s\n", entry->pathname);
-    printf(" - 0x%0*lx | 0x%0*lx | %*s | 0x%0*lx | %*s | %*u\n",
+    printf("   Path = %s\n", entry->pathname);
+    printf("   0x%0*lx | 0x%0*lx | %*s | 0x%0*lx | %*s | %*u\n",
             map_entry_col_width[0], entry->address, map_entry_col_width[0], entry->size, map_entry_col_width[1], entry->perms,
             map_entry_col_width[2], entry->offset, map_entry_col_width[3], entry->dev, map_entry_col_width[4], entry->inode);
 
@@ -780,8 +780,8 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, uint8
     p_needle_ln = needle_ln;
     uint32_t find_flags = 0;
     
-    if ( (mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INDEPENDENT)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INDEPENDENT) )
-        find_flags = (FIND_FLAG_CASE_INDEPENDENT|FIND_FLAG_ASCII);
+    if ( (mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
+        find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
     // check if /proc/pid/mem is accessible
     if ( !fopenProcessMemory(pid, &fp, "r") )
