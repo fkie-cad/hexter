@@ -9,7 +9,7 @@ Compiles and runs under
 
 
 ## Version ##
-1.8.1  
+1.8.2  
 Last changed: 10.09.2024
 
 
@@ -89,6 +89,7 @@ Optional Parameters:
    * -px HEX only print.
    * -po Print address (only valid in combination with the other options).
    * -pp Print plain, not console styled output. 
+   * -pbs Print plain byte string. 
  * File manipulation/examination.
    * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
    * -i* Insert hex byte sequence (destructive!). Where * is a format option. (File mode only.)

@@ -47,6 +47,8 @@ static void printAsciiCol(const uint8_t* block, size_t i, size_t size, uint16_t 
 static void printUnicodeCols(const uint8_t* block, size_t size, uint16_t col_size);
 static void printUnicodeCol(const uint8_t* block, size_t i, size_t size, uint16_t col_size);
 
+void printPlainByteString(const uint8_t* block, size_t size);
+
 static void printHexCols(const uint8_t* block, size_t size);
 static uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_size);
 static uint8_t printHexCol16(const uint8_t* block, size_t i, size_t size, uint8_t col_size);
@@ -291,7 +293,7 @@ void printLine(const uint8_t* block, size_t block_start, size_t size, uint8_t of
 {
     if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK) )
         printTripleCols(block, size, block_start, offset_width, printAsciiCol);
-    if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_UNICODE_MASK | PRINT_HEX_MASK) )
+    else if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_UNICODE_MASK | PRINT_HEX_MASK) )
         printTripleCols(block, size, block_start, offset_width, printUnicodeCol);
     else if ( print_col_mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK) )
         printDoubleCols(block, size, printAsciiCol);
@@ -303,6 +305,8 @@ void printLine(const uint8_t* block, size_t block_start, size_t size, uint8_t of
         printHexCols(block, size);
     else if ( print_col_mask == PRINT_UNICODE_MASK )
         printUnicodeCols(block, size, UNICODE_COL_SIZE);
+    else if ( print_col_mask == PRINT_BYTES_STRING )
+        printPlainByteString(block, size);
 }
 
 //void printDoubleCols(const uint8_t* block, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t))
@@ -478,6 +482,25 @@ uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_siz
     }
 
     return k;
+}
+
+
+
+void printPlainByteString(const uint8_t* block, size_t size)
+{
+    size_t k = 0;
+
+    for ( k = 0; k < size; k++ )
+    {
+        if ( skip_hex_bytes > 0 )
+        {
+            printf(HEX_GAP);
+            skip_hex_bytes--;
+            continue;
+        }
+          
+        printf("%02x", block[k]);
+    }
 }
 
 //uint8_t printHexCol16(const uint8_t* block, size_t i, size_t size, uint8_t col_size)

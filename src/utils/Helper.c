@@ -292,6 +292,8 @@ uint8_t getColSize()
         col_size = UNICODE_COL_SIZE;
     else if ( print_col_mask == PRINT_HEX_MASK )
         col_size = HEX_COL_SIZE;
+    else if ( print_col_mask == PRINT_BYTES_STRING ) // convenience size to don't break calculations
+        col_size = TRIPLE_COL_SIZE;
 
     return col_size;
 }

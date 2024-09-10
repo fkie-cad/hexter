@@ -67,6 +67,7 @@ extern uint8_t print_col_mask;
 #define PRINT_UNICODE_MASK  (0x2)
 #define PRINT_HEX_MASK      (0x4)
 #define PRINT_OFFSET_MASK   (0x8)
+#define PRINT_BYTES_STRING  (0x10)
 
 
 #define MODE_FLAG_INSERT                (0x01)

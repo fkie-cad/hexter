@@ -35,7 +35,7 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.8.1"
+#define BIN_VS "1.8.2"
 #define BIN_LAST_CHANGED  "10.09.2024"
 
 #define LIN_PARAM_IDENTIFIER ('-')
@@ -300,6 +300,7 @@ void printHelp()
            "   * -px HEX only print.\n"
            "   * -po Print address (only valid in combination with the other options).\n"
            "   * -pp Print plain, not console styled output.\n"
+           "   * -pbs Print plain byte string.\n"
            " * File manipulation/examination.\n"
            "   * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
            "   * -i* Insert hex byte sequence (destructive!). Where * is a format option. (File mode only.)\n"
@@ -372,6 +373,10 @@ int parseArgs(int argc, char** argv)
         else if ( isArgOfType(argv[i], "-pp") )
         {
             mode_flags |= MODE_FLAG_CLEAN_PRINTING;
+        }
+        else if ( isArgOfType(argv[i], "-pbs") )
+        {
+            print_col_mask = PRINT_BYTES_STRING;
         }
         else if ( isArgOfType(argv[i], "-d") )
         {
@@ -651,7 +656,8 @@ int sanitizePrintParams(uint32_t pid)
     }
 
     // normalize length to block size for continuous printing
-    if ( mode_flags&MODE_FLAG_CONTINUOUS_PRINTING )
+    if ( (mode_flags&MODE_FLAG_CONTINUOUS_PRINTING)
+        && print_col_mask != PRINT_BYTES_STRING )
     {
         if ( length % col_size != 0 )
         {
