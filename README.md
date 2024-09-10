@@ -1,4 +1,4 @@
-# Hexter #
+# Hexter
 A minimal terminal hex viewer supporting reading, writing and searching in files and processes.
 
 Compiles and runs under
@@ -8,12 +8,12 @@ Compiles and runs under
 - Android in Termux
 
 
-## Version ##
+## Version
 1.8.2  
 Last changed: 10.09.2024
 
 
-## REQUIREMENTS ##
+## REQUIREMENTS
 - Linux
     - Gcc
     - Building with cmake requires cmake.  
@@ -21,14 +21,14 @@ Last changed: 10.09.2024
     - msbuild
 
 
-## BUILD ##
+## BUILD
 
-### Linux (gcc) & cmake ###
+### Linux (gcc) & linuxBuild.sh
 ```bash
 $ ./linuxBuild.sh [-t exe] [-m Debug|Release] [-h]
 ```
 
-### Linux (gcc) ###
+### Linux (gcc) manual
 ```bash
 $ mkdir build
 $ gcc -o build/hexter -Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Ofast src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c
@@ -36,7 +36,7 @@ $ gcc -o build/hexter -Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Ofast src/hext
 
 Use `clang` instead of `gcc` in Termux on Android.
 
-### Windows (MsBuild) ###
+### Windows (MsBuild)
 ```bash
 $ winBuild.bat [/exe] [/m Release|Debug] [/b 32|64] [/rt] [/pdb] [/pts <toolset>] [/bt <path>] [/h]
 ```
@@ -54,7 +54,7 @@ $devcmd> msbuild Hexter.vcxproj /p:Configuration=<Release|Debug> /p:Platform=<x6
 ```
 
 
-### DLL : Windows (MsBuild) ### 
+### DLL : Windows (MsBuild) 
 ```bash
 $ winBuild.bat /lib [/b 64] [/m Release] [/rt] [/pdb] [/pts <toolset>] [/bt a\path] [/?]
 ```
@@ -64,7 +64,7 @@ If a "VCRUNTIMExxx.dll not found Error" occurs on the target system, statically 
 This is done by using the `/p:RunTimeLib=Debug|Release` (msbuild) or `[/rtl]` (winBuild) flags.
 
 
-### Windows Context Menu ###
+### Windows Context Menu
 It may be convenient to add Hexter to the context menu to be able to right-click a file and hexter it.
 In this scenario, you may use
 ```bash
@@ -72,7 +72,7 @@ $ addHeaderHexterToShellCtxtMenu.bat /p "c:\Hexter.exe" [/l "Open in Hexter"]
 ```
 
 
-## USAGE ##
+## USAGE
 ```bash
 $ ./hexter [options] -file a/file/name [options]
 $ ./hexter [options] -pid xx [options] 
@@ -123,7 +123,7 @@ Quit with "q".
 If searching something in continuous mode, type "n" to find next occurrence.  
 The length value will be padded to fit a block size in continuous mode.  
 
-### EXAMPLES ###
+### EXAMPLES
 **files**  
 Print 100 bytes from offset 20 in hex only style.
 ```bash
@@ -166,10 +166,10 @@ Print a list of running processes.
 $ ./hexter -pid 0 -lrp
 ```
 
-## TESTS ##
+## TESTS
 (Currently Gtests run linux only) 
 
-### REQUIREMENTS ###
+### REQUIREMENTS
  - The google c++ testing framework gtest [1]  
  - A c++ compiler available to cmake
 
@@ -179,12 +179,12 @@ The test may be built with the target_name=hexter_tests which is the name of the
 [1] https://github.com/google/googletest
 
 
-## COPYRIGHT, CREDITS & CONTACT ##
+## COPYRIGHT, CREDITS & CONTACT
 Published under [GNU GENERAL PUBLIC LICENSE](LICENSE).   
 
-#### Author ####
+#### Author
 - Henning Braun ([henning.braun@fkie.fraunhofer.de](mailto:henning.braun@fkie.fraunhofer.de)) 
 
-#### Co-Author ####
+#### Co-Author
 common_codeio.c
 - Viviane Zwanger ([viviane.zwanger@fkie.fraunhofer.de](mailto:viviane.zwanger@fkie.fraunhofer.de))
