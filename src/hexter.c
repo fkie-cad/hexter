@@ -35,8 +35,8 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.8.0"
-#define BIN_LAST_CHANGED  "13.06.2024"
+#define BIN_VS "1.8.1"
+#define BIN_LAST_CHANGED  "10.09.2024"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -182,7 +182,7 @@ int run(const char payload_format, const char* raw_payload)
         if ( ((mode_flags & (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE))
             && payload_format == FORMAT_ASCII )
         {
-            toUpperCaseA(payload, payload_ln);
+            toUpperCaseA((char*)payload, payload_ln);
         }
     }
 
@@ -763,8 +763,15 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
         ln = payloadParseUtf16(value, payload);
 //  else if ( format == 'r' )
 //      ln = payloadParseReversedPlainBytes(arg, payload);
-    else if ( format == FORMAT_PLAIN_HEX_1 || format == FORMAT_PLAIN_HEX_2 )
-        ln = payloadParsePlainBytes(value, payload);
+    else if (format == FORMAT_PLAIN_HEX_1 || format == FORMAT_PLAIN_HEX_2)
+    {
+        char* cleaned_value = NULL;
+        int s = cleanBytes(value, &cleaned_value);
+        if ( s != 0 )
+            return 0;
+        ln = payloadParsePlainBytes(cleaned_value, payload);
+        free(cleaned_value);
+    }
     else
     {
         printf("ERROR: %c is not a supported format!\n", format);

@@ -35,7 +35,7 @@ static void truncateFile(FILE* fp, size_t file_size, size_t ln);
 uint32_t payloadParseByte(const char* arg, uint8_t** payload)
 {
     int s;
-    uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
+    uint32_t arg_ln = (uint32_t)strnlen(arg, 4);
     if ( arg_ln < 1 )
     {
         printf("Error: Payload byte has no value!\n");
@@ -276,10 +276,9 @@ uint32_t payloadParseUtf16(const char* arg, uint8_t** payload)
 {
     uint32_t i;
     size_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
-
-    // fill buffer to get the real size
-    uint8_t outb[MAX_PAYLOAD_LN*2] = {0};
-    size_t outlen = MAX_PAYLOAD_LN*2;
+    
+    size_t outlen = 0;
+    uint8_t* outb = NULL;
 
     if ( arg_ln < 1 )
     {
@@ -287,12 +286,18 @@ uint32_t payloadParseUtf16(const char* arg, uint8_t** payload)
         return 0;
     }
 
-    int s = UTF8ToUTF16LE(outb, &outlen, (uint8_t*)arg, &arg_ln);
+    // fill buffer to get the real size
+    outlen = (size_t)MAX_PAYLOAD_LN * 2;
+    outb = (uint8_t*)malloc(outlen);
+    if ( !outb )
+        return 0;
 
+    int s = UTF8ToUTF16LE(outb, &outlen, (uint8_t*)arg, &arg_ln);
     if ( s != 0 )
     {
         printf("Error (0x%x): Converting to utf16.\n", s);
-        return 0;
+        outlen = 0;
+        goto clean;
     }
 
     // alloc payload with real size
@@ -300,7 +305,8 @@ uint32_t payloadParseUtf16(const char* arg, uint8_t** payload)
     if ( p == NULL )
     {
         printf("ERROR: Allocating memory failed!\n");
-        return 0;
+        outlen = 0;
+        goto clean;
     }
 
     for ( i = 0; i < outlen; i++ )
@@ -309,6 +315,10 @@ uint32_t payloadParseUtf16(const char* arg, uint8_t** payload)
     }
 
     *payload = p;
+
+clean:
+    if ( outb )
+        free(outb);
 
     return (uint32_t)outlen;
 }
@@ -341,6 +351,55 @@ uint32_t payloadParseReversedPlainBytes(const char* arg, uint8_t** payload)
 }
 
 /**
+ * Clean byte string of spaces or \x format tags
+ */
+int cleanBytes(const char* input, char** output)
+{
+    // get max size of data
+    size_t input_ln = strlen(input);
+    
+    // alloc output buffer + terminating zero
+    char* local = (char*)malloc(input_ln+1);
+    if ( !local )
+        return -1;
+    size_t local_cb = 0;
+
+    const char* end_ptr = input + input_ln;
+    char* local_ptr = local;
+    for ( const char* input_ptr = input; input_ptr < end_ptr; input_ptr++ )
+    {
+        // skip spaces
+        if ( *input_ptr == ' ' 
+          || *input_ptr == '|'
+          || *input_ptr == '-' )
+            continue;
+        // skip "\x" marker
+        if (*input_ptr == '\\'
+            && input_ptr < end_ptr - 1
+            && *(input_ptr + 1) == 'x')
+        {
+            input_ptr++;
+            continue;
+        }
+
+        *local_ptr = *input_ptr;
+        local_ptr++;
+    }
+
+    local_cb = local_ptr - local;
+    if ( local_cb > MAX_PAYLOAD_LN )
+    {
+        free(local);
+        return -2;
+    }
+    local[local_cb] = 0;
+
+    *output = local;
+
+    return 0;
+}
+
+/**
  * Parse the arg as plain bytes.
  * Allocates payload. Caller has to free it.
  *
@@ -351,7 +410,7 @@ uint32_t payloadParseReversedPlainBytes(const char* arg, uint8_t** payload)
 uint32_t payloadParsePlainBytes(const char* arg, uint8_t** payload)
 {
     uint32_t i, j;
-    uint16_t arg_ln = (uint16_t)strnlen(arg, MAX_PAYLOAD_LN);
+    uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
     uint8_t* p;
     char byte[3] = {0};
     uint32_t payload_ln;

@@ -42,6 +42,11 @@ uint32_t payloadParseReversedPlainBytes(
     uint8_t** payload
 );
 
+int cleanBytes(
+    const char* input, 
+    char** output
+);
+
 uint32_t payloadParsePlainBytes(
     const char* arg, 
     uint8_t** payload

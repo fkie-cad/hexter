@@ -184,7 +184,6 @@ int toUpperCaseCA(char* c)
 
 int toUpperCaseA(char* buffer, size_t size)
 {
-    size_t i;
     char* end = buffer + size;
     char* ptr = buffer;
 

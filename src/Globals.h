@@ -54,7 +54,7 @@
 #define QUIT ('q')
 #define CONTINUE ('c')
 
-#define MAX_PAYLOAD_LN (0x200)
+#define MAX_PAYLOAD_LN (0xFFFFFFFF)
 #define FIND_FAILURE SIZE_MAX
 
 extern size_t file_size;
