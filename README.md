@@ -16,7 +16,6 @@ Last changed: 10.09.2024
 ## REQUIREMENTS
 - Linux
     - Gcc
-    - Building with cmake requires cmake.  
 - Windows
     - msbuild
 
@@ -25,7 +24,7 @@ Last changed: 10.09.2024
 
 ### Linux (gcc) & linuxBuild.sh
 ```bash
-$ ./linuxBuild.sh [-t exe] [-m Debug|Release] [-h]
+$ ./linuxBuild.sh -t app [-d|r] [-c] [-h]
 ```
 
 ### Linux (gcc) manual
@@ -57,6 +56,11 @@ $devcmd> msbuild Hexter.vcxproj /p:Configuration=<Release|Debug> /p:Platform=<x6
 ### DLL : Windows (MsBuild) 
 ```bash
 $ winBuild.bat /lib [/b 64] [/m Release] [/rt] [/pdb] [/pts <toolset>] [/bt a\path] [/?]
+```
+
+### DLL : Linux (gcc) 
+```bash
+$ ./linuxBuild.sh -t lib [-d|r] [-c] [-h]
 ```
 
 ### Runtime Errors (Windows)
@@ -182,9 +186,9 @@ The test may be built with the target_name=hexter_tests which is the name of the
 ## COPYRIGHT, CREDITS & CONTACT
 Published under [GNU GENERAL PUBLIC LICENSE](LICENSE).   
 
-#### Author
+### Author
 - Henning Braun ([henning.braun@fkie.fraunhofer.de](mailto:henning.braun@fkie.fraunhofer.de)) 
 
-#### Co-Author
+### Co-Author
 common_codeio.c
 - Viviane Zwanger ([viviane.zwanger@fkie.fraunhofer.de](mailto:viviane.zwanger@fkie.fraunhofer.de))

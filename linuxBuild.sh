@@ -1,12 +1,25 @@
 #!/bin/bash
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+release_build_dir="${ROOT}/build"
+debug_build_dir="${ROOT}/build/debug"
+
+MODE_DEBUG=1
+MODE_RELEASE=2
+
+DP_FLAG=1
+EP_FLAG=2
+
 name=hexter
 def_target=app
-pos_targets="app|lib|pck|cln"
-target=${def_target}
-def_mode=Release
-mode=${def_mode}
+pos_targets="app|lib"
+target=
+def_mode=$MODE_RELEASE
+mode=$def_mode
 help=0
+debug_print=EP_FLAG
+clean=0
 
 # Clean build directory from meta files
 #
@@ -16,22 +29,16 @@ function clean() {
 
     echo "cleaning build dir: $dir"
 
-    if [[ ${dir} == "${ROOT}" ]]; then
+    if [[ ${dir} != "${release_build_dir}" ]] && [[ ${dir} != "${debug_build_dir}" ]]; then
+        echo [e] Invalid clean dir!
         return
     fi
 
     cd ${dir} || return 1
 
-    rm -r ./CMakeFiles 2> /dev/null
-    rm -r ./CTestTestfile.cmake 2> /dev/null
-    rm -r ./CMakeCache.txt 2> /dev/null
-    rm -r ./cmake_install.cmake 2> /dev/null
-    rm -rf ./tests 2> /dev/null
-    rm -f ./*.cbp 2> /dev/null
-    rm -r ./Makefile 2> /dev/null
-    rm -rf ./debug 2> /dev/null
+    rm -f ./*.o 2> /dev/null
 
-    cd - || return 2
+    cd - 2>&1 || return 2
 
     return 0
 }
@@ -46,52 +53,44 @@ function buildTarget() {
     local dir=$2
     local mode=$3
     local dp=$4
+    local ep=0
 
     if ! mkdir -p ${dir}; then
         return 1
     fi
 
-    # if no space at -B..., older cmake (ubuntu 18) will not build
-    if ! cmake -S ${ROOT} -B${dir} -DCMAKE_BUILD_TYPE=${mode} -DDEBUG_PRINT=${dp}; then
-        return 2
+    if [[ $((dp & $EP_FLAG)) == $EP_FLAG ]]; then
+        ep=1
+    fi
+    dp=$((dp & ~$EP_FLAG))
+
+    if [[ ${mode} == $MODE_DEBUG ]]; then
+        local flags="-Wall -pedantic -Wextra -ggdb -O0 -Werror=return-type -Werror=overflow -Werror=format"
+    else
+        local flags="-Wall -pedantic -Wextra -Ofast -Werror=return-type -Werror=overflow -Werror=format"
     fi
 
-    if ! cmake --build ${dir} --target ${target}; then
-        return 3
+    local dpf=
+    if [[ $dp > 0 ]]; then
+        dpf=-DDEBUG_PRINT=$dp
     fi
 
-    # if [[ ${mode} == "Release" || ${mode} == "release" ]]; then
-    #     sha256sum ${dir}/${target} | awk '{print $1}' > ${dir}/${target}.sha256
-    # fi
-
-    return 0
-}
-
-# Build a clean runnable package without metafiles.
-#
-# @param $1 cmake target
-# @param $2 build directory
-# @param $3 build mode
-function buildPackage()
-{
-    local target=$1
-    local dir=$2
-    local mode=$3
-
-    if ! buildTarget ${target} ${dir} ${mode} 0; then
-        return 1
+    local epf=
+    if [[ $ep > 0 ]]; then
+        epf=-DERROR_PRINT
     fi
 
-    if ! clean ${dir}; then
-        return 4
+    if [[ $target == "app" ]]; then
+        gcc -o $dir/hexter -Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 $flags $dpf $epf -Ofast src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c
+    elif [[ $target == "lib" ]]; then
+        gcc -o $dir/hexter.so -shared -Wl,-z,relro,-z,now -fPIC -D_FILE_OFFSET_BITS=64 $flags $dpf $epf -Ofast src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c
     fi
-
     return 0
 }
 
 function printUsage() {
-    echo "Usage: $0 [-t ${pos_targets}] [-m Debug|Release] [-h]"
-    echo "Default: $0 [-t app] [-m ${def_mode}]"
+    echo "Usage: $0 [-t ${pos_targets}] [-d|-r] [-h]"
+    echo "Default: $0 -t app -r"
     return 0;
 }
 
@@ -101,20 +100,28 @@ function printHelp() {
     echo "-t A possible target: ${pos_targets}"
     echo "  * app: build hexter application"
     echo "  * lib: build hexter shared library"
-    echo "  * pck: build hexter application and clean up build dir"
-    echo "  * cln: clean up build dir"
-    echo "-m A compile mode: Release|Debug"
+    echo "-c clean up build dir"
+    echo "-d Build in debug mode"
+    echo "-r Build in release mode"
     echo "-h Print this."
     return 0;
 }
 
 while (("$#")); do
     case "$1" in
-        -m | --mode)
-            mode=$2
-            shift 2
+        -c | -cln | --clean)
+            clean=1
+            shift 1
             ;;
-        -p | --debug-print)
+        -d | --debug)
+            mode=$MODE_DEBUG
+            shift 1
+            ;;
+        -r | --release)
+            mode=$MODE_RELEASE
+            shift 1
+            ;;
+        -p | -dp | --debug-print)
             debug_print=$2
             shift 2
             ;;
@@ -136,42 +143,36 @@ while (("$#")); do
     esac
 done
 
+if [[ ${usage} == 1 ]]; then
+    printUsage
+    exit $?
+fi
+
 if [[ ${help} == 1 ]]; then
     printHelp
     exit $?
 fi
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-
-release_build_dir="${ROOT}/build"
-debug_build_dir="${ROOT}/build/debug"
-if [[ ${mode} == "Debug" || ${mode} == "debug" ]]; then
+if [[ ${mode} == $MODE_DEBUG || ${mode} == $MODE_DEBUG ]]; then
     build_dir=${debug_build_dir}
 else
     build_dir=${release_build_dir}
 fi
 
+if [[ -z ${target} && ${clean} == 0 ]]; then
+    $target=$def_target
+fi
+
+echo "clean: "${clean}
 echo "target: "${target}
 echo "mode: "${mode}
 echo "build_dir: "${build_dir}
+echo -e
 
-if [[ ${target} == "clean" || ${target} == "cln" ]]; then
+if [[ ${clean} == 1 ]]; then
     clean ${build_dir}
-    exit $?
-elif [[ ${target} == "pck" ]]; then
-    buildPackage ${name} ${release_build_dir} Release
-    exit $?
-else
-    if [[ ${target} == "app" ]]; then
-        target=${name}
-    elif [[ ${target} == "lib" ]]; then
-        target=${name}_so
-    else
-        exit $?
-    fi
-
-    buildTarget ${target} ${build_dir} ${mode} ${debug_print}
-    exit $?
 fi
+
+buildTarget ${target} ${build_dir} ${mode} ${debug_print}
 
 exit $?

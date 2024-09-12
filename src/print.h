@@ -1,7 +1,7 @@
 #ifndef PRINT_H
 #define PRINT_H
 
-#define ERROR_PRINT
+// #define ERROR_PRINT
 
 #ifdef DEBUG_PRINT
 #define debug_info(...) { printf("[d] "); printf(__VA_ARGS__); }
