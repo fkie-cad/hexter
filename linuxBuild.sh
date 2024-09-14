@@ -11,14 +11,14 @@ MODE_RELEASE=2
 DP_FLAG=1
 EP_FLAG=2
 
-name=hexter
-def_target=app
+name="hexter"
+def_target="app"
 pos_targets="app|lib"
 target=
 def_mode=$MODE_RELEASE
 mode=$def_mode
 help=0
-debug_print=EP_FLAG
+debug_print=$EP_FLAG
 clean=0
 
 # Clean build directory from meta files
@@ -85,7 +85,8 @@ function buildTarget() {
     elif [[ $target == "lib" ]]; then
         gcc -o $dir/hexter.so -shared -Wl,-z,relro,-z,now -fPIC -D_FILE_OFFSET_BITS=64 $flags $dpf $epf -Ofast src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c
     fi
-    return 0
+    
+    return $?
 }
 
 function printUsage() {
@@ -160,7 +161,7 @@ else
 fi
 
 if [[ -z ${target} && ${clean} == 0 ]]; then
-    $target=$def_target
+    target=$def_target
 fi
 
 echo "clean: "${clean}
@@ -173,6 +174,8 @@ if [[ ${clean} == 1 ]]; then
     clean ${build_dir}
 fi
 
-buildTarget ${target} ${build_dir} ${mode} ${debug_print}
+if [[ -n ${target} ]]; then
+    buildTarget ${target} ${build_dir} ${mode} ${debug_print}
+fi
 
 exit $?
