@@ -30,6 +30,7 @@
 #elif defined(_WIN32)
     #include <process.h>
     #include <time.h>
+    #include "utils/win/processes.h"
     #include "ProcessHandlerWin.h"
 #endif
 #include "utils/Strings.h"
@@ -154,10 +155,25 @@ int run(const char payload_format, const char* raw_payload)
 
         if ( pid == 0 )
             pid = getpid();
-//#if defined(__linux__) || defined(__linux) || defined(linux)
-//            pid = getpid();
-//#elif defined(_WIN32)
-//#endif
+
+#ifdef _WIN32
+        if ( IsProcessElevated(pid) )
+        {
+            debug_info("elevated!\n");
+            PCHAR privileges[1] = {
+                SE_DEBUG_NAME
+            };
+            ULONG privilegesCount = _countof(privileges);
+    
+            s = AddPrivileges(privileges, privilegesCount);
+            if ( s != 0 )
+            {
+                EPrint("AddPrivileges failed! (0x%x)\n", GetLastError());
+            }
+            debug_info("debug enabled!\n");
+        }
+#endif
+
         file_size = getSizeOfProcess(pid);
         if ( file_size == 0 )
             return -2;

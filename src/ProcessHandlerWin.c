@@ -15,6 +15,8 @@
 #include "utils/Helper.h"
 #include "utils/Strings.h"
 
+//#include "utils/win/processes.h"
+
 #define PAGE_R_W_E ((PAGE_READONLY|PAGE_READWRITE|PAGE_WRITECOPY|PAGE_EXECUTE_READ|PAGE_EXECUTE_READWRITE|PAGE_EXECUTE_WRITECOPY))
 
 typedef int (*MemInfoCallback)(HANDLE, MEMORY_BASIC_INFORMATION*);
@@ -800,7 +802,10 @@ BOOL openProcess(HANDLE* process, uint32_t pid)
 {
 //	uint32_t lpExitCode = 0;
 
-    (*process) = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+    uint32_t access = PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION;
+    //uint32_t access = PROCESS_ALL_ACCESS;
+
+    (*process) = OpenProcess(access, FALSE, pid);
     if ((*process) == NULL)
     {
         printf("ERROR (0x%lx): OpenProcess %u failed\n", GetLastError(), pid);
