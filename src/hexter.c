@@ -275,17 +275,24 @@ void initParameters()
     payload_arg_id = -1;
 }
 
+void printVersion()
+{
+    printf("%s\n", BIN_NAME);
+    printf("Version: %s\n", BIN_VS);
+    printf("Last changed: %s\n", BIN_LAST_CHANGED);
+    printf("Compiled: %s %s\n", __DATE__, __TIME__);
+}
+
 void printUsage()
 {
     printf("Usage: %s [options] -file a/file [options]\n", BIN_NAME);
     printf("Usage: %s [options] -pid 123 [options]\n", BIN_NAME);
-    printf("\n");
-    printf("Version: %s\n", BIN_VS);
-    printf("Last changed: %s\n", BIN_LAST_CHANGED);
 }
 
 void printHelp()
 {
+    printVersion();
+    printf("\n");
     printUsage();
     printf("\n");
     printf("Options:\n");
