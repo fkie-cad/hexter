@@ -11,38 +11,38 @@ typedef struct _MODULE_INFO {
  */
 INT AddPrivileges(
     PCHAR *Privileges,
-    UINT32 PrivilegeCount
+    UINT32 PrivilegesCount
 )
 {
     INT s = 0;
-    HANDLE htoken;
+    HANDLE token;
     ULONG i;
 
-    TOKEN_PRIVILEGES* p = NULL;
+    TOKEN_PRIVILEGES* tp = NULL;
 
-    if ( OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &htoken) )
+    if ( OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &token) )
     {
-        size_t htokenSize = sizeof(TOKEN_PRIVILEGES) + (PrivilegeCount-1) * sizeof(LUID_AND_ATTRIBUTES);
-        p = (PTOKEN_PRIVILEGES)malloc(htokenSize);
-        if ( !p )
+        size_t tpSize = sizeof(TOKEN_PRIVILEGES) + (PrivilegesCount-1) * sizeof(LUID_AND_ATTRIBUTES);
+        tp = (PTOKEN_PRIVILEGES)malloc(tpSize);
+        if ( !tp )
         {
             s = GetLastError();
             goto clean;
         }
 
-        for ( i = 0; i < PrivilegeCount; i++ )
+        for ( i = 0; i < PrivilegesCount; i++ )
         {
-            if ( !LookupPrivilegeValueA(NULL, Privileges[i], &(p->Privileges[i].Luid)) )
+            if ( !LookupPrivilegeValueA(NULL, Privileges[i], &(tp->Privileges[i].Luid)) )
             {
                 s = GetLastError();
                 goto clean;
             }
 
-            p->Privileges[i].Attributes = SE_PRIVILEGE_ENABLED;
+            tp->Privileges[i].Attributes = SE_PRIVILEGE_ENABLED;
         }
-        p->PrivilegeCount = PrivilegeCount;
+        tp->PrivilegeCount = PrivilegesCount;
 
-        if ( !AdjustTokenPrivileges(htoken, FALSE, p, (ULONG)htokenSize, NULL, NULL) 
+        if ( !AdjustTokenPrivileges(token, FALSE, tp, (ULONG)tpSize, NULL, NULL) 
            || GetLastError() != ERROR_SUCCESS )
         {
             s = GetLastError();
@@ -56,8 +56,8 @@ INT AddPrivileges(
     }
 
 clean:
-    if ( p )
-        free(p);
+    if ( tp )
+        free(tp);
 
     return s;
 }
@@ -71,12 +71,12 @@ BOOL IsProcessElevated()
 
     if ( !OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken) )
     {
-        goto clean;  // if Failed, we treat as False
+        goto clean;
     }
 
-    if (!GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &dwSize))
+    if ( !GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &dwSize) )
     {   
-        goto clean;// if Failed, we treat as False
+        goto clean;
     }
 
     fIsElevated = elevation.TokenIsElevated;

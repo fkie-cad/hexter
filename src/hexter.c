@@ -36,8 +36,8 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.8.2"
-#define BIN_LAST_CHANGED  "10.09.2024"
+#define BIN_VS "1.8.3"
+#define BIN_LAST_CHANGED  "17.09.2024"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')

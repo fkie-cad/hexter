@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version
-1.8.2  
-Last changed: 10.09.2024
+1.8.3  
+Last changed: 17.09.2024
 
 
 ## REQUIREMENTS
