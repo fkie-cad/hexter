@@ -11,18 +11,25 @@ MODE_RELEASE=2
 DP_FLAG_DEBUG=1
 DP_FLAG_ERROR=2
 
+BUILD_TARGET_CLN=1
+BUILD_TARGET_DEL=2
+BUILD_TARGET_APP=4
+BUILD_TARGET_SH=8
+BUILD_TARGET_ST=0x10
+
 BUILD_FLAG_STATIC=1
 
 name="hexter"
-def_target="app"
-pos_targets="app|sh"
-target=
-def_mode=$MODE_RELEASE
-build_mode=$def_mode
+def_target=$BUILD_TARGET_APP
+pos_targets="-app|-sh|-st|-cln|-del"
+target=0
+build_mode=$MODE_RELEASE
 build_flags=0
+usage=0
 help=0
-debug_print=$DP_FLAG_ERROR
 clean=0
+verbose=0
+debug_print=$DP_FLAG_ERROR
 
 # Clean build directory from meta files
 #
@@ -36,14 +43,13 @@ function clean() {
         return
     fi
 
-    if [[ ${type} == 1 ]]; then
+    if (( ${type} == 1 )); then
         echo "cleaning build dir: $dir"
         rm -rf ${dir}/*.o 2> /dev/null
-    elif [[ ${type} == 2 ]]; then
+    elif (( ${type} == 2 )); then
         echo "deleting dir: $dir"
         rm -rf ${dir}/* 2> /dev/null
     fi
-
 
     return 0
 }
@@ -61,34 +67,44 @@ function buildTarget() {
     local build_flags=$5
     local ep=0
 
+    if [[ $verbose == 1 ]]; 
+    then
+        echo "buildTarget()"
+        echo   "target="$target
+        echo   "dir="$dir
+        echo   "build_mode="$build_mode
+        echo   "dp="$dp
+        echo   "build_flags="$build_flags
+    fi
+
     if ! mkdir -p ${dir}; then
         return 1
     fi
 
-    if [[ $((dp & $DP_FLAG_ERROR)) == $DP_FLAG_ERROR ]]; then
+    if (( $((dp & $DP_FLAG_ERROR)) == $DP_FLAG_ERROR )); then
         ep=1
     fi
     dp=$((dp & ~$DP_FLAG_ERROR))
     
-    local bin_name=hexter
 
-    if [[ ${build_mode} == $MODE_DEBUG ]]; then
-        local flags="-Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Wall -pedantic -Wextra -ggdb -O0 -Werror=return-type -Werror=overflow -Werror=format"
+    local flags="-Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Wall -pedantic -Wextra -Werror=return-type -Werror=overflow -Werror=format"
+    if (( ${build_mode} == $MODE_DEBUG )); then
+        flags="${flags} -ggdb -O0"
     else
-        local flags="-Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Wall -pedantic -Wextra -Ofast -Werror=return-type -Werror=overflow -Werror=format"
+        flags="${flags} -Ofast"
     fi
 
-    if [[ $((build_flags & $BUILD_FLAG_STATIC)) == $BUILD_FLAG_STATIC ]]; then
+    if (( $((build_flags & $BUILD_FLAG_STATIC)) == $BUILD_FLAG_STATIC )); then
         flags="${flags} -static"
     fi
 
     local dpf=
-    if [[ $dp > 0 ]]; then
+    if (( $dp > 0 )); then
         dpf=-DDEBUG_PRINT=$dp
     fi
 
     local epf=
-    if [[ $ep > 0 ]]; then
+    if (( $ep > 0 )); then
         epf=-DERROR_PRINT
     fi
 
@@ -97,33 +113,32 @@ function buildTarget() {
     local sh_src="src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c"
 
     case $target in
-        "app")
-            gcc -o $dir/${bin_name} $flags $dpf $epf -Ofast $app_src
+        $((BUILD_TARGET_APP)))
+            gcc $flags $dpf $epf -o $dir/${bin_name} $app_src
             ;;
 
-            
-        "sh" | "shared")
-            gcc -o $dir/lib${bin_name}.so -fPIC $flags $dpf $epf -Ofast $sh_src
+        $((BUILD_TARGET_SH)))
+            gcc -shared -fPIC $flags $dpf $epf -o $dir/lib${bin_name}.so $sh_src
             ;;
             
-        #"st" | "static")
-            #if ! mkdir -p ${dir}/st; then
-                #return $?
-            #fi
+        $((BUILD_TARGET_ST)))
+            if ! mkdir -p ${dir}/st; then
+                return $?
+            fi
 
-            #gcc $flags -o ${dir}/st/hexter.o $ROOT/src/hexter.c
-            #gcc $flags -o ${dir}/st/Finder.o $ROOT/src/Finder.c
-            #gcc $flags -o ${dir}/st/Printer.o $ROOT/src/Printer.c
-            #gcc $flags -o ${dir}/st/ProcessHandlerLinux.o $ROOT/src/ProcessHandlerLinux.c
-            #gcc $flags -o ${dir}/st/Writer.o $ROOT/src/Writer.c
-            #gcc $flags -o ${dir}/st/common_file_io.o $ROOT/src/utils/common_file_io.c
-            #gcc $flags -o ${dir}/st/utils/Converter.o $ROOT/src/utils/Converter.c
-            #gcc $flags -o ${dir}/st/utils/Helper.o $ROOT/src/utils/Helper.c
-            #gcc $flags -o ${dir}/st/utils/Strings.o $ROOT/src/utils/Strings.c
-            #gcc $flags -o ${dir}/st/utils/TerminalUtil.o $ROOT/src/utils/TerminalUtil.c
+            gcc $flags -c -o ${dir}/st/hexter.o $ROOT/src/hexter.c
+            gcc $flags -c -o ${dir}/st/Finder.o $ROOT/src/Finder.c
+            gcc $flags -c -o ${dir}/st/Printer.o $ROOT/src/Printer.c
+            gcc $flags -c -o ${dir}/st/ProcessHandlerLinux.o $ROOT/src/ProcessHandlerLinux.c
+            gcc $flags -c -o ${dir}/st/Writer.o $ROOT/src/Writer.c
+            gcc $flags -c -o ${dir}/st/common_fileio.o $ROOT/src/utils/common_fileio.c
+            gcc $flags -c -o ${dir}/st/Converter.o $ROOT/src/utils/Converter.c
+            gcc $flags -c -o ${dir}/st/Helper.o $ROOT/src/utils/Helper.c
+            gcc $flags -c -o ${dir}/st/Strings.o $ROOT/src/utils/Strings.c
+            gcc $flags -c -o ${dir}/st/TerminalUtil.o $ROOT/src/utils/TerminalUtil.c
 
-            #ar rcs $dir/lib${bin_name}.a ${dir}/st/*.o
-            #;;
+            ar rcs $dir/lib${bin_name}.a ${dir}/st/*.o
+            ;;
             
         *)
             echo "Unknown target: ${target}"
@@ -134,60 +149,72 @@ function buildTarget() {
 }
 
 function printUsage() {
-    echo "Usage: $0 [-t ${pos_targets}] [-d|-r] [-h]"
-    echo "Default: $0 -t app -r"
+    echo "Usage: $0 [${pos_targets}] [-d|-r] [-h]"
+    echo "Default: $0 [-app -r]"
     return 0;
 }
 
 function printHelp() {
     printUsage
     echo ""
-    echo "-t A possible target: ${pos_targets}"
-    echo "  * app: build hexter application"
-    echo "  * sh: build hexter shared library"
-    #echo "  * st: build hexter static library"
+    echo "Possible targets: ${pos_targets}"
+    echo "  * -app: build headerParser application"
+    echo "  * -sh: build headerParser as a shared library"
+    echo "  * -st: build headerParser as a static library"
     echo "-d Build in debug build_mode"
     echo "-r Build in release build_mode"
     echo "-s Build statically linked binary"
-    echo "-c clean up build dir"
-    echo "-x delete all files in build dir"
+    echo "-c Clean up build dir"
+    echo "-x Delete all files in build dir"
     echo "-h Print this."
     return 0;
 }
 
 while (("$#")); do
     case "$1" in
+        -a | -app | --user-appliation)
+            target=$(( target | BUILD_TARGET_APP ))
+            shift 1
+            ;;
         -c | -cln | --clean)
-            clean=1
+            target=$(( target | BUILD_TARGET_CLN ))
             shift 1
             ;;
         -d | --debug)
             build_mode=$MODE_DEBUG
             shift 1
             ;;
-        -r | --release)
-            build_mode=$MODE_RELEASE
-            shift 1
+        -h | --help)
+            help=1
+            break
             ;;
         -p | -dp | --debug-print)
             debug_print=$2
             shift 2
             ;;
+        -r | --release)
+            build_mode=$MODE_RELEASE
+            shift 1
+            ;;
         -s | --static)
             build_flags=$((build_flags | $BUILD_FLAG_STATIC))
             shift 1
             ;;
-        -t | --target)
-            target=$2
-            shift 2
+        -sh | --shared-library)
+            target=$((target | $BUILD_TARGET_SH))
+            shift 1
             ;;
-        -h | --help)
-            help=1
-            break
+        -st | --static-library)
+            target=$((target | $BUILD_TARGET_ST))
+            shift 1
+            ;;
+        -v | --verbose)
+            verbose=1
+            shift 1
             ;;
         -x | --delete)
-            clean=2
-            break
+            target=$(( target | BUILD_TARGET_DEL ))
+            shift 1
             ;;
         -* | --usage)
             usage=1
@@ -199,38 +226,56 @@ while (("$#")); do
     esac
 done
 
-if [[ ${usage} == 1 ]]; then
+if (( ${usage} == 1 )); then
     printUsage
     exit $?
 fi
 
-if [[ ${help} == 1 ]]; then
+if (( ${help} == 1 )); then
     printHelp
     exit $?
 fi
 
-if [[ ${build_mode} == $MODE_DEBUG || ${build_mode} == $MODE_DEBUG ]]; then
-    build_dir=${debug_build_dir}
-else
+# set build dir
+if (( $((build_mode & $MODE_RELEASE)) == $MODE_RELEASE )); then
     build_dir=${release_build_dir}
+else
+    build_dir=${debug_build_dir}
 fi
 
-if [[ -z ${target} && ${clean} == 0 ]]; then
-    target=$def_target
+# set default target
+if (( $target == 0 )); then
+    target=$BUILD_TARGET_APP
 fi
 
-echo "clean: "${clean}
-echo "target: "${target}
-echo "build_mode: "${build_mode}
-echo "build_dir: "${build_dir}
-echo "build_flags: "${build_flags}
-echo -e
-
-if [[ ${clean} > 0 ]]; then
-    clean ${build_dir} ${clean} 
+if (( $verbose == 1 )); 
+then
+    echo "target: "${target}
+    echo "  clean: "$(( (target & BUILD_TARGET_CLN) > 0 ))
+    echo "  del: "$(( (target & BUILD_TARGET_DEL) > 0 ))
+    echo "  app: "$(( (target & BUILD_TARGET_APP) > 0 ))
+    echo "  sh: "$(( (target & BUILD_TARGET_SH) > 0 ))
+    echo "  st: "$(( (target & BUILD_TARGET_ST) > 0 ))
+    echo "build_mode: "${build_mode}
+    echo "debug_print: "${debug_print}
+    echo "build_dir: "${build_dir}
+    echo -e
 fi
 
-if [[ -n ${target} ]]; then
+
+#
+# build set targets
+#
+
+if (( $((target & BUILD_TARGET_CLN)) == $BUILD_TARGET_CLN )); then
+    clean ${build_dir} 1
+fi
+if (( $((target & BUILD_TARGET_DEL)) == $BUILD_TARGET_DEL )); then
+    clean ${build_dir} 2
+fi
+
+if (( $target > $BUILD_TARGET_DEL )); 
+then
     buildTarget ${target} ${build_dir} ${build_mode} ${debug_print} ${build_flags}
 fi
 

@@ -58,9 +58,9 @@ $devcmd> msbuild Hexter.vcxproj /p:Configuration=<Release|Debug> /p:Platform=<x6
 $ winBuild.bat /lib [/b 64] [/m Release] [/rt] [/pdb] [/pts <toolset>] [/bt a\path] [/?]
 ```
 
-### DLL : Linux (gcc) 
+### SH : Linux (gcc) 
 ```bash
-$ ./linuxBuild.sh -t lib [-d|r] [-c] [-h]
+$ ./linuxBuild.sh -sh [-d|r] [-c] [-h]
 ```
 
 ### Runtime Errors (Windows)
