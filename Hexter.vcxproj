@@ -32,9 +32,7 @@
   <PropertyGroup Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
     <TargetPlatform>Desktop</TargetPlatform>
-    <!--<DriverTargetPlatform>Desktop</DriverTargetPlatform>-->
-    <!-- <PlatformToolset>WindowsApplicationForDrivers10.0</PlatformToolset> smaller build than v142 -->
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <ConfigurationType>Application</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)'=='Release'">
@@ -139,6 +137,12 @@
     </ClCompile>
   </ItemDefinitionGroup>
 
+  <ItemDefinitionGroup Condition="'$(ErrorPrint)'=='1'">
+    <ClCompile>
+      <PreprocessorDefinitions>ERROR_PRINT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <ItemGroup>
     <ClCompile Include="src\hexter.c" />
     <ClCompile Include="src\utils\common_fileio.c;src\utils\Converter.c;src\utils\Helper.c;src\utils\Strings.c" />
@@ -162,5 +166,7 @@
     <Message Text="IntDir = $(IntDir)" />
     <Message Text="OutDir = $(OutDir)" />
     <Message Text="TargetPath = $(TargetPath)" />
+    <Message Text="DebugPrint = $(DebugPrint)" />
+    <Message Text="ErrorPrint = $(ErrorPrint)" />
   </Target>
 </Project>

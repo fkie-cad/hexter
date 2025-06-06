@@ -4,6 +4,7 @@
 
 #include <memory.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -54,10 +55,10 @@ static uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t 
 static uint8_t printHexCol16(const uint8_t* block, size_t i, size_t size, uint8_t col_size);
 
 static void printOffsetCol(size_t offset, uint8_t width);
-static void printCleanHexValue(const uint8_t b, const char gap);
-static void printAnsiFormatedHexValue(const uint8_t b, const char gap);
+static void printCleanHexValue(const uint64_t b, const uint8_t width, const char gap);
+static void printAnsiFormatedHexValue(const uint64_t b, const uint8_t width, const char gap);
 #ifdef _WIN32
-static void printWinFormatedHexValue(const uint8_t b, const char gap);
+static void printWinFormatedHexValue(const uint64_t b, const uint8_t width, const char gap);
 #endif
 
 static void printAsciiChar(
@@ -68,7 +69,7 @@ static void printUnicodeChar(
     const uint16_t c
 );
 
-void (*printHexValue)(const uint8_t, const char);
+void (*printHexValue)(const uint64_t, const uint8_t, const char);
 
 #if defined(_WIN32)
     HANDLE hStdout;
@@ -478,13 +479,44 @@ uint8_t printHexCol(const uint8_t* block, size_t i, size_t size, uint8_t col_siz
         if ( (gap_ctr+1) == col_size )
             gap_ctr = 0;
 
-        printHexValue(block[block_offset], gap);
+        printHexValue(block[block_offset], 2, gap);
     }
 
     return k;
 }
 
+uint8_t printHexCol16(const uint8_t* block, size_t i, size_t size, uint8_t col_size)
+{
+    uint8_t k = 0;
+    size_t block_offset;
+    char gap = BLANK_GAP_C;
+    uint8_t gap_ctr = 0;
 
+    for ( k = 0, gap_ctr=0; k < col_size; k+=2, gap_ctr+=2 )
+    {
+        block_offset = i + k;
+        if ( block_offset >= size )
+            break;
+
+        if ( skip_hex_bytes > 0 )
+        {
+            printf(HEX_GAP);
+            skip_hex_bytes--;
+            continue;
+        }
+
+        if ( (gap_ctr+1) == col_size/2 )
+            gap = SEPARATOR_GAP_C;
+        else 
+            gap = BLANK_GAP_C;
+        if ( (gap_ctr+1) == col_size )
+            gap_ctr = 0;
+
+        printHexValue(*(uint16_t*)&block[block_offset], 4, gap);
+    }
+
+    return k;
+}
 
 void printPlainByteString(const uint8_t* block, size_t size)
 {
@@ -503,84 +535,51 @@ void printPlainByteString(const uint8_t* block, size_t size)
     }
 }
 
-//uint8_t printHexCol16(const uint8_t* block, size_t i, size_t size, uint8_t col_size)
-//{
-//    uint8_t k = 0;
-//    size_t block_offset;
-//    char gap = BLANK_GAP_C;
-//    uint8_t gap_ctr = 0;
-//
-//    for ( k = 0, gap_ctr=0; k < col_size; k+=2, gap_ctr+=2 )
-//    {
-//        block_offset = i + k;
-//        if ( block_offset >= size )
-//            break;
-//
-//        if ( skip_hex_bytes > 0 )
-//        {
-//            printf(HEX_GAP);
-//            skip_hex_bytes--;
-//            continue;
-//        }
-//
-//        if ( (gap_ctr+1) == col_size/2 )
-//            gap = SEPARATOR_GAP_C;
-//        else 
-//            gap = BLANK_GAP_C;
-//        if ( (gap_ctr+1) == col_size )
-//            gap_ctr = 0;
-//
-//        printHexValue(block[block_offset], gap);
-//    }
-//
-//    return k;
-//}
-
-void printCleanHexValue(const uint8_t b, const char gap)
+void printCleanHexValue(const uint64_t v, const uint8_t width, const char gap)
 {
-    printf("%02X%c", b, gap);
+    printf("%0*"PRIX64"%c", width, v, gap);
 }
 
-void printAnsiFormatedHexValue(const uint8_t b, const char gap)
+void printAnsiFormatedHexValue(const uint64_t v, const uint8_t width, const char gap)
 {
     if ( highlight_hex_bytes > 0 && highlight_hex_wait-- <= 0 )
     {
         setAnsiFormat(HIGHLIGHT_HEX_STYLE);
         highlight_hex_bytes--;
-        printf("%02X%c", b, gap);
+        printCleanHexValue(v, width, gap);
         resetAnsiFormat();
     }
-    else if ( b == 0 )
+    else if ( v == 0 )
     {
-        printf("%02X%c", b, gap);
+        printCleanHexValue(v, width, gap);
     }
     else
     {
         setAnsiFormat(POS_HEX_STYLE);
-        printf("%02X%c", b, gap);
+        printCleanHexValue(v, width, gap);
         resetAnsiFormat();
     }
 }
 
 #ifdef _WIN32
-void printWinFormatedHexValue(const uint8_t b, const char gap)
+void printWinFormatedHexValue(const uint64_t v, const uint8_t width, const char gap)
 {    
     if ( highlight_hex_bytes > 0 && highlight_hex_wait-- <= 0 )
     {
         SetConsoleTextAttribute(hStdout, BACKGROUND_INTENSITY);
         highlight_hex_bytes--;
-        printf("%02X%c", b, gap);
+        printCleanHexValue(v,  width, gap);
         SetConsoleTextAttribute(hStdout, wOldColorAttrs);
     }
-    else if ( b == 0 )
+    else if ( v == 0 )
     {
         SetConsoleTextAttribute(hStdout, FOREGROUND_INTENSITY);
-        printf("%02X%c", b, gap);
+        printCleanHexValue(v,  width, gap);
         SetConsoleTextAttribute(hStdout, wOldColorAttrs);
     }
     else
     {
-        printf("%02X%c", b, gap);
+        printCleanHexValue(v,  width, gap);
     }
 }
 #endif

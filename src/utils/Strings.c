@@ -155,6 +155,11 @@ size_t splitArgsCSM(char* buffer, char* argv[], size_t argv_size, char som, char
      (*(__char_ptr__)) -= 0x20
  #define UC_TO_LC_CHAR_A(__char_ptr__) \
      (*(__char_ptr__)) += 0x20
+     
+ #define TO_LC_CHAR_A(__char_ptr__) \
+     (*(__char_ptr__)) |= ' '
+ #define TO_UC_CHAR_A(__char_ptr__) \
+     (*(__char_ptr__)) |= '_'
 
 // int toLowerCaseA(char* buffer, size_t size)
 // {

@@ -7,6 +7,9 @@ set "my_dir=%my_dir:~1,-2%"
 
 set name=hexter
 
+set /a DP_FLAG=1
+set /a EP_FLAG=2
+
 set /a exe=0
 set /a dll=0
 set /a cln=0
@@ -17,15 +20,15 @@ set /a debug=0
 set /a release=0
 
 set /a rtl=0
-set /a dp=0
+set /a dp=%EP_FLAG%
 set /a pdb=0
 set /a ico=1
 set /a verbose=0
 
 :: adjust this path, if you're using another version or path.
-set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools"
-set pts=v142
-:: set pts=WindowsApplicationForDrivers10.0
+set /a vs_year=2022
+set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\%vs_year%\BuildTools"
+set pts=v143
 
 
 :: default
@@ -85,7 +88,8 @@ GOTO :ParseParams
         goto reParseParams
     )
     IF /i "%~1"=="/dp" (
-        SET /a dp=1
+        SET /a dp="%~2"
+        SHIFT
         goto reParseParams
     )
     IF /i "%~1"=="/xi" (
@@ -187,10 +191,10 @@ GOTO :ParseParams
         rmdir /s /q "%my_dir%\build" >nul 2>&1 
     )
     if %exe% == 1 (
-        call :build Hexter.vcxproj Application
+        call :build Hexter.vcxproj Application %dp%
     ) 
     if %dll% == 1 (
-        call :build Hexter.vcxproj DynamicLibrary
+        call :build Hexter.vcxproj DynamicLibrary %dp%
     ) 
 
     endlocal
@@ -201,6 +205,7 @@ GOTO :ParseParams
     setlocal
         set proj=%1
         set ct=%2
+        set /a dpf=%~3
         set conf=
         if %debug% EQU 1 (
             set conf=Debug
@@ -208,7 +213,12 @@ GOTO :ParseParams
             if %release% EQU 1 set conf=Release
         )
         
-        cmd /k "%vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:PlatformToolset=%pts% /p:Configuration=%conf% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct% /p:DebugPrint=%dp% /p:Icon=%ico% & exit"
+        :: print flags
+        set /a "dp=%dpf%&~EP_FLAG"
+        set /a "ep=%dpf%&EP_FLAG"
+        if not %ep% == 0 set /a ep=1
+        
+        cmd /k "%vcvars% & msbuild Hexter.vcxproj /p:Platform=%platform% /p:PlatformToolset=%pts% /p:Configuration=%conf% /p:RuntimeLib=%rtlib% /p:PDB=%pdb% /p:ConfigurationType=%ct% /p:DebugPrint=%dp% /p:ErrorPrint=%ep% /p:Icon=%ico% & exit"
         
     endlocal
     exit /B 0
@@ -224,16 +234,16 @@ GOTO :ParseParams
     echo Targets:
     echo /exe Build Hexter.exe application.
     echo /dll Build Hexter.dll library.
-	echo.
-	echo Options:
+    echo.
+    echo Options:
     echo /b Target bitness: 32^|64. Default: 64.
     echo /d Build in debug mode.
     echo /r Build in release mode (default). 
     echo /rtl Statically include runtime libs. Increases file size but may be needed if a "VCRUNTIMExxx.dll not found Error" occurs on the target system.
     echo /pdb Include pdb symbols into release build. Default in debug mode. 
     echo /bt Custom path to Microsoft Visual Studio BuildTools
-    echo /pts Platformtoolset. Defaults to "v142".
-    echo /xi No icon for the exe.
+    echo /pts Platformtoolset. Defaults to "v143".
+    echo /xi No icon for the exe == smaller exe.
     echo.
     echo /v more verbose output
     echo /h print this

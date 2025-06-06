@@ -170,7 +170,10 @@ int run(const char payload_format, const char* raw_payload)
             {
                 EPrint("AddPrivileges failed! (0x%x)\n", GetLastError());
             }
-            debug_info("debug enabled!\n");
+            else
+            {
+                debug_info("debug enabled!\n");
+            }
         }
 #endif
 
@@ -792,7 +795,7 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
         ln = payloadParseUtf16(value, payload);
 //  else if ( format == 'r' )
 //      ln = payloadParseReversedPlainBytes(arg, payload);
-    else if (format == FORMAT_PLAIN_HEX_1 || format == FORMAT_PLAIN_HEX_2)
+    else if ( format == FORMAT_PLAIN_HEX_1 || format == FORMAT_PLAIN_HEX_2 )
     {
         char* cleaned_value = NULL;
         int s = cleanBytes(value, &cleaned_value);
