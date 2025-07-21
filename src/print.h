@@ -5,8 +5,12 @@
 
 #ifdef DEBUG_PRINT
 #define debug_info(...) { printf("[d] "); printf(__VA_ARGS__); }
+#define DPrint(...) { printf("[d] "); printf(__VA_ARGS__); }
+#define IPrint(...) { printf("[i] "); printf(__VA_ARGS__); }
 #else
 #define debug_info(...)
+#define DPrint(...)
+#define IPrint(...)
 #endif
 
 

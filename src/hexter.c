@@ -168,7 +168,7 @@ int run(const char payload_format, const char* raw_payload)
             s = AddPrivileges(privileges, privilegesCount);
             if ( s != 0 )
             {
-                EPrint("AddPrivileges failed! (0x%x)\n", GetLastError());
+                IPrint("AddPrivileges failed! (0x%x)\n", GetLastError());
             }
             else
             {
