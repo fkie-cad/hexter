@@ -341,7 +341,7 @@ void printHelp()
            "     * %c: word (uint16)\n"
            "     * %c: double word (uint32)\n"
            "     * %c: quad word (uint64).\n"
-           "     Expect for the string types, all values have to be passed as hex values, omitting `0x`.\n"
+           "     Except for the string types, all values have to be passed as hex values, omitting `0x`.\n"
            "   * Find options:\n"
            "     * -ci: case insensitive (for ascii search only).\n"
 //         " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"

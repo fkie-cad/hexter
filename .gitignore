@@ -3,7 +3,7 @@ build/
 venv/
 desktop.ini
 .idea
-tests/sources
+tests
 *.7z
 .cproject
 .project

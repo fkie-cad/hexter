@@ -44,8 +44,7 @@ This will run in a normal cmd.
 
 The correct path to your build tools may be passed with the `/bt` parameter or just changed in the script [winBuild.bat](winBuild.bat) itself.  
 
-The PlatformToolset defaults to "v142", but may be changed with the `/pts` option.
-"v142" is used for VS 2019 version, "v143" would be used in VS 2022.
+The PlatformToolset may be changed with the `/pts` option.
 
 In a developer cmd you can also type:
 ```bash
@@ -70,9 +69,9 @@ This is done by using the `/p:RunTimeLib=Debug|Release` (msbuild) or `[/rtl]` (w
 
 ### Windows Context Menu
 It may be convenient to add Hexter to the context menu to be able to right-click a file and hexter it.
-In this scenario, you may use
+In this scenario, you may use [addBinShellCtxtMenuEntry.bat](https://github.com/fkie-cad/windowsScripts/blob/master/addBinShellCtxtMenuEntry.bat)
 ```bash
-$ addHeaderHexterToShellCtxtMenu.bat /p "c:\Hexter.exe" [/l "Open in Hexter"]
+$ addBinShellCtxtMenuEntry.bat /p "c:\Hexter.exe" /l "Open in Hexter"
 ```
 
 
@@ -108,7 +107,7 @@ Optional Parameters:
      * w: word, 
      * d: double word, 
      * q: quad word.  
-     Expect for the string types, all values have to be passed as hex values, omitting `0x`.  
+     Except for the string types, all values have to be passed as hex values, omitting `0x`.  
    * Find options:
      * -ci: case insensitive (for ascii search only).
  * -pid only:
@@ -169,19 +168,6 @@ Print a list of running processes.
 ```bash
 $ ./hexter -pid 0 -lrp
 ```
-
-## TESTS
-(Currently Gtests run linux only) 
-
-### REQUIREMENTS
- - The google c++ testing framework gtest [1]  
- - A c++ compiler available to cmake
-
-The test may be built with the target_name=hexter_tests which is the name of the test program as well.
-
-
-[1] https://github.com/google/googletest
-
 
 ## COPYRIGHT, CREDITS & CONTACT
 Published under [GNU GENERAL PUBLIC LICENSE](LICENSE).   
