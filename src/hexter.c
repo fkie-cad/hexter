@@ -36,7 +36,7 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.8.5"
+#define BIN_VS "1.8.6"
 #define BIN_LAST_CHANGED  "05.03.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
@@ -80,12 +80,14 @@ static const char format_types[] = {
 };
 #define format_types_ln (ARRAY_SIZE(format_types))
 
+void printVersion();
 static void printUsage();
 void printHelp();
 static void initParameters();
 static int parseArgs(int argc, char** argv);
 static uint8_t isArgOfType(const char* arg, const char* type);
 static uint8_t isCallForHelp(const char* arg1);
+static uint8_t isCheckForVersion(const char* arg1);
 static uint8_t isFormatArgOfType(char* arg, char* type);
 static uint8_t hasValue(char* type, int i, int end_i);
 static int sanitizeDeleteParams();
@@ -117,7 +119,13 @@ main(int argc, char** argv)
     if ( isCallForHelp(argv[1]) )
     {
         printHelp();
-        return 1;
+        return 0;
+    }
+
+    if ( isCheckForVersion(argv[1]) )
+    {
+        printVersion();
+        return 0;
     }
 
     initParameters();
@@ -593,6 +601,12 @@ uint8_t isCallForHelp(const char* arg1)
 {
     return isArgOfType(arg1, "/h") || 
            isArgOfType(arg1, "/?");
+}
+
+uint8_t isCheckForVersion(const char* arg1)
+{
+    return isArgOfType(arg1, "/version") || 
+           isArgOfType(arg1, "/vs");
 }
 
 uint8_t isFormatArgOfType(char* arg, char* type)

@@ -9,7 +9,7 @@ Compiles and runs under
 
 
 ## Version
-1.8.5  
+1.8.6  
 Last changed: 05.03.2026
 
 
@@ -170,12 +170,5 @@ Print a list of running processes.
 $ ./hexter -pid 0 -lrp
 ```
 
-## COPYRIGHT, CREDITS & CONTACT
+## COPYRIGHT
 Published under [GNU GENERAL PUBLIC LICENSE](LICENSE).   
-
-### Author
-- Henning Braun ([henning.braun@fkie.fraunhofer.de](mailto:henning.braun@fkie.fraunhofer.de)) 
-
-### Co-Author
-common_codeio.c
-- Viviane Zwanger ([viviane.zwanger@fkie.fraunhofer.de](mailto:viviane.zwanger@fkie.fraunhofer.de))
