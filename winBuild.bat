@@ -83,6 +83,10 @@ GOTO :ParseParams
         SET /a rtl=1
         goto reParseParams
     )
+    IF /i "%~1"=="/static" (
+        SET /a rtl=1
+        goto reParseParams
+    )
     IF /i "%~1"=="/pdb" (
         SET /a pdb=1
         goto reParseParams
@@ -224,8 +228,8 @@ GOTO :ParseParams
     exit /B 0
 
 :usage
-    @echo Usage: %my_name% [/exe] [/dll] [/b 32^|64] [/r^|/d] [/rtl] [/pdb] [/pts ^<toolset^>] [/bt ^<path^>] [/xi] [/v] [/h]
-    @echo Default: %my_name% [/exe /b %bitness% /m %mode% /pts %pts% /bt %buildTools%]
+    echo Usage: %my_name% [/exe] [/dll] [/b 32^|64] [/r^|/d] [/rtl] [/pdb] [/pts ^<toolset^>] [/bt ^<path^>] [/xi] [/v] [/h]
+    echo Default: %my_name% [/exe /b %bitness% /m %mode% /pts %pts% /bt %buildTools%]
     exit /B 0
 
 :help
@@ -239,7 +243,7 @@ GOTO :ParseParams
     echo /b Target bitness: 32^|64. Default: 64.
     echo /d Build in debug mode.
     echo /r Build in release mode (default). 
-    echo /rtl Statically include runtime libs. Increases file size but may be needed if a "VCRUNTIMExxx.dll not found Error" occurs on the target system.
+    echo /rtl Statically include runtime libs. May be needed if a "VCRUNTIMExxx.dll not found Error" occurs on the target system.
     echo /pdb Include pdb symbols into release build. Default in debug mode. 
     echo /bt Custom path to Microsoft Visual Studio BuildTools
     echo /pts Platformtoolset. Defaults to "v143".

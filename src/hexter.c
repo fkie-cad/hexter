@@ -36,8 +36,8 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.8.3"
-#define BIN_LAST_CHANGED  "17.09.2024"
+#define BIN_VS "1.8.4"
+#define BIN_LAST_CHANGED  "05.03.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -521,7 +521,7 @@ int parseArgs(int argc, char** argv)
 
     if ( run_mode == RUN_MODE_NONE )
     {
-//      printf("ERROR: You have to specify either a -file or a -pid!\n");
+//      EPrint("You have to specify either a -file or a -pid!\n");
         printUsage();
         return -1;
     }
@@ -677,7 +677,7 @@ int sanitizePrintParams(uint32_t pid)
     col_size = getColSize();
     if ( col_size == 0 )
     {
-        printf("ERROR: col size error!\n");
+        EPrint("Col size error!\n");
         return -1;
     }
 
@@ -757,7 +757,7 @@ uint8_t keepLengthInFile()
  * 
  * @param format char the format of the raw payload string
  * @param value char* the raw payload value
- * @param payload char** the array to store the formated payload in
+ * @param payload char** the array to store the formatted payload in
  * @return uint32_t length of parsed payload.
  */
 uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
@@ -766,48 +766,62 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
 
     if ( strnlen(value, MAX_PAYLOAD_LN) < 1 )
     {
-        printf("ERROR: Payload greater max payload size of 0x%x)!\n", MAX_PAYLOAD_LN);
+        EPrint("Payload greater max payload size of 0x%x!\n", MAX_PAYLOAD_LN);
         return 0;
     }
-    if ( format == FORMAT_BYTE )
+
+    switch ( format)
     {
-        ln = payloadParseByte(value, payload);
-    }
-    else if ( format == FORMAT_FILL_BYTE )
-    {
-        if ( length > MAX_PAYLOAD_LN )
+        case FORMAT_BYTE:
         {
-            printf("INFO: Fill byte length is greater than 0x%x (%u). Setting to 0x%x (%u)!\n", MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN);
-            length = MAX_PAYLOAD_LN;
+            ln = payloadParseByte(value, payload);
+            break;
         }
-        ln = payloadParseFillBytes(value, payload, length);
-        length = DEFAULT_LENGTH;
-    }
-    else if ( format == FORMAT_WORD )
-        ln = payloadParseWord(value, payload);
-    else if ( format == FORMAT_D_WORD )
-        ln = payloadParseDWord(value, payload);
-    else if ( format == FORMAT_Q_WORD )
-        ln = payloadParseQWord(value, payload);
-    else if ( format == FORMAT_ASCII )
-        ln = payloadParseUtf8(value, payload);
-    else if ( format == FORMAT_UNICODE )
-        ln = payloadParseUtf16(value, payload);
-//  else if ( format == 'r' )
-//      ln = payloadParseReversedPlainBytes(arg, payload);
-    else if ( format == FORMAT_PLAIN_HEX_1 || format == FORMAT_PLAIN_HEX_2 )
-    {
-        char* cleaned_value = NULL;
-        int s = cleanBytes(value, &cleaned_value);
-        if ( s != 0 )
-            return 0;
-        ln = payloadParsePlainBytes(cleaned_value, payload);
-        free(cleaned_value);
-    }
-    else
-    {
-        printf("ERROR: %c is not a supported format!\n", format);
-        ln = 0;
+        case FORMAT_FILL_BYTE:
+        {
+            if ( length > MAX_PAYLOAD_LN )
+            {
+                printf("INFO: Fill byte length is greater than 0x%x (%u). Setting to 0x%x (%u)!\n", MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN);
+                length = MAX_PAYLOAD_LN;
+            }
+            ln = payloadParseFillBytes(value, payload, length);
+            length = DEFAULT_LENGTH;
+            break;
+        }
+        case FORMAT_WORD:
+            ln = payloadParseWord(value, payload);
+            break;
+        case FORMAT_D_WORD:
+            ln = payloadParseDWord(value, payload);
+            break;
+        case FORMAT_Q_WORD:
+            ln = payloadParseQWord(value, payload);
+            break;
+        case FORMAT_ASCII:
+            ln = payloadParseUtf8(value, payload);
+            break;
+        case FORMAT_UNICODE:
+            ln = payloadParseUtf16(value, payload, 0x100);
+            break;
+    //  case 'r':
+    //      ln = payloadParseReversedPlainBytes(arg, payload);
+        case FORMAT_PLAIN_HEX_1:
+        case FORMAT_PLAIN_HEX_2:
+        {
+            char* cleaned_value = NULL;
+            int s = cleanBytes(value, &cleaned_value);
+            if ( s != 0 )
+                return 0;
+            ln = payloadParsePlainBytes(cleaned_value, payload);
+            free(cleaned_value);
+            break;
+        }
+        default:
+        {
+            EPrint("%c is not a supported format!\n", format);
+            ln = 0;
+            break;
+        }
     }
 
     return ln;

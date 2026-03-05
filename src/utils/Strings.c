@@ -232,7 +232,7 @@ int UTF8ToUTF16LE(unsigned char* outb, size_t* outlen, const unsigned char* in, 
 
     if ( in == NULL )
     {
-        //	initialization, add the Byte Order Mark
+        // initialization, add the Byte Order Mark
         if ( *outlen >= 2 )
         {
             outb[0] = 0xFF;

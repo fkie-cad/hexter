@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version
-1.8.3  
-Last changed: 17.09.2024
+1.8.4  
+Last changed: 05.03.2026
 
 
 ## REQUIREMENTS
@@ -133,14 +133,14 @@ Print 100 bytes from offset 20 in hex only style.
 $ ./hexter -file a/file/name -s 20 -l 100 -x
 ```
 
-Insert bytes at offset 0x20 with 0xdead0bea
+Insert bytes at offset 0x20 with value dead0bea
 ```bash
 $ ./hexter -file a/file/name -s 0x20 -ih dead0bea
 ```
 
-Overwrite dword at offset 0x20 with 0xdead0bea
+Overwrite dword at offset 0x20 with 0xEA0BADDE
 ```bash
-$ ./hexter -file a/file/name -s 0x20 -od dead0bea
+$ ./hexter -file a/file/name -s 0x20 -od EA0BADDE
 ```
 
 Find ascii string "PE"
@@ -156,6 +156,7 @@ $ ./hexter -file a/file/name -d -s 16 -l 16
 Create file with 8 bytes 
 ```bash
 $ ./hexter -file a/file/name -ih 0102030405060708
+$ ./hexter -file a/file/name -ih "\x01 \x02 \x03 \x04-\x05 \x06 \x07 \x08"
 ```
 
 **processes**  

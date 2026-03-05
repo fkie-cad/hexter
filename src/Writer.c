@@ -38,19 +38,19 @@ uint32_t payloadParseByte(const char* arg, uint8_t** payload)
     uint32_t arg_ln = (uint32_t)strnlen(arg, 4);
     if ( arg_ln < 1 )
     {
-        printf("Error: Payload byte has no value!\n");
+        EPrint("Payload byte has no value!\n");
         return 0;
     }
     if ( arg_ln > 2 )
     {
-        printf("Error: Payload byte is too big!\n");
+        EPrint("Payload byte is too big!\n");
         return 0;
     }
     arg_ln = 1;  // 1 byte
     uint8_t* p = (uint8_t*) malloc(arg_ln);
     if ( p == NULL )
     {
-        printf("ERROR: Allocating memory failed!\n");
+        EPrint("Allocating memory failed!\n");
         return 0;
     }
 
@@ -80,19 +80,19 @@ uint32_t payloadParseFillBytes(const char* arg, uint8_t** payload, size_t ln)
     uint8_t fill_byte = 0;
     if ( arg_ln < 1 )
     {
-        printf("Error: Fill byte has no value!\n");
+        EPrint("Fill byte has no value!\n");
         return 0;
     }
     if ( arg_ln > 2 )
     {
-        printf("Error: Fill byte is too big!\n");
+        EPrint("Fill byte is too big!\n");
         return 0;
     }
     arg_ln = (uint32_t)ln;
     uint8_t* p = (uint8_t*) malloc(arg_ln);
     if ( p == NULL )
     {
-        printf("ERROR: Allocating memory failed!\n");
+        EPrint("Allocating memory failed!\n");
         return 0;
     }
 
@@ -119,19 +119,19 @@ uint32_t payloadParseWord(const char* arg, uint8_t** payload)
     uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
     if ( arg_ln < 1 )
     {
-        printf("Error: Payload byte has no value!\n");
+        EPrint("Payload byte has no value!\n");
         return 0;
     }
     if ( arg_ln > 4 )
     {
-        printf("Error: Payload word is too big!\n");
+        EPrint("Payload word is too big!\n");
         return 0;
     }
     arg_ln = 2;  // 2 bytes
     uint8_t* p = (uint8_t*) malloc(arg_ln);
     if ( p == NULL )
     {
-        printf("ERROR: Allocating memory failed!\n");
+        EPrint("Allocating memory failed!\n");
         return 0;
     }
 
@@ -161,19 +161,19 @@ uint32_t payloadParseDWord(const char* arg, uint8_t** payload)
     uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
     if ( arg_ln < 1 )
     {
-        printf("Error: Payload byte has no value!\n");
+        EPrint("Payload byte has no value!\n");
         return 0;
     }
     if ( arg_ln > 8 )
     {
-        printf("Error: Payload dword is too big!\n");
+        EPrint("Payload dword is too big!\n");
         return 0;
     }
     arg_ln = 4;  // 4 bytes
     uint8_t* p = (uint8_t*) malloc(arg_ln);
     if ( p == NULL )
     {
-        printf("ERROR: Allocating memory failed!\n");
+        EPrint("Allocating memory failed!\n");
         return 0;
     }
 
@@ -203,19 +203,19 @@ uint32_t payloadParseQWord(const char* arg, uint8_t** payload)
     uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
     if ( arg_ln < 1 )
     {
-        printf("Error: Payload byte has no value!\n");
+        EPrint("Payload byte has no value!\n");
         return 0;
     }
     if ( arg_ln > 16 )
     {
-        printf("Error: Payload quad word is too big!\n");
+        EPrint("Payload quad word is too big!\n");
         return 0;
     }
     arg_ln = 8;  // 8 bytes
     uint8_t* p = (uint8_t*) malloc(arg_ln);
     if ( p == NULL )
     {
-        printf("ERROR: Allocating memory failed!\n");
+        EPrint("Allocating memory failed!\n");
         return 0;
     }
 
@@ -245,13 +245,13 @@ uint32_t payloadParseUtf8(const char* arg, uint8_t** payload)
     uint32_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
     if ( arg_ln < 1 )
     {
-        printf("Error: Payload string has no value!\n");
+        EPrint("Payload string has no value!\n");
         return 0;
     }
     uint8_t* p = (uint8_t*) malloc(arg_ln);
     if ( p == NULL )
     {
-        printf("ERROR: Allocating memory failed!\n");
+        EPrint("Allocating memory failed!\n");
         return 0;
     }
 
@@ -272,22 +272,23 @@ uint32_t payloadParseUtf8(const char* arg, uint8_t** payload)
  * @param payload
  * @return
  */
-uint32_t payloadParseUtf16(const char* arg, uint8_t** payload)
+uint32_t payloadParseUtf16(const char* arg, uint8_t** payload, size_t max_payload_ln)
 {
     uint32_t i;
-    size_t arg_ln = (uint32_t)strnlen(arg, MAX_PAYLOAD_LN);
+    size_t arg_ln = (uint32_t)strnlen(arg, max_payload_ln);
     
     size_t outlen = 0;
     uint8_t* outb = NULL;
 
     if ( arg_ln < 1 )
     {
-        printf("Error: Payload string has no value!\n");
+        EPrint("Payload string has no value!\n");
         return 0;
     }
 
-    // fill buffer to get the real size
-    outlen = (size_t)MAX_PAYLOAD_LN * 2;
+    // fill max buffer to get the real size
+    // utf-8 is one to 4 bytes plus some arbitrary buffer, 2 bytes bom could be added
+    outlen = (size_t)arg_ln * 4 + 0x10;
     outb = (uint8_t*)malloc(outlen);
     if ( !outb )
         return 0;
@@ -295,16 +296,17 @@ uint32_t payloadParseUtf16(const char* arg, uint8_t** payload)
     int s = UTF8ToUTF16LE(outb, &outlen, (uint8_t*)arg, &arg_ln);
     if ( s != 0 )
     {
-        printf("Error (0x%x): Converting to utf16.\n", s);
+        EPrint("Converting to utf16 failed! (0x%x)\n", s);
         outlen = 0;
         goto clean;
     }
 
-    // alloc payload with real size
+    // alloc payload with actual needed size
     uint8_t* p = (uint8_t*) malloc(outlen);
     if ( p == NULL )
     {
-        printf("ERROR: Allocating memory failed!\n");
+        s = errno;
+        EPrint("Allocating memory failed! (0x%x)\n", s);
         outlen = 0;
         goto clean;
     }
@@ -357,18 +359,22 @@ int cleanBytes(const char* input, char** output)
 {
     // get max size of data
     size_t input_ln = strlen(input);
-    
+    int s = 0;
+
     // alloc output buffer + terminating zero
     char* local = (char*)malloc(input_ln+1);
     if ( !local )
-        return -1;
+    {
+        s = errno;
+        return s;
+    }
     size_t local_cb = 0;
 
     const char* end_ptr = input + input_ln;
     char* local_ptr = local;
     for ( const char* input_ptr = input; input_ptr < end_ptr; input_ptr++ )
     {
-        // skip spaces
+        // skip spaces and separators
         if ( *input_ptr == ' ' 
           || *input_ptr == '|'
           || *input_ptr == '-' )
@@ -418,14 +424,15 @@ uint32_t payloadParsePlainBytes(const char* arg, uint8_t** payload)
 
     if ( arg_ln % 2 != 0 || arg_ln == 0 )
     {
-        printf("Error: Payload is not byte aligned!\n");
+        EPrint("Payload is not byte aligned!\n");
         return 0;
     }
 
     p = (uint8_t*) malloc(arg_ln/2);
     if ( p == NULL )
     {
-        printf("ERROR: Allocating memory failed!\n");
+        s = errno;
+        EPrint("Allocating memory failed! (0x%x)\n", s);
         return 0;
     }
 
@@ -481,7 +488,7 @@ void insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offs
         int errsv = errno;
         if ( !fp )
         {
-            printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
+            EPrint("Could not open \"%s\"! (0x%x)\n", path, errsv);
             return;
         }
     }
@@ -551,7 +558,7 @@ void overwrite(const char* path, uint8_t* payload, uint32_t payload_ln, size_t o
     int errsv = errno;
     if ( !fp )
     {
-        printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
+        EPrint("Could not open \"%s\"! (0x%x)\n", path, errsv);
         return;
     }
     // backup
@@ -599,7 +606,7 @@ void deleteBytes(const char* path, size_t start, size_t ln)
     int errsv = errno;
     if ( !fp )
     {
-        printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
+        EPrint("Could not open \"%s\"! (0x%x)\n", path, errsv);
         return;
     }
 

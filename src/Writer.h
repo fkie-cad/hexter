@@ -34,7 +34,8 @@ uint32_t payloadParseUtf8(
 
 uint32_t payloadParseUtf16(
     const char* arg, 
-    uint8_t** payload
+    uint8_t** payload, 
+    size_t max_payload_ln
 );
 
 uint32_t payloadParseReversedPlainBytes(
