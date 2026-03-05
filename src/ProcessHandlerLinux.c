@@ -417,7 +417,7 @@ uint64_t getSizeOfProcess(uint32_t pid)
     ProcMapsEntry entry;
     memset(&entry, 0, sizeof(entry));
     ProcMapsEntry last_entry;
-    memset(&entry, 0, sizeof(entry));
+    memset(&last_entry, 0, sizeof(last_entry));
     uint64_t start_address = 0;
 
     char* module_name = NULL;
