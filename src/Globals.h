@@ -22,6 +22,11 @@
     #define getpid _getpid
 #endif
 
+#if IS_LINUX
+#include <sys/param.h>
+#define max MAX
+#endif
+
 //#define DEBUG_PRINT_INFO (0)
 
 #include "print.h"

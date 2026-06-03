@@ -798,11 +798,11 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, uint8
     }
 
     if ( (mode_flags&MODE_FLAG_FIND) )
-        Finder_initFailure(p_needle, p_needle_ln);
+        Finder_initFailure(p_needle, p_needle_ln, NULL);
 
     while ( queryNextRegion(fp, &entry) )
     {
-//		printf("next region:\n");
+//      printf("next region:\n");
         // set correct entry base
         if ( entry.inode != 0 && entry.inode == last_inode )
             entry.base = last_base;
