@@ -55,21 +55,21 @@ uint32_t payloadParsePlainBytes(
 
 
 
-void insert(
+int insert(
     const char* file_path, 
     uint8_t* payload, 
     uint32_t payload_ln, 
     size_t offset
 );
 
-void overwrite(
+int overwrite(
     const char* file_path, 
     uint8_t* payload, 
     uint32_t payload_ln, 
     size_t offset
 );
 
-void deleteBytes(
+int deleteBytes(
     const char* file_path, 
     size_t start, 
     size_t length

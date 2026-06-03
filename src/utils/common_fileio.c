@@ -64,8 +64,15 @@ size_t getSize(const char* finame)
 size_t readFile(FILE* fi, size_t begin, size_t size, unsigned char* data, int* errsv)
 {
     size_t n = 0;
+    int s = 0;
 
-    fseek(fi, begin, SEEK_SET);
+    s = fseek(fi, begin, SEEK_SET);
+    *errsv = errno;
+    if ( s != 0 )
+    {
+        EPrint("FSeek failed! (0x%x)\n", *errsv);
+        return 0;
+    }
     errno = 0;
     n = fread(data, 1, size, fi);
     *errsv = errno;

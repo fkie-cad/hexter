@@ -6,20 +6,21 @@
 #define FIND_FLAG_ASCII            (0x2)
 
 
-void Finder_initFailure(
-    uint8_t* needle, 
-    uint32_t needle_ln
+int Finder_initFailure(
+    const uint8_t* needle, 
+    uint32_t needle_ln,
+    uint16_t** failure
 );
 
-size_t find(
-    const char* 
-    file_path, 
-    const uint8_t* needle, 
-    uint32_t needle_ln, 
-    size_t offset, 
-    size_t max_offset, 
-    uint32_t flags
-);
+//size_t find(
+//    const char* 
+//    file_path, 
+//    const uint8_t* needle, 
+//    uint32_t needle_ln, 
+//    size_t offset, 
+//    size_t max_offset, 
+//    uint32_t flags
+//);
 
 size_t findNeedleInFile(
     const char* file_path, 
@@ -50,7 +51,7 @@ size_t findNeedleInBlock(
 void computeFailure(
     const uint8_t* pattern, 
     size_t pattern_ln, 
-    uint16_t* failure
+    uint16_t* g_failure
 );
 
 void Finder_cleanUp();

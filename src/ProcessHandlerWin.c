@@ -345,7 +345,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, uint8_t
     }
 
     if ( (mode_flags&MODE_FLAG_FIND) )
-        Finder_initFailure(p_needle, p_needle_ln);
+        Finder_initFailure(p_needle, p_needle_ln, NULL);
 
     getRegionName(process, info.AllocationBase, file_name);
     info_p = info.BaseAddress;

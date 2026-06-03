@@ -36,8 +36,8 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME ("hexter")
-#define BIN_VS "1.8.6"
-#define BIN_LAST_CHANGED  "05.03.2026"
+#define BIN_VS "1.8.7"
+#define BIN_LAST_CHANGED  "03.06.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -215,7 +215,7 @@ int run(const char payload_format, const char* raw_payload)
 
     if ( (mode_flags&MODE_FLAG_INSERT) )
     {
-        insert(file_path, payload, payload_ln, start);
+        s = insert(file_path, payload, payload_ln, start);
         file_size = getSize(file_path);
     }
     else if ( (mode_flags&MODE_FLAG_OVERWRITE) && run_mode == RUN_MODE_FILE )
@@ -227,8 +227,7 @@ int run(const char payload_format, const char* raw_payload)
     {
         writeProcessMemory(pid, payload, payload_ln, start);
     }
-
-    if ( (mode_flags&MODE_FLAG_DELETE) )
+    else if ( (mode_flags&MODE_FLAG_DELETE) )
     {
         if ( sanitizeDeleteParams() != 0 )
         {
@@ -778,7 +777,7 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
 {
     uint32_t ln = 0;
 
-    if ( strnlen(value, MAX_PAYLOAD_LN) < 1 )
+    if ( strnlen(value, MAX_PAYLOAD_LN) == MAX_PAYLOAD_LN )
     {
         EPrint("Payload greater max payload size of 0x%x!\n", MAX_PAYLOAD_LN);
         return 0;

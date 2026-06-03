@@ -124,7 +124,7 @@ int parseUint16(const char* arg, uint16_t* value, uint8_t base)
     uint64_t result;
     int s = parseUint64(arg, &result, base);
     if ( s != 0 ) return s;
-    if ( s > UINT16_MAX )
+    if ( result > UINT16_MAX )
     {
         fprintf(stderr, "Error: %s could not be converted to a 2 byte int: Out of range!\n", arg);
         return 5;
@@ -161,7 +161,7 @@ int parseUint8(const char* arg, uint8_t* value, uint8_t base)
     uint64_t result;
     int s = parseUint64(arg, &result, base);
     if ( s != 0 ) return s;
-    if ( s > UINT8_MAX )
+    if ( result > UINT8_MAX )
     {
         fprintf(stderr, "Error: %s could not be converted to a byte: Out of range!\n", arg);
         return 5;

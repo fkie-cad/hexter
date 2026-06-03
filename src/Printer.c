@@ -143,7 +143,7 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
 
     if ( mode_flags&MODE_FLAG_FIND )
     {
-        Finder_initFailure(needle, needle_ln);
+        Finder_initFailure(needle, needle_ln, NULL);
         found = findNeedleInFile(file_path, needle, needle_ln, start, file_size, find_flags);
         //found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, file_size);
         if ( found == FIND_FAILURE )

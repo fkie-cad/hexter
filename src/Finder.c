@@ -12,57 +12,57 @@
 #include "Finder.h"
 #include "Globals.h"
 
-static uint16_t* failure = NULL;
+static uint16_t* g_failure = NULL;
 
-void Finder_initFailure(uint8_t* needle, uint32_t needle_ln)
+int Finder_initFailure(const uint8_t* needle, uint32_t needle_ln, uint16_t** failure)
 {
 //	int i = 0;
-    failure = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
-    computeFailure(needle, needle_ln, failure);
-//	if ( failure != NULL )
-//	{
-//		printf("failure\n");
-//		for ( i = 0; i < needle_ln; i++ )
-//		{
-//			printf("%u, ", failure[i]);
-//		}
-//		printf("\n");
-//	}
-//	else
-//	{
-//		printf("no failure initialized!\n");
-//	}
-}
 
-/**
- * Find the needle in the file starting from an offset.
- *
- * @param	needle uint8_t*
- * @param	needle_ln uint32_t
- * @param	offset size_t
- * @return	size_t the offset of the found needle or FIND_FAILURE, if not found
- */
-size_t find(const char* path, const uint8_t* needle, uint32_t needle_ln, size_t offset, size_t max_offset, uint32_t flags)
-{
-    size_t found;
+    uint16_t* f = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
+    if ( !f )
+        return -1;
 
-    uint16_t* f = NULL;
-    f = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
     computeFailure(needle, needle_ln, f);
 
-    found = findNeedleInFile(path, needle, needle_ln, offset, max_offset, flags);
-//	uint8_t remainder = 0;
+    // TODO make param mandatory not NULL, delete global g_failure
+    if ( failure )
+        *failure = f;
+    else
+        g_failure = f;
 
-//	n_found = normalizeOffset(found, &remainder);
-//	if ( found == FIND_FAILURE )
-//		printf("Pattern not found!\n");
-//	else
-//		print(n_found, remainder);
-
-    free(f);
-
-    return found;
+    return 0;
 }
+
+///**
+// * Find the needle in the file starting from an offset.
+// *
+// * @param	needle uint8_t*
+// * @param	needle_ln uint32_t
+// * @param	offset size_t
+// * @return	size_t the offset of the found needle or FIND_FAILURE, if not found
+// */
+//size_t find(const char* path, const uint8_t* needle, uint32_t needle_ln, size_t offset, size_t max_offset, uint32_t flags)
+//{
+//    size_t found;
+//
+//    // locally alloc failure
+//    //uint16_t* f = NULL;
+//    //f = (uint16_t*) calloc(needle_ln, sizeof(uint16_t));
+//    //computeFailure(needle, needle_ln, f);
+//
+//    found = findNeedleInFile(path, needle, needle_ln, offset, max_offset, flags);
+////	uint8_t remainder = 0;
+//
+////	n_found = normalizeOffset(found, &remainder);
+////	if ( found == FIND_FAILURE )
+////		printf("Pattern not found!\n");
+////	else
+////		print(n_found, remainder);
+//
+//    //free(f);
+//
+//    return found;
+//}
 
 /**
  * KMPMatch
@@ -83,7 +83,7 @@ size_t findNeedleInFile(const char* path, const uint8_t* needle, uint32_t needle
     int errsv = errno;
     if ( !fi )
     {
-        printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, path);
+        EPrint("Could not open \"%s\". (0x%x)\n", path, errsv);
         return FIND_FAILURE;
     }
 
@@ -116,11 +116,17 @@ size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, 
     //debug_info("findNeedleInFP(0x%zx, 0x%zx)\n", offset, max_offset);
     //debug_info("  flags: 0x%x\n", flags);
 
+    if ( !g_failure )
+    {
+        EPrint("g_failure not initialized!\n");
+        return FIND_FAILURE;
+    }
+
     j = 0;
 
     while ( n == buf_ln )
     {
-//		printf("\r0x%lx", offset);
+//      printf("\r0x%lx", offset);
         if ( offset + read_size > max_offset )
             read_size = max_offset - offset;
 
@@ -165,7 +171,7 @@ size_t findNeedleInBlock(const uint8_t* needle, uint32_t needle_ln, const uint8_
     {
         while ( needle_i > 0 && needle[needle_i] != buf[buf_i] )
         {
-            needle_i = failure[needle_i - 1];
+            needle_i = g_failure[needle_i - 1];
         }
         if ( needle[needle_i] == buf[buf_i] )
         {
@@ -210,5 +216,6 @@ void computeFailure(const uint8_t* pattern, size_t pattern_ln, uint16_t* failure
 
 void Finder_cleanUp()
 {
-    if ( failure != NULL ) free(failure);
+    if ( g_failure != NULL )
+        free(g_failure);
 }

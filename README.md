@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version
-1.8.6  
-Last changed: 05.03.2026
+1.8.7  
+Last changed: 03.06.2026
 
 
 ## REQUIREMENTS
@@ -53,6 +53,8 @@ $devcmd> msbuild Hexter.vcxproj /p:Configuration=<Release|Debug> /p:Platform=<x6
 
 
 ### DLL : Windows (MsBuild) 
+Library currently is not thread due to some global state variables.
+
 ```bash
 $ winBuild.bat /lib [/b 64] [/m Release] [/rt] [/pdb] [/pts <toolset>] [/bt a\path] [/?]
 ```

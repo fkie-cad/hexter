@@ -15,11 +15,11 @@ static const int le = 1;
  * str will be changed!!!
  * TODO: show, if max_bucket is exceeded
  *
- * @param	str char* the source string
- * @param	delimiter char* the splitting delimiter
- * @param	bucket char** the bucket to hold the parts (should be allocated memory)
- * @param	bucket_max size_t the max size of the bucket (if there are more parts, the loop will break before)
- * @return	size_t the size of the actual bucket, i.e. number of found parts.
+ * @param   str char* the source string
+ * @param   delimiter char* the splitting delimiter
+ * @param   bucket char** the bucket to hold the parts (should be allocated memory)
+ * @param   bucket_max size_t the max size of the bucket (if there are more parts, the loop will break before)
+ * @return  size_t the size of the actual bucket, i.e. number of found parts.
  */
 size_t split(char* str, const char* delimiter, char** bucket, const size_t bucket_max)
 {
@@ -151,15 +151,11 @@ size_t splitArgsCSM(char* buffer, char* argv[], size_t argv_size, char som, char
      ( (__char__) >= 'a' && (__char__) <= 'z' )
  #define IS_UC_CHAR_A(__char__) \
      ( (__char__) >= 'A' && (__char__) <= 'Z' )
- #define LC_TO_UC_CHAR_A(__char_ptr__) \
-     (*(__char_ptr__)) -= 0x20
- #define UC_TO_LC_CHAR_A(__char_ptr__) \
-     (*(__char_ptr__)) += 0x20
-     
- #define TO_LC_CHAR_A(__char_ptr__) \
-     (*(__char_ptr__)) |= ' '
- #define TO_UC_CHAR_A(__char_ptr__) \
-     (*(__char_ptr__)) |= '_'
+ #define LC_TO_UC_CHAR_A(__char__) \
+     ((__char__) -= 0x20)
+ #define UC_TO_LC_CHAR_A(__char__) \
+     ((__char__) += 0x20)
+
 
 // int toLowerCaseA(char* buffer, size_t size)
 // {
@@ -182,7 +178,7 @@ int toUpperCaseCA(char* c)
 {
     if ( IS_LC_CHAR_A(*c) )
     {
-        LC_TO_UC_CHAR_A(c);
+        LC_TO_UC_CHAR_A(*c);
     }
     return 0;
 }
@@ -196,7 +192,7 @@ int toUpperCaseA(char* buffer, size_t size)
     {
         if ( IS_LC_CHAR_A(*ptr) )
         {
-            LC_TO_UC_CHAR_A(ptr);
+            LC_TO_UC_CHAR_A(*ptr);
         }
         ++ptr;
     }
