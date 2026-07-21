@@ -20,12 +20,13 @@ void Printer_cleanUp(
 );
 
 size_t printBlock(
-    size_t nr_of_parts,
-    uint8_t* block,
-    FILE* fi,
-    uint16_t block_size,
-    size_t read_start,
-    size_t read_max
+    size_t nr_of_parts, 
+    uint8_t* block, 
+    FILE* fi, 
+    uint16_t block_size, 
+    size_t read_start, 
+    size_t read_max,
+    size_t length
 );
 
 void printLine(

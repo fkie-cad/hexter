@@ -997,7 +997,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 
     // prevent auto print, if next region of a module is accessed, to prevent printing two blocks at once
     if ( print_s == 1 )
-        base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end);
+        base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, length);
 //	printf(" - base_off: 0x%lx\n", base_off);
 
     if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
@@ -1011,7 +1011,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 
         if ( input == ENTER )
         {
-            base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end);
+            base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, length);
 //			printf(" -- base_off: 0x%lx\n", base_off);
         }
         else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
@@ -1030,7 +1030,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
             skip_bytes = 0;
 
             printf("\n");
-            base_off = printBlock(nr_of_parts, block, fp, block_size, base_addr+base_off, base_end);
+            base_off = printBlock(nr_of_parts, block, fp, block_size, base_addr+base_off, base_end, length);
         }
         else if ( input == QUIT )
         {

@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version
-1.8.7  
-Last changed: 03.06.2026
+1.9.0  
+Last changed: 21.07.2026
 
 
 ## REQUIREMENTS
@@ -112,6 +112,7 @@ Optional Parameters:
      Except for the string types, all values have to be passed as hex values, omitting `0x`.  
    * Find options:
      * -ci: case insensitive (for ascii search only).
+     * -all: find all occurrences.
  * -pid only:
    * -lpx List entire process memory layout.
    * -lpm List all process modules.

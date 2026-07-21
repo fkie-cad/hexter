@@ -158,7 +158,7 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
         skip_bytes = 0;
     }
 
-    block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, file_size);
+    block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, file_size, length);
 
     if ( (mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) && (block_start < file_size) )
         printBlockLoop(nr_of_parts, block, fi, block_size, block_start, file_size);
@@ -211,25 +211,41 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block
 
     while ( 1 )
     {
-        input = (char)_getch();
-
-        if ( input == ENTER )
-        {
-            block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
-        }
-        else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
+        // find all always wants next
+        if ( mode_flags&MODE_FLAG_FIND_ALL )
+            input = NEXT;
+        // else wait for user decision
+        else
+            input = (char)_getch();
+        
+        if ( ( (mode_flags&MODE_FLAG_FIND) && input == NEXT ) )
         {
             found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max, find_flags);
             if ( found == FIND_FAILURE )
                 break;
-
+            
             block_start = normalizeOffset(found, &skip_bytes, print_col_mask);
             Printer_setHighlightBytes(needle_ln);
             Printer_setHighlightWait(skip_bytes);
             skip_bytes = 0;
 
             printf("\n");
-            block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
+            DPrint("block_size: 0x%x\n", block_size);
+            DPrint("found: 0x%zx\n", found);
+            DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
+            size_t _length = length;
+            if ( mode_flags&MODE_FLAG_FIND )
+            {
+                size_t end = block_start + length;
+                if ( found + needle_ln > end )
+                    _length = length*2;
+            }
+
+            block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max, _length);
+        }
+        else if ( input == ENTER )
+        {
+            block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max, length);
         }
         else if ( input == QUIT )
             break;
@@ -239,44 +255,58 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block
     }
 }
 
-size_t printBlock(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block_size, size_t read_start, size_t read_max)
+size_t printBlock(
+    size_t nr_of_parts, 
+    uint8_t* block, 
+    FILE* fi, 
+    uint16_t block_size, 
+    size_t read_start, 
+    size_t read_max,
+    size_t length_
+)
 {
+    FEnter();
     size_t p;
     size_t read_size = 0;
     size_t size;
-    size_t end = read_start + length;
+    size_t end = read_start + length_;
     uint8_t offset_width = countHexWidth64((end>HEX_COL_SIZE)?end-HEX_COL_SIZE:end);
     int errsv = 0;
 
     // adjust end size if it exceeds read_max
     if ( end > read_max )
         end = read_max;
+    
+    DPrint("  nr_of_parts: 0x%zx\n", nr_of_parts);
+    DPrint("  block: %p\n", block);
+    DPrint("  fi: %p\n", fi);
+    DPrint("  block_size: 0x%x\n", block_size);
+    DPrint("  read_start: 0x%zx\n", read_start);
+    DPrint("  read_max: 0x%zx\n", read_max);
+    DPrint("  end: 0x%zx\n", end);
 
     for ( p = 0; p < nr_of_parts; p++ )
     {
         read_size = block_size;
-#ifdef DEBUG_PRINT
-        debug_info("%zu / %zu\n", (p+1), nr_of_parts);
-        debug_info(" - read_size: 0x%zx\n", read_size);
-        debug_info(" - block_start: 0x%zx\n", read_start);
-        debug_info(" - end: 0x%zx\n", end);
-#endif
+        DPrint("%zu / %zu\n", (p+1), nr_of_parts);
+        DPrint("  read_size: 0x%zx\n", read_size);
+        DPrint("  read_start: 0x%zx\n", read_start);
+
         if ( read_start >= end )
             break;
         if ( read_start + read_size > end )
             read_size = end - read_start;
         if ( read_size == 0 )
             break;
-#ifdef DEBUG_PRINT
-        debug_info(" - read_size: 0x%zx\n", read_size);
-#endif
-
+        
+        DPrint(" - read_size: 0x%zx\n", read_size);
+        
         memset(block, 0, block_size);
         size = readFile(fi, read_start, read_size, block, &errsv);
-
+        
         if ( !size )
         {
-            printf("ERROR (0x%x): Reading block of bytes failed!\n", errsv);
+            EPrint("Reading block of bytes failed! (0x%x)\n", errsv);
             read_start = read_max;
             break;
         }
@@ -289,6 +319,7 @@ size_t printBlock(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block_s
     if ( read_start >= read_max )
         read_start = SIZE_MAX;
 
+    FLeave();
     return read_start;
 }
 

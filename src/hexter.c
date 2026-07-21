@@ -36,7 +36,7 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME "hexter"
-#define BIN_VS "1.8.8"
+#define BIN_VS "1.9.0"
 #define BIN_LAST_CHANGED "21.07.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
@@ -359,6 +359,7 @@ void printHelp()
            "     Except for the string types, all values have to be passed as hex values, omitting `0x`.\n"
            "   * Find options:\n"
            "     * -ci: case insensitive (for ascii search only).\n"
+           "     * -all: Find all occurrences.\n"
 //         " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
            " * -pid only options:\n"
            "   * -lpx List entire process memory layout.\n"
@@ -527,6 +528,10 @@ int parseArgs(int argc, char** argv)
         else if ( isArgOfType(argv[i], "-ci") )
         {
             mode_flags |= MODE_FLAG_CASE_INSENSITIVE;
+        }
+        else if ( isArgOfType(argv[i], "-all") )
+        {
+            mode_flags |= MODE_FLAG_FIND_ALL;
         }
         else
         {
