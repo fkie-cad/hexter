@@ -63,9 +63,9 @@ int expandFilePath(const char* src, char* dest)
  * Create a temporary file and store its name in buf.
  * Currently Linux only.
  *
- * @param	buf char[128]
- * @param	prefix char* name prefix of the tmp file
- * @return	int status code
+ * @param   buf char[128]
+ * @param   prefix char* name prefix of the tmp file
+ * @return  int status code
  */
 int getTempFile(char* buf, const char* prefix)
 {
@@ -86,8 +86,8 @@ int getTempFile(char* buf, const char* prefix)
  * Extract the base file name out of a file_path.
  * "Light" version just pointing to the file_name in the memory of file_path.
  *
- * @param file_path char*
- * @param file_name char**
+ * @param   file_path char*
+ * @param   file_name char**
  */
 void getFileNameL(char* path, char** file_name)
 {
@@ -102,8 +102,8 @@ void getFileNameL(char* path, char** file_name)
  * Copying the found name into file_name.
  * Make sure, file_name char[] has a capacity of PATH_MAX!
  *
- * @param path char*
- * @param name char*
+ * @param   path char*
+ * @param   name char*
  */
 void getFileName(const char* path, char* name)
 {
@@ -129,8 +129,8 @@ void getFileName(const char* path, char* name)
  * Copying the found name into file_name allocated char*.
  * Caller is responsible for freeing it!
  *
- * @param 	file_path char*
- * @return	char* the file name
+ * @param   file_path char*
+ * @return  char* the file name
  */
 char* getFileNameP(const char* path)
 {
@@ -155,8 +155,8 @@ char* getFileNameP(const char* path)
 /**
  * Extract the base file name offset out of a file_path.
  *
- * @param file_path char*
- * @param file_name char*
+ * @param   file_path char*
+ * @param   file_name char*
  */
 int32_t getFileNameOffset(const char* path)
 {
@@ -173,7 +173,7 @@ int32_t getFileNameOffset(const char* path)
 /**
  * List all files in a directory.
  *
- * @param path char* the directory path.
+ * @param   path char* the directory path.
  */
 void listFilesOfDir(char* path)
 {
@@ -200,20 +200,24 @@ void listFilesOfDir(char* path)
 /**
  * Count the width (string length) of a hex value representation of an uint.
  *
- * @param	value uint64_t the value
- * @return	uint8_t the width
+ * @param   value uint64_t the value
+ * @return  uint8_t the width
  */
 uint8_t countHexWidth64(uint64_t value)
 {
     uint8_t width = 16;
     uint8_t t8;
     uint16_t t16;
+    // check upper uint32
     uint32_t t32 = (uint32_t) (value >> 32u);
     if ( t32 == 0 )
     {
         width -= 8;
+        // if 0 move to lower uint32
         t32 = (uint32_t) value;
     }
+    // check upper uint16 of current uint32 value
+    // ...
     t16 = (uint16_t) (t32 >> 16u);
     if ( t16 == 0 )
     {
@@ -230,38 +234,42 @@ uint8_t countHexWidth64(uint64_t value)
 
 /**
  * Count the width (string length) of a hex value representation of an uint.
+ * Counts leading zeros by shifting them in.
  *
- * @param	value uint32_t the value
- * @return	uint8_t the width
+ * @param   value uint32_t the value
+ * @return  uint8_t the width
  */
 uint8_t countHexWidth32(uint32_t value)
 {
     uint8_t width = 8;
     uint8_t t8;
     uint16_t t16 = (uint16_t) (value >> 16u);
+
     if ( t16 == 0 )
     {
         width -= 4;
         t16 = (uint16_t) value;
     }
+
     t8 = (uint8_t) (t16 >> 8u);
     if ( t8 == 0 )
     {
         width -= 2;
     }
+
     return width;
 }
 
 /**
- * Normalize a match a colsize value and fill the remainder.
+ * Normalize and match a colsize value and fill the remainder.
  *
- * @param	offset size_t the offset
- * @param	remainder uint8_t the remainder
- * @return
+ * @param   offset size_t the offset
+ * @param   remainder uint8_t the remainder
+ * @return  size_t 
  */
-size_t normalizeOffset(size_t offset, uint8_t* remainder)
+size_t normalizeOffset(size_t offset, uint8_t* remainder, uint8_t mask)
 {
-    uint8_t col_size = getColSize();
+    uint8_t col_size = getColSize(mask);
     *remainder = (offset % col_size);
 
     offset -= *remainder;
@@ -272,27 +280,27 @@ size_t normalizeOffset(size_t offset, uint8_t* remainder)
 /**
  * Get the colsize depending on the selected printing method.
  *
- * @return	uint8_t the col size
+ * @return  uint8_t the col size
  */
-uint8_t getColSize()
+uint8_t getColSize(uint8_t mask)
 {
     uint8_t col_size = 0;
     
-    if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK))
+    if ( mask == (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK))
         col_size = TRIPLE_COL_SIZE;
-    else if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_UNICODE_MASK | PRINT_HEX_MASK))
+    else if ( mask == (PRINT_OFFSET_MASK | PRINT_UNICODE_MASK | PRINT_HEX_MASK))
         col_size = TRIPLE_COL_SIZE;
-    else if ( print_col_mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK))
+    else if ( mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK))
         col_size = DOUBLE_COL_SIZE;
-    else if ( print_col_mask == (PRINT_UNICODE_MASK | PRINT_HEX_MASK))
+    else if ( mask == (PRINT_UNICODE_MASK | PRINT_HEX_MASK))
         col_size = DOUBLE_COL_SIZE;
-    else if ( print_col_mask == PRINT_ASCII_MASK )
+    else if ( mask == PRINT_ASCII_MASK )
         col_size = ASCII_COL_SIZE;
-    else if ( print_col_mask == PRINT_UNICODE_MASK )
+    else if ( mask == PRINT_UNICODE_MASK )
         col_size = UNICODE_COL_SIZE;
-    else if ( print_col_mask == PRINT_HEX_MASK )
+    else if ( mask == PRINT_HEX_MASK )
         col_size = HEX_COL_SIZE;
-    else if ( print_col_mask == PRINT_BYTES_STRING ) // convenience size to don't break calculations
+    else if ( mask == PRINT_BYTES_STRING ) // convenience size to don't break calculations
         col_size = TRIPLE_COL_SIZE;
 
     return col_size;
@@ -311,11 +319,7 @@ Bool confirmContinueWithNextRegion(char* name, size_t address)
     while ( 1 )
     {
         input = (char)_getch();
-//#if defined(_WIN32)
-//		input = _getch();
-//#else
-//		input = getch();
-//#endif
+
         if ( input == CONTINUE )
             return true;
         else if ( input == QUIT )
@@ -325,7 +329,7 @@ Bool confirmContinueWithNextRegion(char* name, size_t address)
 
         counter++;
     }
-//	return false;
+//    return false;
 }
 
 void setAnsiFormat(char* format)

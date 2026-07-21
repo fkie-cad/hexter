@@ -26,7 +26,7 @@ set /a ico=1
 set /a verbose=0
 
 :: adjust this path, if you're using another version or path.
-set /a vs_year=2022
+set /a vs_year=18
 set buildTools="C:\Program Files (x86)\Microsoft Visual Studio\%vs_year%\BuildTools"
 set pts=v145
 
@@ -177,7 +177,7 @@ GOTO :ParseParams
     )
 
     
-    :: set vcvars, if necessary
+    :: set vcvars, if not in developer cmd
     :: pseudo nop command to prevent if else bug in :build
     set vcvars=call
     if [%VisualStudioVersion%] EQU [] (
@@ -214,7 +214,7 @@ GOTO :ParseParams
         if %debug% EQU 1 (
             set conf=Debug
         ) else (
-            if %release% EQU 1 set conf=Release
+            set conf=Release
         )
         
         :: print flags
@@ -246,7 +246,7 @@ GOTO :ParseParams
     echo /rtl Statically include runtime libs. May be needed if a "VCRUNTIMExxx.dll not found Error" occurs on the target system.
     echo /pdb Include pdb symbols into release build. Default in debug mode. 
     echo /bt Custom path to Microsoft Visual Studio BuildTools
-    echo /pts Platformtoolset. Defaults to "v143".
+    echo /pts Platformtoolset. Defaults to "v145".
     echo /xi No icon for the exe == smaller exe.
     echo.
     echo /v more verbose output

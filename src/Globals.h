@@ -85,4 +85,14 @@ extern uint8_t print_col_mask;
 
 extern uint32_t mode_flags;
 
+
+
+#ifndef ALIGN_UP_BY
+#define ALIGN_UP_BY(__value__, __align__) ( ((uint64_t)(__value__) + (__align__) - 1) & ~((__align__) - 1) )
+#endif
+
+#ifndef ALIGN_DOWN_BY
+#define ALIGN_DOWN_BY(__value__, __align__) ((uint64_t)(__value__) & ~((uint64_t)(__align__) - 1))
+#endif
+
 #endif

@@ -18,6 +18,9 @@ INT AddPrivileges(
     HANDLE token;
     ULONG i;
 
+    if ( !Privileges || !PrivilegesCount )
+        return STATUS_INVALID_PARAMETER;
+
     TOKEN_PRIVILEGES* tp = NULL;
 
     if ( OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &token) )

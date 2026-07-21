@@ -24,15 +24,6 @@ int parseSizeAuto(const char* arg, uint64_t* value)
 }
 #endif
 
-int parseUint64Auto(const char* arg, uint64_t* value)
-{
-//	uint8_t base = 10;
-//	if ( arg[0] != 0 && arg[1] != 0 && arg[0] ==  '0' && arg[1] ==  'x')
-//		base = 16;
-
-    return parseUint64(arg, value, 0);
-}
-
 int parseUint64(const char* arg, uint64_t* value, uint8_t base)
 {
     char* endptr;
@@ -74,21 +65,6 @@ int parseUint64(const char* arg, uint64_t* value, uint8_t base)
     return 0;
 }
 
-int parseUint32Auto(const char* arg, uint32_t* value)
-{
-    uint64_t result;
-    int s = parseUint64Auto(arg, &result);
-    if ( s != 0 ) return s;
-    if ( result > UINT32_MAX )
-    {
-        fprintf(stderr, "Error: %s could not be converted to a 4 byte int: Out of range!\n", arg);
-        return 5;
-    }
-
-    *value = (uint32_t) result;
-    return 0;
-}
-
 int parseUint32(const char* arg, uint32_t* value, uint8_t base)
 {
     uint64_t result;
@@ -104,21 +80,6 @@ int parseUint32(const char* arg, uint32_t* value, uint8_t base)
     return 0;
 }
 
-int parseUint16Auto(const char* arg, uint16_t* value)
-{
-    uint64_t result;
-    int s = parseUint64Auto(arg, &result);
-    if ( s != 0 ) return s;
-    if ( result > UINT16_MAX )
-    {
-        fprintf(stderr, "Error: %s could not be converted to a 2 byte int: Out of range!\n", arg);
-        return 5;
-    }
-
-    *value = (uint16_t) result;
-    return 0;
-}
-
 int parseUint16(const char* arg, uint16_t* value, uint8_t base)
 {
     uint64_t result;
@@ -131,21 +92,6 @@ int parseUint16(const char* arg, uint16_t* value, uint8_t base)
     }
 
     *value = (uint16_t) result;
-    return 0;
-}
-
-int parseUint8Auto(const char* arg, uint8_t* value)
-{
-    uint64_t result;
-    int s = parseUint64Auto(arg, &result);
-    if ( s != 0 ) return s;
-    if ( result > UINT8_MAX )
-    {
-        fprintf(stderr, "Error: %s could not be converted to a byte: Out of range!\n", arg);
-        return 5;
-    }
-
-    *value = (uint8_t) result;
     return 0;
 }
 

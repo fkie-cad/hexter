@@ -152,7 +152,7 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
             return;
         }
 
-        block_start = normalizeOffset(found, &skip_bytes);
+        block_start = normalizeOffset(found, &skip_bytes, print_col_mask);
         Printer_setHighlightBytes(needle_ln);
         Printer_setHighlightWait(skip_bytes);
         skip_bytes = 0;
@@ -214,14 +214,16 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block
         input = (char)_getch();
 
         if ( input == ENTER )
+        {
             block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max);
+        }
         else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
         {
             found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max, find_flags);
             if ( found == FIND_FAILURE )
                 break;
 
-            block_start = normalizeOffset(found, &skip_bytes);
+            block_start = normalizeOffset(found, &skip_bytes, print_col_mask);
             Printer_setHighlightBytes(needle_ln);
             Printer_setHighlightWait(skip_bytes);
             skip_bytes = 0;

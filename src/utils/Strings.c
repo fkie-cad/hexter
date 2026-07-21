@@ -209,7 +209,7 @@ int toUpperCaseA(char* buffer, size_t size)
  * Take a block of UTF-8 chars in and try to convert it to an UTF-16LE
  * block of chars out.
  *
- * Returns the number of byte written, or -1 by lack of space, or -2
+ * Returns the number of bytes written, or -1 by lack of space, or -2
  *     if the transcoding failed.
  *
  * (c) https://dev.w3.org/XML/encoding.c
@@ -355,15 +355,15 @@ int UTF8ToUTF16LE(unsigned char* outb, size_t* outlen, const unsigned char* in, 
  * @inb:  a pointer to an array of UTF-16LE passwd as a byte array
  * @inlenb:  the length of @in in UTF-16LE chars
  *
- * Take a block of UTF-16LE ushorts in and try to convert it to an UTF-8
- * block of chars out. This function assume the endian properity
+ * Take a block of UTF-16LE ushort values in and try to convert it to an UTF-8
+ * block of chars out. This function assumes the endian property
  * is the same between the native type of this machine and the
- * inputed one.
+ * input one.
  *
  * Returns the number of byte written, or -1 by lack of space, or -2
  *     if the transcoding fails (for *in is not valid utf16 string)
  *     The value of *inlen after return is the number of octets consumed
- *     as the return value is positive, else unpredictiable.
+ *     as the return value is positive, else unpredictable.
  *
  * (c) https://dev.w3.org/XML/encoding.c
  */

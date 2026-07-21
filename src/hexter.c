@@ -35,9 +35,9 @@
 #endif
 #include "utils/Strings.h"
 
-#define BIN_NAME ("hexter")
-#define BIN_VS "1.8.7"
-#define BIN_LAST_CHANGED  "03.06.2026"
+#define BIN_NAME "hexter"
+#define BIN_VS "1.8.8"
+#define BIN_LAST_CHANGED "21.07.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -157,7 +157,7 @@ int run(const char payload_format, const char* raw_payload)
     }
     else if ( run_mode == RUN_MODE_PID )
     {
-        s = parseUint32Auto(file_path, &pid);
+        s = parseUint32(file_path, &pid, 0);
         if ( s != 0 )
             return -1;
 
@@ -167,7 +167,7 @@ int run(const char payload_format, const char* raw_payload)
 #ifdef _WIN32
         if ( IsProcessElevated(pid) )
         {
-            debug_info("elevated!\n");
+            DPrint("elevated!\n");
             PCHAR privileges[1] = {
                 SE_DEBUG_NAME
             };
@@ -180,7 +180,7 @@ int run(const char payload_format, const char* raw_payload)
             }
             else
             {
-                debug_info("debug enabled!\n");
+                DPrint("debug enabled!\n");
             }
         }
 #endif
@@ -190,16 +190,16 @@ int run(const char payload_format, const char* raw_payload)
             return -2;
     }
 
-    debug_info("file_path: %s\n", file_path);
-    debug_info("file_size: 0x%zx\n", file_size);
-    debug_info("start: 0x%zx\n", start);
-    debug_info("length: 0x%zx\n", length);
-    debug_info("print_col_mask only: %d\n", print_col_mask);
-    debug_info("insert: %d\n", (mode_flags&MODE_FLAG_INSERT));
-    debug_info("overwrite: %d\n", (mode_flags&MODE_FLAG_OVERWRITE));
-    debug_info("find: %d\n", (mode_flags&MODE_FLAG_FIND));
-    debug_info("delete: %d\n", (mode_flags&MODE_FLAG_DELETE));
-    debug_info("\n");
+    DPrint("file_path: %s\n", file_path);
+    DPrint("file_size: 0x%zx\n", file_size);
+    DPrint("start: 0x%zx\n", start);
+    DPrint("length: 0x%zx\n", length);
+    DPrint("print_col_mask only: %d\n", print_col_mask);
+    DPrint("insert: %d\n", (mode_flags&MODE_FLAG_INSERT));
+    DPrint("overwrite: %d\n", (mode_flags&MODE_FLAG_OVERWRITE));
+    DPrint("find: %d\n", (mode_flags&MODE_FLAG_FIND));
+    DPrint("delete: %d\n", (mode_flags&MODE_FLAG_DELETE));
+    DPrint("\n");
 
     if ( (mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_FIND)) && payload_format > 0 )
     {
@@ -301,13 +301,19 @@ void initParameters()
     payload_arg_id = -1;
 }
 
-void printVersion()
+void printName()
 {
     printf("%s\n", BIN_NAME);
+    printf("A command line hex editor for files and processes.\n");
+}
+
+void printVersion()
+{
     printf("Version: %s\n", BIN_VS);
     printf("Last changed: %s\n", BIN_LAST_CHANGED);
     printf("Compiled: %s %s\n", __DATE__, __TIME__);
 }
+
 
 void printUsage()
 {
@@ -317,6 +323,8 @@ void printUsage()
 
 void printHelp()
 {
+    printName();
+    printf("\n");
     printVersion();
     printf("\n");
     printUsage();
@@ -652,14 +660,14 @@ int sanitizeDeleteParams()
 
     if ( start >= file_size )
     {
-        fprintf(stderr, "ERROR: Start offset 0x%zx is greater the the file size 0x%zx (%zu)!\n",
-                start, file_size, file_size);
+        EPrint("Start offset 0x%zx is greater then the file size of 0x%zx!\n",
+                start, file_size);
         return 1;
     }
     
     if ( length == 0 )
     {
-        fprintf(stdout, "Info: Length is 0. Setting to end of file 0x%zx!\n", 
+        printf("Info: Length is 0. Setting it to remaining file size 0x%zx!\n", 
             file_size - start);
         length = file_size - start;
         info_line_break = 1;
@@ -687,7 +695,7 @@ int sanitizePrintParams(uint32_t pid)
     if ( mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_DELETE) )
         mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
-    col_size = getColSize();
+    col_size = getColSize(print_col_mask);
     if ( col_size == 0 )
     {
         EPrint("Col size error!\n");
@@ -700,22 +708,30 @@ int sanitizePrintParams(uint32_t pid)
     {
         if ( length % col_size != 0 )
         {
-            length = length + col_size - (length % col_size);
+            length = ALIGN_UP_BY(length, col_size);
             printf("INFO: Normalized length to 0x%zx\n", length);
         }
     }
 
     // check start offset
     if ( run_mode == RUN_MODE_FILE )
-        info_line_break = keepStartInFile();
+    {
+        if ( start >= file_size )
+        {
+            EPrint("Start offset 0x%zx is greater then the file size of 0x%zx!\n\n", start, file_size);
+            return -1;
+        }
+    }
     else if ( run_mode == RUN_MODE_PID )
+    {
         info_line_break = makeStartHitAccessableMemory(pid, &start);
+    }
 
     // normalize start offset to block size
     // called after insert and overwrite
     if ( !(mode_flags&(MODE_FLAG_FIND|MODE_FLAG_DELETE)) )
     {
-        start = normalizeOffset(start, &skip_bytes);
+        start = normalizeOffset(start, &skip_bytes, print_col_mask);
         if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
             length += skip_bytes;
     }
@@ -736,17 +752,6 @@ int sanitizePrintParams(uint32_t pid)
     if ( info_line_break )
         printf("\n");
 
-    return 0;
-}
-
-uint8_t keepStartInFile()
-{
-    if ( start >= file_size )
-    {
-        printf("Info: Start offset 0x%zx is greater the the file size 0x%zx (%zu)!\nSetting to 0!\n", start, file_size, file_size);
-        start = 0;
-        return 1;
-    }
     return 0;
 }
 
@@ -783,7 +788,7 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
         return 0;
     }
 
-    switch ( format)
+    switch ( format )
     {
         case FORMAT_BYTE:
         {
@@ -841,7 +846,7 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
 }
 
 /**
- * Library function to print a file (-t file).
+ * Library function to print a file (-file <name>).
  *
  * @param _file_name
  * @param _start
@@ -868,7 +873,7 @@ HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _l
 }
 
 /**
- * Library function to print a process (-t pid).
+ * Library function to print a process (-pid <pid>).
  *
  * @param _pid
  * @param _start
@@ -903,7 +908,7 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
  * Example: rundll32 hexter.dll,runHexter hexter -pid 0 -lrp
  * The "hexter" param is a dummy param and the rest of the params should be used as explained in normal usage:
  * -file|-pid xxx [options]
- * With the "hexter" dummy param, the splitted arguments may be passed to the main function.
+ * With the "hexter" dummy param, the split arguments may be passed to the main function.
  * Otherwise it had to be added internally.
  *
  * @param hwnd
@@ -926,7 +931,7 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
     (void) hinst;
     (void) nCmdShow;
 
-    debug_info("the param cmd line: %s\n", lpszCmdLine);
+    DPrint("the param cmd line: %s\n", lpszCmdLine);
 
     uint8_t argv_max = 20;
     uint8_t argc;
@@ -935,9 +940,9 @@ HEXTER_API void runHexter(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCm
 
 #ifdef DEBUG_PRINT
     int i;
-    debug_info("argc: %u\n", argc);
+    DPrint("argc: %u\n", argc);
     for ( i = 0; i < argc; i++ )
-        debug_info("arg%d: %s\n", i, argv[i]);
+        DPrint("arg%d: %s\n", i, argv[i]);
 #endif
 
     main(argc, argv);
