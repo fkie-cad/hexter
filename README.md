@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## Version
-1.9.0  
-Last changed: 21.07.2026
+1.9.1  
+Last changed: 22.07.2026
 
 
 ## REQUIREMENTS
@@ -174,4 +174,4 @@ $ ./hexter -pid 0 -lrp
 ```
 
 ## COPYRIGHT
-Published under [GNU GENERAL PUBLIC LICENSE](LICENSE).   
+Published under [GNU GENERAL PUBLIC LICENSE](LICENSE).

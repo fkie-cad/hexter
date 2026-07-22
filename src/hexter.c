@@ -36,8 +36,8 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME "hexter"
-#define BIN_VS "1.9.0"
-#define BIN_LAST_CHANGED "21.07.2026"
+#define BIN_VS "1.9.1"
+#define BIN_LAST_CHANGED "22.07.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -97,7 +97,6 @@ static uint32_t parsePayload(const char format, const char* value, uint8_t** pay
 static int run(const char payload_format, const char* raw_payload);
 void cleanUp(uint8_t* payload);
 
-static uint8_t keepStartInFile();
 static uint8_t keepLengthInFile();
 
 #ifdef DILLER

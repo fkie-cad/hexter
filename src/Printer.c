@@ -212,13 +212,13 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block
     while ( 1 )
     {
         // find all always wants next
-        if ( mode_flags&MODE_FLAG_FIND_ALL )
+        if ( (mode_flags&(MODE_FLAG_FIND|MODE_FLAG_FIND_ALL)) == (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL) )
             input = NEXT;
         // else wait for user decision
         else
             input = (char)_getch();
         
-        if ( ( (mode_flags&MODE_FLAG_FIND) && input == NEXT ) )
+        if ( (mode_flags&MODE_FLAG_FIND) && (input == NEXT) )
         {
             found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max, find_flags);
             if ( found == FIND_FAILURE )
