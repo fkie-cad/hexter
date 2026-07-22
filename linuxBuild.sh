@@ -87,11 +87,11 @@ function buildTarget() {
     dp=$((dp & ~$DP_FLAG_ERROR))
     
 
-    local flags="-Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Wall -pedantic -Wextra -Werror=return-type -Werror=overflow -Werror=format"
+    local flags="-Wl,-z,relro,-z,now -D_FILE_OFFSET_BITS=64 -Wall -pedantic -Wextra -Werror=return-type -Werror=overflow -Werror=format -fvisibility=hidden"
     if (( ${build_mode} == $MODE_DEBUG )); then
         flags="${flags} -ggdb -O0"
     else
-        flags="${flags} -Ofast"
+        flags="${flags} -Ofast -Wl,--gc-sections -ffunction-sections -fdata-sections"
     fi
 
     if (( $((build_flags & $BUILD_FLAG_STATIC)) == $BUILD_FLAG_STATIC )); then
@@ -111,6 +111,11 @@ function buildTarget() {
     local bin_name=$name
     local app_src="src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c"
     local sh_src="src/hexter.c src/Finder.c src/Printer.c src/ProcessHandlerLinux.c src/Writer.c src/utils/*.c"
+
+    if [[ $verbose == 1 ]]; 
+    then
+        flags="--verbose -Wl,--print-gc-sections $flags"
+    fi
 
     case $target in
         $((BUILD_TARGET_APP)))

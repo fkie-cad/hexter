@@ -1,10 +1,12 @@
 #ifndef HEXTER_SRC_HEXTER_H
 #define HEXTER_SRC_HEXTER_H
 
-#if defined(_LINUX) || defined(__APPLE__)
-    #define HEXTER_API
-#elif defined(HEXTER_EXPORTS)
-    #define HEXTER_API __declspec(dllexport)
+#if defined(HEXTER_EXPORTS)
+    #if defined(_MSC_VER) 
+        #define HEXTER_API __declspec(dllexport) // Microsoft  
+    #elif defined(__GNUC__) 
+        #define HEXTER_API __attribute__((visibility("default"))) // GCC 
+    #endif
 #else
     #define HEXTER_API __declspec(dllimport)
 #endif

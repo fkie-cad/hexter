@@ -80,9 +80,9 @@ static const char format_types[] = {
 };
 #define format_types_ln (ARRAY_SIZE(format_types))
 
-void printVersion();
+static void printVersion();
 static void printUsage();
-void printHelp();
+static void printHelp();
 static void initParameters();
 static int parseArgs(int argc, char** argv);
 static uint8_t isArgOfType(const char* arg, const char* type);
@@ -95,7 +95,7 @@ static int sanitizePrintParams(uint32_t pid);
 static uint32_t parsePayload(const char format, const char* value, uint8_t** payload);
 
 static int run(const char payload_format, const char* raw_payload);
-void cleanUp(uint8_t* payload);
+static void cleanUp(uint8_t* payload);
 
 static uint8_t keepLengthInFile();
 
