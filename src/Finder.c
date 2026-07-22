@@ -113,8 +113,8 @@ size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, 
     size_t block_i, j;
     size_t found = FIND_FAILURE;
 
-    //debug_info("findNeedleInFP(0x%zx, 0x%zx)\n", offset, max_offset);
-    //debug_info("  flags: 0x%x\n", flags);
+    //DPrint("findNeedleInFP(0x%zx, 0x%zx)\n", offset, max_offset);
+    //DPrint("  flags: 0x%x\n", flags);
 
     if ( !g_failure )
     {

@@ -3,7 +3,7 @@
 
 #if defined(HEXTER_EXPORTS)
     #if defined(_MSC_VER) 
-        #define HEXTER_API __declspec(dllexport) // Microsoft  
+        #define HEXTER_API __declspec(dllexport) // MSBUILD  
     #elif defined(__GNUC__) 
         #define HEXTER_API __attribute__((visibility("default"))) // GCC 
     #endif

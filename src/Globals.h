@@ -74,21 +74,22 @@ extern char file_path[PATH_MAX];
 extern size_t length;
 
 extern uint8_t print_col_mask;
-#define PRINT_ASCII_MASK    (0x1)
-#define PRINT_UNICODE_MASK  (0x2)
-#define PRINT_HEX_MASK      (0x4)
-#define PRINT_OFFSET_MASK   (0x8)
+#define PRINT_ASCII_MASK     (0x1)
+#define PRINT_UNICODE_MASK   (0x2)
+#define PRINT_HEX_MASK       (0x4)
+#define PRINT_OFFSET_MASK    (0x8)
 #define PRINT_BYTES_STRING  (0x10)
 
 
-#define MODE_FLAG_INSERT                (0x01)
-#define MODE_FLAG_OVERWRITE             (0x02)
-#define MODE_FLAG_DELETE                (0x04)
-#define MODE_FLAG_FIND                  (0x08)
-#define MODE_FLAG_FIND_ALL              (0x10)
-#define MODE_FLAG_CONTINUOUS_PRINTING   (0x20)
-#define MODE_FLAG_CLEAN_PRINTING        (0x40)
-#define MODE_FLAG_CASE_INSENSITIVE      (0x80)
+#define MODE_FLAG_INSERT                 (0x01)
+#define MODE_FLAG_OVERWRITE              (0x02)
+#define MODE_FLAG_DELETE                 (0x04)
+#define MODE_FLAG_FIND                   (0x08)
+#define MODE_FLAG_FIND_ALL               (0x10)
+#define MODE_FLAG_CONTINUOUS_PRINTING    (0x20)
+#define MODE_FLAG_CLEAN_PRINTING         (0x40)
+#define MODE_FLAG_CASE_INSENSITIVE       (0x80)
+#define MODE_FLAG_PRINT_FIND_OFFSET     (0x100)
 
 extern uint32_t mode_flags;
 
@@ -101,5 +102,7 @@ extern uint32_t mode_flags;
 #ifndef ALIGN_DOWN_BY
 #define ALIGN_DOWN_BY(__value__, __align__) ((uint64_t)(__value__) & ~((uint64_t)(__align__) - 1))
 #endif
+
+#define ARE_FLAGS_SET(__value__, __flags__) ((__value__)&(__flags__)) == (__flags__) 
 
 #endif

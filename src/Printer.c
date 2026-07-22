@@ -103,6 +103,8 @@ static uint32_t find_flags = 0;
  */
 void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_ln)
 {
+    FEnter();
+
     needle = _needle;
     needle_ln = _needle_ln;
     
@@ -114,58 +116,45 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
     size_t nr_of_parts = length / block_size;
     if ( length % block_size != 0 ) nr_of_parts++;
 
-    if ( (mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
+    if ( ARE_FLAGS_SET(mode_flags, (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) )
         find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
-    debug_info("start: 0x%zx\n", start);
-    debug_info("block_size: 0x%x\n", block_size);
-    debug_info("nr_of_parts: 0x%zx\n", nr_of_parts);
-    debug_info("mode_flags: 0x%x\n", mode_flags);
-    debug_info("find_flags: 0x%x\n", find_flags);
-    debug_info("\n");
+    DPrint("start: 0x%zx\n", start);
+    DPrint("block_size: 0x%x\n", block_size);
+    DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
+    DPrint("mode_flags: 0x%x\n", mode_flags);
+    DPrint("find_flags: 0x%x\n", find_flags);
+    DPrint("\n");
 
     errno = 0;
     fi = fopen(file_path, "rb");
     errsv = errno;
     if ( !fi )
     {
-        printf("ERROR (0x%x): Could not open \"%s\".\n", errsv, file_path);
+        EPrint("Could not open \"%s\"! (0x%x)\n", file_path, errsv);
         return;
     }
 
-    block = (uint8_t*) malloc(block_size);
+    block = (uint8_t*)malloc(block_size);
     if ( !block )
     {
-        printf("Malloc block failed.\n");
+        errsv = errno;
+        EPrint("Malloc block failed! (0x%x)\n", errsv);
         fclose(fi);
         return;
     }
 
     Printer_setSkipBytes(skip_bytes);
-
     if ( mode_flags&MODE_FLAG_FIND )
     {
         Finder_initFailure(needle, needle_ln, NULL);
-        found = findNeedleInFile(file_path, needle, needle_ln, start, file_size, find_flags);
-        //found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, file_size);
-        if ( found == FIND_FAILURE )
-        {
-            Printer_cleanUp(block, fi);
-            return;
-        }
-
-        block_start = normalizeOffset(found, &skip_bytes, print_col_mask);
-        Printer_setHighlightBytes(needle_ln);
-        Printer_setHighlightWait(skip_bytes);
-        skip_bytes = 0;
     }
-
-    block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, file_size, length);
-
-    if ( (mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) && (block_start < file_size) )
-        printBlockLoop(nr_of_parts, block, fi, block_size, block_start, file_size);
+    
+    printBlockLoop(nr_of_parts, block, fi, block_size, block_start, file_size);
 
     Printer_cleanUp(block, fi);
+
+    FLeave();
 }
 
 void Printer_setSkipBytes(uint8_t skip_bytes)
@@ -176,9 +165,10 @@ void Printer_setSkipBytes(uint8_t skip_bytes)
 
 void setPrintingStyle()
 {
+    FEnter();
 #ifdef CLEAN_PRINTING
     printHexValue = &printCleanHexValue;
-#elif defined(__linux__) || defined(__linux) || defined(linux)
+#elif defined(_LINUX)
     if ( (mode_flags&MODE_FLAG_CLEAN_PRINTING) || !isatty(fileno(stdout)) )
         printHexValue = &printCleanHexValue;
     else
@@ -197,34 +187,54 @@ void setPrintingStyle()
 #else
     printHexValue = &printCleanHexValue;
 #endif
+    FLeave();
 }
 
 void Printer_cleanUp(uint8_t* block, FILE* fi)
 {
+    FEnter();
+
     free(block);
     fclose(fi);
     Finder_cleanUp();
+    
+    FLeave();
 }
 
 void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block_size, size_t block_start, size_t block_max)
 {
-    char input;
-    uint8_t skip_bytes = 0;
+    FEnter();
 
-    while ( 1 )
+    uint8_t skip_bytes = 0;
+    size_t find_offset = block_start;
+    int continuing = (mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) ? 1 : 0;
+    char input = (mode_flags&MODE_FLAG_FIND) ? NEXT : ENTER;
+    
+    DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
+    DPrint("block: %p\n", block);
+    DPrint("fi: %p\n", fi);
+    DPrint("block_size: 0x%x\n", block_size);
+    DPrint("block_start: 0x%zx\n", block_start);
+    DPrint("block_max: 0x%zx\n", block_max);
+    DPrint("find_offset: 0x%zx\n", find_offset);
+    DPrint("file_size: 0x%zx\n", file_size);
+    DPrint("input: %c\n", input);
+    DPrint("continuing: %u\n", continuing);
+    
+    if ( block_start >= file_size )
     {
-        // find all always wants next
-        if ( (mode_flags&(MODE_FLAG_FIND|MODE_FLAG_FIND_ALL)) == (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL) )
-            input = NEXT;
-        // else wait for user decision
-        else
-            input = (char)_getch();
-        
+        IPrint("block_start exceeds file size!\n");
+        return;
+    }
+    
+    do
+    {
         if ( (mode_flags&MODE_FLAG_FIND) && (input == NEXT) )
         {
-            found = findNeedleInFP(needle, needle_ln, found+needle_ln, fi, block_max, find_flags);
+            found = findNeedleInFP(needle, needle_ln, find_offset, fi, block_max, find_flags);
             if ( found == FIND_FAILURE )
                 break;
+            find_offset = found+needle_ln;
             
             block_start = normalizeOffset(found, &skip_bytes, print_col_mask);
             Printer_setHighlightBytes(needle_ln);
@@ -235,14 +245,21 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block
             DPrint("block_size: 0x%x\n", block_size);
             DPrint("found: 0x%zx\n", found);
             DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
+
+            // check if found needle exceeds current printing length
             size_t _length = length;
-            if ( mode_flags&MODE_FLAG_FIND )
+            //if ( mode_flags&MODE_FLAG_FIND )
             {
                 size_t end = block_start + length;
                 if ( found + needle_ln > end )
-                    _length = length*2;
+                {
+                    _length += needle_ln;
+                    _length = ALIGN_UP_BY(_length, length);
+                }
             }
 
+            if ( mode_flags&MODE_FLAG_PRINT_FIND_OFFSET )
+                printf("found: 0x%zx\n", found);
             block_start = printBlock(nr_of_parts, block, fi, block_size, block_start, block_max, _length);
         }
         else if ( input == ENTER )
@@ -251,10 +268,24 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* block, FILE* fi, uint16_t block
         }
         else if ( input == QUIT )
             break;
+        
+        // on break mode break;
+        if ( !continuing )
+            break;
 
         if ( block_start == SIZE_MAX )
             break;
+
+        // find all always wants next
+        if ( ARE_FLAGS_SET(mode_flags, (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL)) )
+            input = NEXT;
+        // else wait for user decision
+        else
+            input = (char)_getch();
     }
+    while ( continuing );
+
+    FLeave();
 }
 
 size_t printBlock(
@@ -268,6 +299,7 @@ size_t printBlock(
 )
 {
     FEnter();
+
     size_t p;
     size_t read_size = 0;
     size_t size;
@@ -327,6 +359,8 @@ size_t printBlock(
 
 void printLine(const uint8_t* block, size_t block_start, size_t size, uint8_t offset_width)
 {
+    //FEnter();
+
     if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK) )
         printTripleCols(block, size, block_start, offset_width, printAsciiCol);
     else if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_UNICODE_MASK | PRINT_HEX_MASK) )
@@ -343,6 +377,8 @@ void printLine(const uint8_t* block, size_t block_start, size_t size, uint8_t of
         printUnicodeCols(block, size, UNICODE_COL_SIZE);
     else if ( print_col_mask == PRINT_BYTES_STRING )
         printPlainByteString(block, size);
+    
+    //FLeave();
 }
 
 //void printDoubleCols(const uint8_t* block, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t))

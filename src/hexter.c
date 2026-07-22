@@ -36,7 +36,7 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME "hexter"
-#define BIN_VS "1.9.1"
+#define BIN_VS "1.9.2"
 #define BIN_LAST_CHANGED "22.07.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
@@ -359,6 +359,7 @@ void printHelp()
            "   * Find options:\n"
            "     * -ci: case insensitive (for ascii search only).\n"
            "     * -all: Find all occurrences.\n"
+           "     * -pfo: Print the exact found offset separately.\n"
 //         " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
            " * -pid only options:\n"
            "   * -lpx List entire process memory layout.\n"
@@ -531,6 +532,10 @@ int parseArgs(int argc, char** argv)
         else if ( isArgOfType(argv[i], "-all") )
         {
             mode_flags |= MODE_FLAG_FIND_ALL;
+        }
+        else if ( isArgOfType(argv[i], "-pfo") )
+        {
+            mode_flags |= MODE_FLAG_PRINT_FIND_OFFSET;
         }
         else
         {

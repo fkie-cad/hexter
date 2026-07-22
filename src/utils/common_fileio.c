@@ -2,9 +2,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include <stdio.h>
+//#include <stdio.h>
 #include <errno.h>
-#include <string.h>
 
 #include "common_fileio.h"
 #include "../print.h"

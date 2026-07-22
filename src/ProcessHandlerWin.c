@@ -606,12 +606,12 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
     
     for ( p = 0; p < nr_of_parts; p++ )
     {
-        debug_info("%zu / %zu\n", (p + 1), nr_of_parts);
+        DPrint("%zu / %zu\n", (p + 1), nr_of_parts);
         read_size = BLOCKSIZE_LARGE;
         if ( block_start + read_size > end )
             read_size = end - block_start;
         
-        debug_info(" - read_size: %zu\n", read_size);
+        DPrint(" - read_size: %zu\n", read_size);
 
         memset(buffer, 0, BLOCKSIZE_LARGE);
     
@@ -736,10 +736,10 @@ findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, 
     size_t n_size = BLOCKSIZE_LARGE;
     uint8_t find_buf[BLOCKSIZE_LARGE] = {0};
     
-    debug_info("Find: ");
+    DPrint("Find: ");
     for ( block_i = 0; block_i < needle_ln; block_i++ )
-        debug_info("%02x", p_needle[block_i]);
-    debug_info("\n");
+        DPrint("%02x", p_needle[block_i]);
+    DPrint("\n");
 
     while ( n_size && n_size == BLOCKSIZE_LARGE )
     {

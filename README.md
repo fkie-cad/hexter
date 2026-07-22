@@ -9,7 +9,7 @@ Compiles and runs under
 
 
 ## Version
-1.9.1  
+1.9.2  
 Last changed: 22.07.2026
 
 
@@ -113,6 +113,7 @@ Optional Parameters:
    * Find options:
      * -ci: case insensitive (for ascii search only).
      * -all: find all occurrences.
+     * -pfo: Print the exact found offset separately.
  * -pid only:
    * -lpx List entire process memory layout.
    * -lpm List all process modules.

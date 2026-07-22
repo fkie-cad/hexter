@@ -236,7 +236,7 @@ int UTF8ToUTF16LE(unsigned char* outb, size_t* outlen, const unsigned char* in, 
             *outlen = 2;
             *inlen = 0;
 #ifdef DEBUG_ENCODING
-            debug_info(xmlGenericErrorContext,
+            DPrint(xmlGenericErrorContext,
             "Added FFFE Byte Order Mark\n");
 #endif
             return (2);
