@@ -11,18 +11,18 @@
 
 #define IS_LINUX (defined(__linux__) || defined(__linux) || defined(linux)) ? 1 : 0
 
-#if defined(_WIN32)
+#ifdef _WIN32
     #define ENTER (0xd) // aka \r
 #else
     #define ENTER (0xa) // aka \n
 #endif
 
 
-#if defined(_WIN32)
+#ifdef _WIN32
     #define getpid _getpid
 #endif
 
-#if IS_LINUX
+#ifdef IS_LINUX
 #include <sys/param.h>
 #define max MAX
 #endif
