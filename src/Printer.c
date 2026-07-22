@@ -2,13 +2,15 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include "utils/env.h"
+
 #include <memory.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(_LINUX)
     #include <unistd.h>
 #include "utils/TerminalUtil.h"
 #endif

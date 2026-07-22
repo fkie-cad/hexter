@@ -9,7 +9,10 @@
 #include "common_fileio.h"
 #include "../print.h"
 
-//static int errsv;
+#if defined(Win64) || defined(_WIN64)
+    #define fseek(f, o, t) _fseeki64(f, o, t)
+    #define ftell(s) _ftelli64(s)
+#endif
 
 // Get file size.
 // Returns actual size in bytes.

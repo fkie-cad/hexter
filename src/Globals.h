@@ -9,7 +9,9 @@
 
 #include "Bool.h"
 
-#define IS_LINUX (defined(__linux__) || defined(__linux) || defined(linux)) ? 1 : 0
+#include "utils/env.h"
+
+
 
 #ifdef _WIN32
     #define ENTER (0xd) // aka \r
@@ -17,12 +19,16 @@
     #define ENTER (0xa) // aka \n
 #endif
 
-
 #ifdef _WIN32
     #define getpid _getpid
 #endif
 
-#ifdef IS_LINUX
+#if defined(Win64) || defined(_WIN64)
+#define fseek(f, o, t) _fseeki64(f, o, t)
+#define ftell(s) _ftelli64(s)
+#endif
+
+#ifdef _LINUX
 #include <sys/param.h>
 #define max MAX
 #endif

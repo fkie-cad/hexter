@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#include "env.h"
+
+#ifdef _LINUX
     #include <dirent.h>
     #include <unistd.h>
     #include "TerminalUtil.h"
@@ -18,7 +20,7 @@
 #include "Helper.h"
 #include "../Globals.h"
 
-#if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
+#if defined(_LINUX) || defined(__APPLE__)
     #define PATH_SEPARATOR 0x2F
 #elif defined(_WIN32)
     #define PATH_SEPARATOR 0x5C
@@ -32,7 +34,7 @@
  */
 int expandFilePath(const char* src, char* dest)
 {
-    const char* env_home;
+    //const char* env_home;
 
     if ( !src || src[0] == 0 )
         return -1;
@@ -40,7 +42,7 @@ int expandFilePath(const char* src, char* dest)
     if ( cch >= PATH_MAX )
         return -1;
 
-#if defined(__linux__) || defined(__linux) || defined(linux) || defined(__APPLE__)
+#if defined(_LINUX) || defined(__APPLE__)
     dest = realpath(src, dest);
     if ( dest == NULL )
         return -1;
@@ -70,7 +72,7 @@ int expandFilePath(const char* src, char* dest)
 int getTempFile(char* buf, const char* prefix)
 {
     int s = 1;
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(_LINUX)
     snprintf(buf, 128, "/tmp/%sXXXXXX.tmp", prefix);
     buf[127] = 0;
 
@@ -177,7 +179,7 @@ int32_t getFileNameOffset(const char* path)
  */
 void listFilesOfDir(char* path)
 {
-#if defined(__linux__) || defined(__linux) || defined(linux)
+#if defined(_LINUX)
     DIR *d;
     struct dirent *dir;
     d = opendir(path);
