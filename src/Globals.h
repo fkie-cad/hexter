@@ -42,8 +42,7 @@
     #define PATH_MAX _MAX_PATH
 #endif
 
-#define BLOCKSIZE (0x200)
-#define BLOCKSIZE_LARGE (0x400)
+#define BLOCK_SIZE (0x400)
 
 #define DEFAULT_LENGTH (0x100)
 //#define DEFAULT_ASCII_LENGTH (0x80)
@@ -71,15 +70,20 @@
 extern size_t file_size;
 extern char file_path[PATH_MAX];
 
-extern size_t length;
+extern size_t g_length;
 
 extern uint8_t print_col_mask;
-#define PRINT_ASCII_MASK     (0x1)
-#define PRINT_UNICODE_MASK   (0x2)
-#define PRINT_HEX_MASK       (0x4)
-#define PRINT_OFFSET_MASK    (0x8)
-#define PRINT_BYTES_STRING  (0x10)
+//#define PRINT_ASCII_MASK     (0x1)
+//#define PRINT_UNICODE_MASK   (0x2)
+//#define PRINT_HEX_MASK       (0x4)
+//#define PRINT_OFFSET_MASK    (0x8)
+//#define PRINT_BYTES_STRING  (0x10)
 
+#define COL_MASK_OFFSET (0x1)
+#define COL_MASK_HEX (0x2)
+#define COL_MASK_ASCII (0x4)
+#define COL_MASK_UNICODE (0x8)
+#define COL_MASK_BYTE_STRING (0x10)
 
 #define MODE_FLAG_INSERT                 (0x01)
 #define MODE_FLAG_OVERWRITE              (0x02)
@@ -92,7 +96,15 @@ extern uint8_t print_col_mask;
 #define MODE_FLAG_PRINT_FIND_OFFSET     (0x100)
 
 extern uint32_t mode_flags;
+extern uint32_t g_col_mask;
+extern uint32_t g_hex_size;
+extern uint32_t g_col_size;
 
+//typedef struct print_flags {
+//    uint8_t col_mask;
+//    uint8_t hex_size;
+//    uint8_t main_col_size;
+//};
 
 
 #ifndef ALIGN_UP_BY
@@ -104,5 +116,6 @@ extern uint32_t mode_flags;
 #endif
 
 #define ARE_FLAGS_SET(__value__, __flags__) ((__value__)&(__flags__)) == (__flags__) 
+#define IS_FLAG_SET(__value__, __flags__) ((__value__)&(__flags__))
 
 #endif

@@ -74,7 +74,7 @@ int Finder_initFailure(const uint8_t* needle, uint32_t needle_ln, uint16_t** fai
  */
 size_t findNeedleInFile(const char* path, const uint8_t* needle, uint32_t needle_ln, size_t offset, size_t max_offset, uint32_t flags)
 {
-//	printf("BLOCKSIZE_LARGE: %u\n",BLOCKSIZE_LARGE);
+//	printf("BLOCK_SIZE: %u\n",BLOCK_SIZE);
     FILE* fi;
     size_t found;
 
@@ -106,8 +106,8 @@ size_t findNeedleInFile(const char* path, const uint8_t* needle, uint32_t needle
  */
 size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, FILE* fi, size_t max_offset, uint32_t flags)
 {
-    uint8_t buf[BLOCKSIZE_LARGE];
-    const uint16_t buf_ln = BLOCKSIZE_LARGE;
+    uint8_t buf[BLOCK_SIZE];
+    const uint16_t buf_ln = BLOCK_SIZE;
     size_t n = buf_ln;
     size_t read_size = buf_ln;
     size_t block_i, j;

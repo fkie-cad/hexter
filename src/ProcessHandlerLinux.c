@@ -120,7 +120,7 @@ static Bool isReadableRegion(ProcMapsEntry *entry);
 static Bool addressIsInRegionRange(uint64_t address, uint64_t base, uint64_t size);
 static void setModuleEndAddress(ProcMapsEntry *entry, FILE *fp);
 static uint64_t getModuleEndAddress(ProcMapsEntry *module, FILE* fp);
-//static Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length);
+//static Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *g_length);
 
 static void printRegionInfo(ProcMapsEntry* entry, const char* file_name);
 static Bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t printed_module_base);
@@ -319,7 +319,7 @@ uint8_t makeStartHitAccessableMemory(uint32_t pid, uint64_t *start)
         if ( addressIsInRegionRange(*start, entry.address, entry.size) )
         {
             setModuleEndAddress(&entry, fp);
-//			info_line_break = keepLengthInModule(&entry, *start, &length);
+//			info_line_break = keepLengthInModule(&entry, *start, &g_length);
             fclose(fp);
             return info_line_break;
         }
@@ -392,13 +392,13 @@ uint64_t getModuleEndAddress(ProcMapsEntry *module, FILE* fp)
     return end_address;
 }
 
-//Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *length)
+//Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *g_length)
 //{
 //	uint64_t base_off = start - entry->address;
-//	if ( base_off + *length > entry->size )
+//	if ( base_off + *g_length > entry->size )
 //	{
-//		printf("Info: Length 0x%lx does not fit in region!\nSetting it to 0x%lx!\n", *length, entry->size - base_off);
-//		*length = entry->size - base_off;
+//		printf("Info: Length 0x%lx does not fit in region!\nSetting it to 0x%lx!\n", *g_length, entry->size - base_off);
+//		*g_length = entry->size - base_off;
 //		return true;
 //	}
 //	return false;
@@ -961,13 +961,13 @@ findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_s
 int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s, uint32_t find_flags)
 {
     FILE* fp;
-    uint8_t block[BLOCKSIZE_LARGE] = {0};
+    uint8_t block[BLOCK_SIZE] = {0};
     char input;
     uint8_t skip_bytes;
     int s = 0;
-    uint16_t block_size = BLOCKSIZE_LARGE;
-    uint64_t nr_of_parts = length / block_size;
-    if ( length % block_size != 0 ) nr_of_parts++;
+    uint16_t block_size = BLOCK_SIZE;
+    uint64_t nr_of_parts = g_length / block_size;
+    if ( g_length % block_size != 0 ) nr_of_parts++;
     uint64_t base_end = base_addr + size;
 
     // older linux ??
@@ -997,7 +997,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 
     // prevent auto print, if next region of a module is accessed, to prevent printing two blocks at once
     if ( print_s == 1 )
-        base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, length);
+        base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_length);
 //	printf(" - base_off: 0x%lx\n", base_off);
 
     if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
@@ -1011,7 +1011,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 
         if ( input == ENTER )
         {
-            base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, length);
+            base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_length);
 //			printf(" -- base_off: 0x%lx\n", base_off);
         }
         else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
@@ -1030,7 +1030,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
             skip_bytes = 0;
 
             printf("\n");
-            base_off = printBlock(nr_of_parts, block, fp, block_size, base_addr+base_off, base_end, length);
+            base_off = printBlock(nr_of_parts, block, fp, block_size, base_addr+base_off, base_end, g_length);
         }
         else if ( input == QUIT )
         {

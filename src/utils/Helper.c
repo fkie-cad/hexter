@@ -288,22 +288,12 @@ uint8_t getColSize(uint8_t mask)
 {
     uint8_t col_size = 0;
     
-    if ( mask == (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK))
-        col_size = TRIPLE_COL_SIZE;
-    else if ( mask == (PRINT_OFFSET_MASK | PRINT_UNICODE_MASK | PRINT_HEX_MASK))
-        col_size = TRIPLE_COL_SIZE;
-    else if ( mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK))
-        col_size = DOUBLE_COL_SIZE;
-    else if ( mask == (PRINT_UNICODE_MASK | PRINT_HEX_MASK))
-        col_size = DOUBLE_COL_SIZE;
-    else if ( mask == PRINT_ASCII_MASK )
+    if ( (mask == COL_MASK_ASCII) || (mask == (COL_MASK_OFFSET|COL_MASK_ASCII)) )
         col_size = ASCII_COL_SIZE;
-    else if ( mask == PRINT_UNICODE_MASK )
+    else if ( (mask == COL_MASK_UNICODE) || (mask == (COL_MASK_OFFSET|COL_MASK_UNICODE)) )
         col_size = UNICODE_COL_SIZE;
-    else if ( mask == PRINT_HEX_MASK )
+    else 
         col_size = HEX_COL_SIZE;
-    else if ( mask == PRINT_BYTES_STRING ) // convenience size to don't break calculations
-        col_size = TRIPLE_COL_SIZE;
 
     return col_size;
 }

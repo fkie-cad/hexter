@@ -14,6 +14,7 @@
 #endif
 
 #define HEXTER_EXPORTS
+#define INFO_PRINT
 
 // for usage in Diller
 //#define DILLER
@@ -22,6 +23,7 @@
 #include "Globals.h"
 #include "utils/common_fileio.h"
 #include "Printer.h"
+#include "utils/payload.h"
 #include "Writer.h"
 #include "utils/Converter.h"
 #include "utils/Helper.h"
@@ -46,13 +48,16 @@
 size_t file_size;
 char file_path[PATH_MAX];
 static size_t start;
-size_t length;
+size_t g_length;
 static uint8_t skip_bytes;
 
 uint8_t print_col_mask;
 
 uint32_t process_list_flags;
 uint32_t mode_flags;
+uint32_t g_col_mask;
+uint32_t g_hex_size;
+uint32_t g_col_size;
 
 typedef enum RunMode { RUN_MODE_NONE, RUN_MODE_FILE, RUN_MODE_PID } RunMode;
 static RunMode run_mode;
@@ -192,7 +197,7 @@ int run(const char payload_format, const char* raw_payload)
     DPrint("file_path: %s\n", file_path);
     DPrint("file_size: 0x%zx\n", file_size);
     DPrint("start: 0x%zx\n", start);
-    DPrint("length: 0x%zx\n", length);
+    DPrint("length: 0x%zx\n", g_length);
     DPrint("print_col_mask only: %d\n", print_col_mask);
     DPrint("insert: %d\n", (mode_flags&MODE_FLAG_INSERT));
     DPrint("overwrite: %d\n", (mode_flags&MODE_FLAG_OVERWRITE));
@@ -233,9 +238,9 @@ int run(const char payload_format, const char* raw_payload)
             cleanUp(payload);
             return 1;
         }
-        deleteBytes(file_path, start, length);
+        deleteBytes(file_path, start, g_length);
         file_size = getSize(file_path);
-        length = (DEFAULT_LENGTH <= file_size) ? DEFAULT_LENGTH : file_size;
+        g_length = (DEFAULT_LENGTH <= file_size) ? DEFAULT_LENGTH : file_size;
         start = 0;
     }
 
@@ -289,7 +294,7 @@ void initParameters()
 {
     file_size = 0;
     start = 0;
-    length = DEFAULT_LENGTH;
+    g_length = DEFAULT_LENGTH;
     skip_bytes = 0;
 
     mode_flags = MODE_FLAG_CONTINUOUS_PRINTING;
@@ -398,19 +403,31 @@ int parseArgs(int argc, char** argv)
 
         if ( isArgOfType(argv[i], "-px") )
         { 
-            print_col_mask = print_col_mask | PRINT_HEX_MASK;
+            //print_col_mask = print_col_mask | PRINT_HEX_MASK;
+            g_col_mask = g_col_mask | COL_MASK_HEX;
         }
         else if ( isArgOfType(argv[i], "-pa") )
         {
-            print_col_mask = print_col_mask | PRINT_ASCII_MASK;
+            //print_col_mask = print_col_mask | PRINT_ASCII_MASK;
+            g_col_mask = g_col_mask | COL_MASK_ASCII;
         }
         else if ( isArgOfType(argv[i], "-pu") )
         {
-            print_col_mask = print_col_mask | PRINT_UNICODE_MASK;
+            //print_col_mask = print_col_mask | PRINT_UNICODE_MASK;
+            g_col_mask = g_col_mask | COL_MASK_UNICODE;
         }
         else if ( isArgOfType(argv[i], "-po") )
         {
-            print_col_mask = print_col_mask | PRINT_OFFSET_MASK;
+            //print_col_mask = print_col_mask | PRINT_OFFSET_MASK;
+            g_col_mask = g_col_mask | COL_MASK_OFFSET;
+        }
+        else if ( isArgOfType(argv[i], "-cm") )
+        {
+            if ( hasValue("-cm", i, end_i))
+            {
+                s = parseUint32(argv[i + 1], &g_col_mask, 0);
+                i++;
+            }
         }
         else if ( isArgOfType(argv[i], "-pp") )
         {
@@ -418,7 +435,7 @@ int parseArgs(int argc, char** argv)
         }
         else if ( isArgOfType(argv[i], "-pbs") )
         {
-            print_col_mask = PRINT_BYTES_STRING;
+            g_col_mask = COL_MASK_BYTE_STRING;
         }
         else if ( isArgOfType(argv[i], "-d") )
         {
@@ -477,7 +494,7 @@ int parseArgs(int argc, char** argv)
                 s = parseSizeAuto(argv[i + 1], &start);
                 if ( s != 0 )
                 {
-                    printf("INFO: Could not parse start. Setting it to %u!\n", 0);
+                    IPrint("Could not parse start. Setting it to %u!\n", 0);
                     start = 0x00;
                 }
                 i++;
@@ -487,11 +504,11 @@ int parseArgs(int argc, char** argv)
         {
             if ( hasValue("-l", i, end_i) )
             {
-                s = parseSizeAuto(argv[i + 1], &length);
+                s = parseSizeAuto(argv[i + 1], &g_length);
                 if ( s != 0 )
                 {
-                    printf("INFO: Could not parse length. Setting it to 0x%x!\n", DEFAULT_LENGTH);
-                    length = DEFAULT_LENGTH;
+                    IPrint("Could not parse length. Setting it to 0x%x!\n", DEFAULT_LENGTH);
+                    g_length = DEFAULT_LENGTH;
                 }
                 else
                     length_found = 1;
@@ -537,9 +554,26 @@ int parseArgs(int argc, char** argv)
         {
             mode_flags |= MODE_FLAG_PRINT_FIND_OFFSET;
         }
+        else if ( isArgOfType(argv[i], "-hs") )
+        {
+            if ( hasValue("-hs", i, end_i))
+            {
+                s = parseUint32(argv[i + 1], &g_hex_size, 0);
+                i++;
+            }
+        }
+        else if ( isArgOfType(argv[i], "-cs") )
+        {
+            if ( hasValue("-cs", i, end_i))
+            {
+                s = parseInt32(argv[i + 1], (int32_t*)&g_col_size, 0);
+                DPrint("g_col_size: 0x%x\n", g_col_size);
+                i++;
+            }
+        }
         else
         {
-            printf("INFO: Unknown arg type \"%s\"\n", argv[i]);
+            IPrint("Unknown arg type \"%s\"\n", argv[i]);
         }
     }
 
@@ -558,19 +592,10 @@ int parseArgs(int argc, char** argv)
         return -2;
     }
 
-    
-    f = print_col_mask&(PRINT_UNICODE_MASK|PRINT_ASCII_MASK);
-    if ( (f & (f-1)) != 0 )
-    {
-        EPrint("Ascii and unicode printing can't be combined!\n");
-        return -5;
-    }
-    if ( print_col_mask == PRINT_OFFSET_MASK )
-    {
-        EPrint("Printing only offsets is not provided! Please select one or more of -pa, -pu, -px.\n");
-        return -6;
-    }
 
+    //
+    // check args
+    //
 
     if ( (mode_flags&MODE_FLAG_DELETE) && !length_found )
     {
@@ -583,6 +608,7 @@ int parseArgs(int argc, char** argv)
         EPrint("Inserting or deleting is not supported in process mode!\n");
         return -4;
     }
+    
 
     if ( run_mode == RUN_MODE_FILE )
     {
@@ -653,7 +679,7 @@ uint8_t hasValue(char* type, int i, int end_i)
 {
     if ( i >= end_i )
     {
-        printf("INFO: Arg \"%s\" has no value! Skipped!\n", type);
+        IPrint("Arg \"%s\" has no value! Skipped!\n", type);
         return 0;
     }
 
@@ -674,17 +700,17 @@ int sanitizeDeleteParams()
         return 1;
     }
     
-    if ( length == 0 )
+    if ( g_length == 0 )
     {
         printf("Info: Length is 0. Setting it to remaining file size 0x%zx!\n", 
             file_size - start);
-        length = file_size - start;
+        g_length = file_size - start;
         info_line_break = 1;
     }
     
-    if ( start + length > file_size )
+    if ( start + g_length > file_size )
     {
-        length = file_size - start;
+        g_length = file_size - start;
     }
 
     if ( info_line_break )
@@ -693,13 +719,74 @@ int sanitizeDeleteParams()
     return 0;
 }
 
+
+size_t alignLengthUpToHexSize(uint32_t hs, size_t length_)
+{
+    int aligned_up = 0;
+    if ( hs == 2 && length_ % 2 != 0 )
+    {
+        length_ = ALIGN_UP_BY(length_, 2);
+        aligned_up = 1;
+    }
+    else if ( hs == 4 && length_ % 4 != 0 )
+    {
+        length_ = ALIGN_UP_BY(length_, 4);
+        aligned_up = 1;
+    }
+    else if ( hs == 8 && length_ % 8 != 0 )
+    {
+        length_ = ALIGN_UP_BY(length_, 8);
+        aligned_up = 1;
+    }
+    if ( aligned_up )
+        IPrint("Aligning length up to 0x%zx bytes.\n", length_);
+
+    return length_;
+}
+
 int sanitizePrintParams(uint32_t pid)
 {
     uint8_t col_size;
     uint8_t info_line_break = 0;
+    
+    //
+    // check col flags
+    if ( !g_col_mask )
+    {
+        g_col_mask = (COL_MASK_OFFSET|COL_MASK_HEX|COL_MASK_ASCII);
+    }
+    else
+    {
+        uint32_t f = g_col_mask&(COL_MASK_ASCII|COL_MASK_UNICODE);
+        if ( (f & (f-1)) != 0 )
+        {
+            EPrint("Ascii and unicode printing can't be combined!\n");
+            return -5;
+        }
+        //if ( g_col_mask == COL_MASK_OFFSET )
+        //{
+        //    EPrint("Printing only offsets is not provided! Please select one or more of -pa, -pu, -px.\n");
+        //    return -6;
+        //}
+        if ( ( g_col_mask < COL_MASK_OFFSET || g_col_mask > (COL_MASK_OFFSET|COL_MASK_HEX|COL_MASK_UNICODE) ) )
+        {
+            EPrint("Invalid column flags!\n");
+            return -6;
+        }
+    }
 
-    if ( print_col_mask == 0 )
-        print_col_mask = (PRINT_OFFSET_MASK | PRINT_ASCII_MASK | PRINT_HEX_MASK);
+    //
+    // check hex size
+
+    if ( !g_hex_size )
+        g_hex_size = 1;
+
+    g_length = alignLengthUpToHexSize(g_hex_size, g_length);
+        
+
+    
+    //
+    // check mode
 
     if ( mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_DELETE) )
         mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
@@ -713,12 +800,12 @@ int sanitizePrintParams(uint32_t pid)
 
     // normalize length to block size for continuous printing
     if ( (mode_flags&MODE_FLAG_CONTINUOUS_PRINTING)
-        && print_col_mask != PRINT_BYTES_STRING )
+        && g_col_mask != COL_MASK_BYTE_STRING )
     {
-        if ( length % col_size != 0 )
+        if ( g_length % col_size != 0 )
         {
-            length = ALIGN_UP_BY(length, col_size);
-            printf("INFO: Normalized length to 0x%zx\n", length);
+            g_length = ALIGN_UP_BY(g_length, col_size);
+            IPrint("Normalized length to 0x%zx\n", g_length);
         }
     }
 
@@ -742,7 +829,7 @@ int sanitizePrintParams(uint32_t pid)
     {
         start = normalizeOffset(start, &skip_bytes, print_col_mask);
         if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
-            length += skip_bytes;
+            g_length += skip_bytes;
     }
 
     // check length
@@ -751,10 +838,10 @@ int sanitizePrintParams(uint32_t pid)
 //  else if ( type == RUN_MODE_PID )
 //      info_line_break = keepLengthInModule(pid);
 
-    if ( length == 0 )
+    if ( g_length == 0 )
     {
         printf("Info: Length is 0. Setting to 0x%x!\n", DEFAULT_LENGTH);
-        length = DEFAULT_LENGTH;
+        g_length = DEFAULT_LENGTH;
         info_line_break = 1;
     }
 
@@ -766,13 +853,13 @@ int sanitizePrintParams(uint32_t pid)
 
 uint8_t keepLengthInFile()
 {
-    if ( start + length > file_size )
+    if ( start + g_length > file_size )
     {
         //printf("Info: Start offset 0x%zx plus length 0x%zx is greater then the file size 0x%zx\n"
         //    "Printing only to file size.\n",
         //start + skip_bytes, (continuous_f) ? length : length - skip_bytes, file_size);
 
-        length = file_size - start;
+        g_length = file_size - start;
         mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
         return 0;
     }
@@ -806,13 +893,13 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
         }
         case FORMAT_FILL_BYTE:
         {
-            if ( length > MAX_PAYLOAD_LN )
+            if ( g_length > MAX_PAYLOAD_LN )
             {
-                printf("INFO: Fill byte length is greater than 0x%x (%u). Setting to 0x%x (%u)!\n", MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN);
-                length = MAX_PAYLOAD_LN;
+                IPrint("Fill byte length is greater than 0x%x (%u). Setting to 0x%x (%u)!\n", MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN);
+                g_length = MAX_PAYLOAD_LN;
             }
-            ln = payloadParseFillBytes(value, payload, length);
-            length = DEFAULT_LENGTH;
+            ln = payloadParseFillBytes(value, payload, g_length);
+            g_length = DEFAULT_LENGTH;
             break;
         }
         case FORMAT_WORD:
@@ -871,7 +958,7 @@ HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _l
 
     run_mode = RUN_MODE_FILE;
     start = _start;
-    length = _length;
+    g_length = _length;
     mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
 //  print_col_mask = print_col_mask | PRINT_HEX_MASK;
@@ -901,7 +988,7 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
 
     run_mode = RUN_MODE_PID;
     start = _start;
-    length = _length;
+    g_length = _length;
     mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
     process_list_flags = flags;

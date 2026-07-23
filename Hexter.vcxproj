@@ -146,8 +146,15 @@
 
   <ItemGroup>
     <ClCompile Include="src\hexter.c" />
-    <ClCompile Include="src\utils\common_fileio.c;src\utils\Converter.c;src\utils\Helper.c;src\utils\Strings.c" />
-    <ClCompile Include="src\Finder.c;src\Printer.c;src\Writer.c;src\ProcessHandlerWin.c" />
+    <ClCompile Include="src\utils\common_fileio.c" />
+    <ClCompile Include="src\utils\Converter.c" />
+    <ClCompile Include="src\utils\Helper.c" />
+    <ClCompile Include="src\utils\payload.c" />
+    <ClCompile Include="src\utils\Strings.c" />
+    <ClCompile Include="src\Finder.c" />
+    <ClCompile Include="src\Printer.c" />
+    <ClCompile Include="src\Writer.c" />
+    <ClCompile Include="src\ProcessHandlerWin.c" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(Icon)'=='1'">

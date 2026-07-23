@@ -65,6 +65,41 @@ int parseUint64(const char* arg, uint64_t* value, uint8_t base)
     return 0;
 }
 
+int parseInt64(const char* arg, int64_t* value, uint8_t base)
+{
+    char* endptr;
+    int err_no = 0;
+    errno = 0;
+    int64_t result;
+
+    if ( base != 10 && base != 16 && base != 0 )
+    {
+        fprintf(stderr, "Error: Unsupported base %u!\n", base);
+        return 1;
+    }
+
+#if defined(_WIN32)
+    result = strtoull(arg, &endptr, base);
+#else
+    result = strtoul(arg, &endptr, base);
+#endif
+    err_no = errno;
+
+    if ( endptr == arg )
+    {
+        fprintf(stderr, "Error: %s could not be converted to a number: Not a number!\n", arg);
+        return 3;
+    }
+    if ( ( result == INT64_MAX || result == INT64_MIN ) && err_no == ERANGE )
+    {
+        fprintf(stderr, "Error: %s could not be converted to a number: Out of range!\n", arg);
+        return 4;
+    }
+
+    *value = result;
+    return 0;
+}
+
 int parseUint32(const char* arg, uint32_t* value, uint8_t base)
 {
     uint64_t result;
@@ -72,11 +107,26 @@ int parseUint32(const char* arg, uint32_t* value, uint8_t base)
     if ( s != 0 ) return s;
     if ( result > UINT32_MAX )
     {
-        fprintf(stderr, "Error: %s could not be converted to a 4 byte int: Out of range!\n", arg);
+        fprintf(stderr, "Error: %s could not be converted to a 4 byte uint: Out of range!\n", arg);
         return 5;
     }
 
     *value = (uint32_t) result;
+    return 0;
+}
+
+int parseInt32(const char* arg, int32_t* value, uint8_t base)
+{
+    int64_t result;
+    int s = parseInt64(arg, &result, base);
+    if ( s != 0 ) return s;
+    if ( result > INT32_MAX || result < INT32_MIN )
+    {
+        fprintf(stderr, "Error: %s could not be converted to a 4 byte int: Out of range!\n", arg);
+        return 5;
+    }
+
+    *value = (int32_t) result;
     return 0;
 }
 
@@ -87,7 +137,7 @@ int parseUint16(const char* arg, uint16_t* value, uint8_t base)
     if ( s != 0 ) return s;
     if ( result > UINT16_MAX )
     {
-        fprintf(stderr, "Error: %s could not be converted to a 2 byte int: Out of range!\n", arg);
+        fprintf(stderr, "Error: %s could not be converted to a 2 byte uint: Out of range!\n", arg);
         return 5;
     }
 

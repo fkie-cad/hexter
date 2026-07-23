@@ -115,7 +115,7 @@ uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start)
 
         if ( addressIsInRegionRange(*start, (size_t) base_addr, (DWORD)info.RegionSize) )
         {
-//			info_line_break = keepLengthInModule(p, &info, process, *start, &length);
+//			info_line_break = keepLengthInModule(p, &info, process, *start, &g_length);
             CloseHandle(process);
             return info_line_break;
         }
@@ -526,7 +526,7 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
 int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, uint32_t find_flags)
 {
     size_t n_size = 0;
-    uint8_t buffer[BLOCKSIZE_LARGE] = {0};
+    uint8_t buffer[BLOCK_SIZE] = {0};
     char input;
     uint8_t skip_bytes;
     int s = 0;
@@ -540,7 +540,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
     if ( base_off == region_size )
         return 0;
 
-    while ( n_size > 0 && n_size == length )
+    while ( n_size > 0 && n_size == g_length )
     {
         input = (char)_getch();
 
@@ -598,27 +598,27 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
     size_t n_read = 0;
     size_t read_size = 0;
     size_t block_start = base_off;
-    size_t end = block_start + length;
+    size_t end = block_start + g_length;
     size_t p;
-    size_t nr_of_parts = length / BLOCKSIZE_LARGE;
-    if ( length % BLOCKSIZE_LARGE != 0 )
+    size_t nr_of_parts = g_length / BLOCK_SIZE;
+    if ( g_length % BLOCK_SIZE != 0 )
         nr_of_parts++;
     
     for ( p = 0; p < nr_of_parts; p++ )
     {
         DPrint("%zu / %zu\n", (p + 1), nr_of_parts);
-        read_size = BLOCKSIZE_LARGE;
+        read_size = BLOCK_SIZE;
         if ( block_start + read_size > end )
             read_size = end - block_start;
         
         DPrint(" - read_size: %zu\n", read_size);
 
-        memset(buffer, 0, BLOCKSIZE_LARGE);
+        memset(buffer, 0, BLOCK_SIZE);
     
         n_read = readProcessBlock(base_addr, block_start, region_size, read_size, process, buffer);
         uint8_t offset_col_width = countHexWidth64((size_t) base_addr + region_size);
         if ( n_read )
-            printLine(buffer, (size_t) base_addr + block_start, n_read, offset_col_width);
+            printPart(buffer, (size_t) base_addr + block_start, n_read, offset_col_width);
         
 //		n_size += n_read;
         block_start += n_read;
@@ -733,17 +733,17 @@ findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, 
     size_t block_i;
     size_t j = 0;
     size_t base_off = offset;
-    size_t n_size = BLOCKSIZE_LARGE;
-    uint8_t find_buf[BLOCKSIZE_LARGE] = {0};
+    size_t n_size = BLOCK_SIZE;
+    uint8_t find_buf[BLOCK_SIZE] = {0};
     
     DPrint("Find: ");
     for ( block_i = 0; block_i < needle_ln; block_i++ )
         DPrint("%02x", p_needle[block_i]);
     DPrint("\n");
 
-    while ( n_size && n_size == BLOCKSIZE_LARGE )
+    while ( n_size && n_size == BLOCK_SIZE )
     {
-        n_size = readProcessBlock(base_addr, base_off, base_size, BLOCKSIZE_LARGE, process, find_buf);
+        n_size = readProcessBlock(base_addr, base_off, base_size, BLOCK_SIZE, process, find_buf);
         
         if ( (flags&(FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII)) == (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII) )
         {

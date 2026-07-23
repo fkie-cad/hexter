@@ -16,6 +16,9 @@ int parseUint32(const char* arg, uint32_t* value, uint8_t base);
 int parseUint16(const char* arg, uint16_t* value, uint8_t base);
 int parseUint8(const char* arg, uint8_t* value, uint8_t base);
 
+int parseInt64(const char* arg, int64_t* value, uint8_t base);
+int parseInt32(const char* arg, int32_t* value, uint8_t base);
+
 uint16_t swapUint16(uint16_t value);
 uint32_t swapUint32(uint32_t value);
 uint64_t swapUint64(uint64_t value);

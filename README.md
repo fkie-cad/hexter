@@ -8,7 +8,7 @@ Compiles and runs under
 - Android in Termux
 
 
-## Version
+## VERSION
 1.9.2  
 Last changed: 22.07.2026
 

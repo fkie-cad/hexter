@@ -29,7 +29,7 @@ size_t printBlock(
     size_t length
 );
 
-void printLine(
+void printPart(
     const uint8_t* block, 
     size_t block_start, 
     size_t size, 

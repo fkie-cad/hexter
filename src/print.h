@@ -17,7 +17,9 @@
 
 
 #ifdef INFO_PRINT
-#define IPrint(...) { printf(__VA_ARGS__); }
+#define IPrint(...) \
+                { printf("INFO: "); \
+                  printf(__VA_ARGS__); }
 #else
 #define IPrint(...)
 #endif
