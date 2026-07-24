@@ -311,7 +311,7 @@ int writeProcessMemory(uint32_t pid, uint8_t* payload, uint32_t payload_ln, size
  * @param needle_ln
  * @return
  */
-BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, uint8_t* needle, uint32_t needle_ln)
+BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_t* needle, uint32_t needle_ln)
 {
     HANDLE process;
     MEMORY_BASIC_INFORMATION info;
@@ -375,7 +375,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint8_t skip_bytes, uint8_t
             else
             {
                 found = found - (uintptr_t) info.BaseAddress;
-                base_off = normalizeOffset(found, &skip_bytes, print_col_mask);
+                base_off = normalizeOffset(found, &skip_bytes, g_col_mask);
                 Printer_setHighlightBytes(p_needle_ln);
                 Printer_setHighlightWait(skip_bytes);
                 skip_bytes = 0;
@@ -528,7 +528,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
     size_t n_size = 0;
     uint8_t buffer[BLOCK_SIZE] = {0};
     char input;
-    uint8_t skip_bytes;
+    uint32_t skip_bytes;
     int s = 0;
 
     n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
@@ -555,7 +555,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
                 break;
             }
             found -= (uintptr_t) base_addr;
-            base_off = normalizeOffset(found, &skip_bytes, print_col_mask);
+            base_off = normalizeOffset(found, &skip_bytes, g_col_mask);
             Printer_setHighlightBytes(p_needle_ln);
             Printer_setHighlightWait(skip_bytes);
             skip_bytes = 0;

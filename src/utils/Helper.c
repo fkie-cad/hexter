@@ -17,8 +17,8 @@
     uint32_t GetFullPathNameA(char* lpFileName,uint32_t nBufferLength,char* lpBuffer,char** lpFilePart);
 #endif
 
-#include "Helper.h"
 #include "../Globals.h"
+#include "Helper.h"
 
 #if defined(_LINUX) || defined(__APPLE__)
     #define PATH_SEPARATOR 0x2F
@@ -269,13 +269,22 @@ uint8_t countHexWidth32(uint32_t value)
  * @param   remainder uint8_t the remainder
  * @return  size_t 
  */
-size_t normalizeOffset(size_t offset, uint8_t* remainder, uint8_t mask)
+size_t normalizeOffset(size_t offset, uint32_t* remainder, uint32_t mask)
 {
-    uint8_t col_size = getColSize(mask);
-    *remainder = (offset % col_size);
+    FEnter();
+    DPrint("offset: 0x%zx\n", offset);
+    DPrint("remainder: %p => 0x%x\n", remainder, *remainder);
+    DPrint("mask: 0x%x\n", mask);
+    uint32_t col_size = getColSize(mask, &g_col_sizes);
+    *remainder = (uint32_t)(offset % col_size);
 
-    offset -= *remainder;
-
+    //if ( offset > *remainder )
+        offset -= *remainder;
+    
+    DPrint("col_size: 0x%x\n", col_size);
+    DPrint("=> remainder: 0x%x\n", *remainder);
+    DPrint("=> offset: 0x%zx\n", offset);
+    FLeave();
     return offset;
 }
 
@@ -284,18 +293,45 @@ size_t normalizeOffset(size_t offset, uint8_t* remainder, uint8_t mask)
  *
  * @return  uint8_t the col size
  */
-uint8_t getColSize(uint8_t mask)
+uint32_t getColSize(uint32_t mask, col_sizes* cs)
 {
-    uint8_t col_size = 0;
-    
-    if ( (mask == COL_MASK_ASCII) || (mask == (COL_MASK_OFFSET|COL_MASK_ASCII)) )
-        col_size = ASCII_COL_SIZE;
-    else if ( (mask == COL_MASK_UNICODE) || (mask == (COL_MASK_OFFSET|COL_MASK_UNICODE)) )
-        col_size = UNICODE_COL_SIZE;
-    else 
-        col_size = HEX_COL_SIZE;
+    if ( mask & COL_MASK_HEX )
+    {
+        cs->hex = HEX_COL_SIZE;
+        cs->ascii = ASCII_HEX_COL_SIZE;
+        cs->unicode = UNICODE_COL_SIZE;
 
-    return col_size;
+        // check for no char col in mask to set arbitray size
+        if ( cs->custom )
+            if ( (mask & (COL_MASK_HEX|COL_MASK_UNICODE|COL_MASK_ASCII)) == COL_MASK_HEX )
+                cs->hex = cs->custom;
+
+        cs->line= cs->hex;
+    }
+    // there is no hex in here
+    else if ( mask & COL_MASK_ASCII )
+    {
+        cs->ascii = ASCII_COL_SIZE;
+        if ( cs->custom )
+            cs->ascii = cs->custom;
+
+        cs->line = cs->ascii;
+    }
+    // there is no hex in here
+    else if ( mask & COL_MASK_UNICODE )
+    {
+        cs->unicode = UNICODE_COL_SIZE;
+        if ( cs->custom )
+            cs->unicode = cs->custom;
+        cs->line = cs->unicode;
+    }
+    // there is no hex in here
+    else if ( mask & COL_MASK_BYTE_STRING )
+    {
+        cs->line = BYTE_STRING_COL_SIZE;
+    }
+
+    return cs->line;
 }
 
 Bool confirmContinueWithNextRegion(char* name, size_t address)

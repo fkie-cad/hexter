@@ -760,7 +760,7 @@ int writeProcessMemory(uint32_t pid, uint8_t *payload, uint32_t payload_ln, uint
  * @param needle_ln
  * @return
  */
-Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, uint8_t* needle, uint32_t needle_ln)
+Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint8_t* needle, uint32_t needle_ln)
 {
     FILE* fp;
     ProcMapsEntry entry;
@@ -859,7 +859,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint8_t skip_bytes, uint8
             else
             {
                 found = found - entry.address;
-                base_off = normalizeOffset(found, &skip_bytes, print_col_mask);
+                base_off = normalizeOffset(found, &skip_bytes, g_col_mask);
                 Printer_setHighlightBytes(p_needle_ln);
                 Printer_setHighlightWait(skip_bytes);
                 skip_bytes = 0;
@@ -963,7 +963,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
     FILE* fp;
     uint8_t block[BLOCK_SIZE] = {0};
     char input;
-    uint8_t skip_bytes;
+    uint32_t skip_bytes;
     int s = 0;
     uint16_t block_size = BLOCK_SIZE;
     uint64_t nr_of_parts = g_length / block_size;
@@ -971,15 +971,15 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
     uint64_t base_end = base_addr + size;
 
     // older linux ??
-//	ptrace(PTRACE_ATTACH, pid, 0, 0);
-//	waitpid(pid, NULL, 0);
+//  ptrace(PTRACE_ATTACH, pid, 0, 0);
+//  waitpid(pid, NULL, 0);
 //
-//	off_t addr = ...; // target process address
-//	pread(fd, &value, sizeof(value), addr);
-//	// or
-//	pwrite(fd, &value, sizeof(value), addr);
+//  off_t addr = ...; // target process address
+//  pread(fd, &value, sizeof(value), addr);
+//  // or
+//  pwrite(fd, &value, sizeof(value), addr);
 //
-//	ptrace(PTRACE_DETACH, pid, 0, 0);
+//  ptrace(PTRACE_DETACH, pid, 0, 0);
 
 
     if ( !fopenProcessMemory(pid, &fp, "r") )
@@ -987,18 +987,18 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
         printf("ERROR (%x): Could not open process %u memory.\n", errsv, pid);
         return false;
     }
-//	printf("printRegionProcessMemory\n");
-//	printf(" - base_addr: 0x%lx\n", base_addr);
-//	printf(" - base_off: 0x%lx\n", base_off);
-//	printf(" - size: 0x%lx\n", size);
-//	printf(" - found: 0x%lx\n", found);
+//  printf("printRegionProcessMemory\n");
+//  printf(" - base_addr: 0x%lx\n", base_addr);
+//  printf(" - base_off: 0x%lx\n", base_off);
+//  printf(" - size: 0x%lx\n", size);
+//  printf(" - found: 0x%lx\n", found);
     base_off += base_addr;
-//	printf(" - base_off: 0x%lx\n", base_off);
+//  printf(" - base_off: 0x%lx\n", base_off);
 
     // prevent auto print, if next region of a module is accessed, to prevent printing two blocks at once
     if ( print_s == 1 )
         base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_length);
-//	printf(" - base_off: 0x%lx\n", base_off);
+//  printf(" - base_off: 0x%lx\n", base_off);
 
     if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
     {
@@ -1012,7 +1012,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
         if ( input == ENTER )
         {
             base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_length);
-//			printf(" -- base_off: 0x%lx\n", base_off);
+//      printf(" -- base_off: 0x%lx\n", base_off);
         }
         else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
         {
@@ -1024,7 +1024,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
             }
 
             found -= base_addr;
-            base_off = normalizeOffset(found, &skip_bytes, print_col_mask);
+            base_off = normalizeOffset(found, &skip_bytes, g_col_mask);
             Printer_setHighlightBytes(p_needle_ln);
             Printer_setHighlightWait(skip_bytes);
             skip_bytes = 0;
@@ -1085,7 +1085,7 @@ int filter(const struct dirent *dir)
         perror("processdir() ==> stat()");
         exit(EXIT_FAILURE);
     }
-//	return !fnmatch("[1-9]*", dir->d_name, 0);
+//  return !fnmatch("[1-9]*", dir->d_name, 0);
     return !fnmatch("[1-9]*", dir->d_name, 0) && user == dirinfo.st_uid;
 }
 
@@ -1100,7 +1100,7 @@ void processdir(const struct dirent *dir)
     strcpy(path, "/proc/");
     strcat(path, dir->d_name);
 
-//	listFilesOfDir(path);
+//  listFilesOfDir(path);
 
     parseUint32(dir->d_name, &pid, 10);
     getProcName(pid, proc_name, 512);
@@ -1124,7 +1124,7 @@ char* getStateString(char c)
         case 'X': // return "Dead";
         case 'x': return "Dead";
         case 'K': return "Wakekill";
-//		case 'W': return "Paging"; // before Linux 2.6.0
+//      case 'W': return "Paging"; // before Linux 2.6.0
         case 'W': return "Waking";
         case 'P': return "Parked";
         default:

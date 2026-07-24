@@ -72,8 +72,8 @@ uint8_t countHexWidth64(uint64_t value);
 uint8_t countHexWidth32(uint32_t value);
 
 // project specific => Helper
-size_t normalizeOffset(size_t offset, uint8_t* remainder, uint8_t mask);
-uint8_t getColSize(uint8_t mask);
+size_t normalizeOffset(size_t offset, uint32_t* remainder, uint32_t mask);
+uint32_t getColSize(uint32_t mask, col_sizes* cs);
 Bool confirmContinueWithNextRegion(char* name, size_t address);
 
 // Terminal

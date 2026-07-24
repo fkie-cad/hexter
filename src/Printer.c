@@ -27,6 +27,7 @@
 #include "utils/Helper.h"
 
 #define HEX_GAP "   "
+#define BYTE_STR_GAP "  "
 #define ASCII_GAP " "
 #define UNICODE_GAP " "
 
@@ -35,7 +36,7 @@
 
 //typedef void (*CharColPrinter)(const uint8_t*, size_t, size_t, uint32_t);
 
-static void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, uint16_t buffer_size, size_t block_start, size_t block_max);
+static void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t block_start, size_t block_max);
 
 //static void printDoubleCols(const uint8_t* buffer, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t));
 //static void printDoubleCols(const uint8_t* buffer, size_t size, CharColPrinter printCol);
@@ -80,9 +81,9 @@ void (*printHexValue)(const uint64_t, const uint32_t, const char);
     WORD wOldColorAttrs;
 #endif
 
-static int8_t skip_hex_bytes = 0;
-static int8_t skip_ascii_bytes = 0;
-static int8_t skip_unicode_bytes = 0;
+static int32_t skip_hex_bytes = 0;
+static int32_t skip_ascii_bytes = 0;
+static int32_t skip_unicode_bytes = 0;
 
 static uint32_t highlight_hex_bytes = 0;
 static int32_t highlight_hex_wait = 0;
@@ -104,7 +105,7 @@ static uint32_t find_flags = 0;
  * If buffer_size % col_size != 0 some more adjustments have to be taken to the col printings.
  * I.e. the index has to be passed and returned and the new line has to check for block and size.
  */
-void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_ln)
+void print(size_t start, uint32_t skip_bytes, uint8_t* _needle, uint32_t _needle_ln)
 {
     FEnter();
 
@@ -115,7 +116,7 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
     FILE* fi;
     uint8_t* buffer = NULL;
     size_t block_start = start;
-    uint16_t buffer_size = BLOCK_SIZE;
+    size_t buffer_size = BLOCK_SIZE;
     size_t nr_of_parts = g_length / buffer_size;
     if ( g_length % buffer_size != 0 ) nr_of_parts++;
 
@@ -123,7 +124,10 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
         find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
     DPrint("start: 0x%zx\n", start);
-    DPrint("buffer_size: 0x%x\n", buffer_size);
+    DPrint("skip_bytes: 0x%x\n", skip_bytes);
+    DPrint("needle: %p\n", needle);
+    DPrint("needle_ln: 0x%x\n", needle_ln);
+    DPrint("buffer_size: 0x%zx\n", buffer_size);
     DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
     DPrint("mode_flags: 0x%x\n", mode_flags);
     DPrint("find_flags: 0x%x\n", find_flags);
@@ -143,8 +147,7 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
     {
         errsv = errno;
         EPrint("Malloc buffer failed! (0x%x)\n", errsv);
-        fclose(fi);
-        return;
+        goto clean;
     }
 
     Printer_setSkipBytes(skip_bytes);
@@ -155,12 +158,14 @@ void print(size_t start, uint8_t skip_bytes, uint8_t* _needle, uint32_t _needle_
     
     printBlockLoop(nr_of_parts, buffer, fi, buffer_size, block_start, file_size);
 
+
+clean:
     Printer_cleanUp(buffer, fi);
 
     FLeave();
 }
 
-void Printer_setSkipBytes(uint8_t skip_bytes)
+void Printer_setSkipBytes(uint32_t skip_bytes)
 {
     if ( skip_bytes > 0 )
         skip_hex_bytes = skip_ascii_bytes = skip_unicode_bytes = skip_bytes;
@@ -197,18 +202,20 @@ void Printer_cleanUp(uint8_t* buffer, FILE* fi)
 {
     FEnter();
 
-    free(buffer);
-    fclose(fi);
+    if ( buffer )
+        free(buffer);
+    if ( fi )
+        fclose(fi);
     Finder_cleanUp();
     
     FLeave();
 }
 
-void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, uint16_t buffer_size, size_t block_start, size_t block_max)
+void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t block_start, size_t block_max)
 {
     FEnter();
 
-    uint8_t skip_bytes = 0;
+    uint32_t skip_bytes = 0;
     size_t find_offset = block_start;
     int continuing = (mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) ? 1 : 0;
     char input = (mode_flags&MODE_FLAG_FIND) ? NEXT : ENTER;
@@ -216,7 +223,7 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, uint16_t buff
     DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
     DPrint("buffer: %p\n", buffer);
     DPrint("fi: %p\n", fi);
-    DPrint("buffer_size: 0x%x\n", buffer_size);
+    DPrint("buffer_size: 0x%zx\n", buffer_size);
     DPrint("block_start: 0x%zx\n", block_start);
     DPrint("block_max: 0x%zx\n", block_max);
     DPrint("find_offset: 0x%zx\n", find_offset);
@@ -230,6 +237,9 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, uint16_t buff
         return;
     }
     
+    if ( (mode_flags&MODE_FLAG_PRINT_START_OFFSET) && !(mode_flags&MODE_FLAG_FIND) )
+        printf("start: 0x%zx\n", block_start + skip_hex_bytes);
+
     do
     {
         if ( (mode_flags&MODE_FLAG_FIND) && (input == NEXT) )
@@ -239,13 +249,13 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, uint16_t buff
                 break;
             find_offset = found+needle_ln;
             
-            block_start = normalizeOffset(found, &skip_bytes, print_col_mask);
+            block_start = normalizeOffset(found, &skip_bytes, g_col_mask);
             Printer_setHighlightBytes(needle_ln);
             Printer_setHighlightWait(skip_bytes);
             skip_bytes = 0;
 
             printf("\n");
-            DPrint("buffer_size: 0x%x\n", buffer_size);
+            DPrint("buffer_size: 0x%zx\n", buffer_size);
             DPrint("found: 0x%zx\n", found);
             DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
 
@@ -258,7 +268,7 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, uint16_t buff
                 _length = ALIGN_UP_BY(_length, g_length);
             }
 
-            if ( mode_flags&MODE_FLAG_PRINT_FIND_OFFSET )
+            if ( mode_flags&MODE_FLAG_PRINT_START_OFFSET )
                 printf("found: 0x%zx\n", found);
             block_start = printBlock(nr_of_parts, buffer, fi, buffer_size, block_start, block_max, _length);
         }
@@ -296,10 +306,10 @@ size_t printBlock(
     size_t nr_of_parts, 
     uint8_t* buffer, 
     FILE* fi, 
-    uint16_t buffer_size, 
+    size_t buffer_size, 
     size_t read_start, 
     size_t read_max,
-    size_t length_
+    size_t length
 )
 {
     FEnter();
@@ -307,10 +317,10 @@ size_t printBlock(
     size_t p;
     size_t read_size = 0;
     size_t size;
-    size_t end = read_start + length_;
+    size_t end = read_start + length;
     int errsv = 0;
 
-    if ( !length_ || read_start >= read_max )
+    if ( !length || read_start >= read_max )
     {
         read_start = SIZE_MAX;
         goto clean;
@@ -325,7 +335,7 @@ size_t printBlock(
     DPrint("  nr_of_parts: 0x%zx\n", nr_of_parts);
     DPrint("  buffer: %p\n", buffer);
     DPrint("  fi: %p\n", fi);
-    DPrint("  buffer_size: 0x%x\n", buffer_size);
+    DPrint("  buffer_size: 0x%zx\n", buffer_size);
     DPrint("  read_start: 0x%zx\n", read_start);
     DPrint("  read_max: 0x%zx\n", read_max);
     DPrint("  end: 0x%zx\n", end);
@@ -371,47 +381,15 @@ clean:
 
 void printPart(const uint8_t* buffer, size_t block_start, size_t size, uint8_t offset_width)
 {
-    //FEnter();
+    FEnter();
     
     if ( g_col_mask == COL_MASK_BYTE_STRING || g_col_mask == (COL_MASK_OFFSET|COL_MASK_BYTE_STRING) )
         printPlainByteString(buffer, size);
     else
         printTripleCols(buffer, size, block_start, offset_width);
-    //else if ( print_col_mask == (PRINT_OFFSET_MASK | PRINT_UNICODE_MASK | PRINT_HEX_MASK) )
-        //printTripleCols(buffer, size, block_start, offset_width);
-    //else if ( print_col_mask == (PRINT_ASCII_MASK | PRINT_HEX_MASK) )
-    //    printDoubleCols(buffer, size, printAsciiCol);
-    //else if ( print_col_mask == (PRINT_UNICODE_MASK | PRINT_HEX_MASK) )
-    //    printDoubleCols(buffer, size, printUnicodeCol);
-    //else if ( print_col_mask == PRINT_ASCII_MASK )
-        //printAsciiCols(buffer, size, ASCII_COL_SIZE);
-    //else if ( print_col_mask == PRINT_HEX_MASK )
-        //printHexCols(buffer, size);
-    //else if ( print_col_mask == PRINT_UNICODE_MASK )
-        //printUnicodeCols(buffer, size, UNICODE_COL_SIZE);
     
-    //FLeave();
+    FLeave();
 }
-
-//void printDoubleCols(const uint8_t* buffer, size_t size, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t))
-//void printDoubleCols(const uint8_t* buffer, size_t size, CharColPrinter printCol)
-//{
-//    size_t i;
-//    uint32_t k = 0;
-//
-//    for ( i = 0; i < size; i += HEX_COL_SIZE )
-//    {
-//        k = printHexCol8(buffer, i, size, HEX_COL_SIZE);
-//
-//        fillHexGap(k, HEX_COL_SIZE, 1);
-//
-//        printf("%c ", COL_SEPARATOR);
-//
-//        printCol(buffer, i, size, HEX_COL_SIZE);
-//
-//        printf("\n");
-//    }
-//}
 
 void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t width)
 {
@@ -420,52 +398,29 @@ void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t 
     size_t i;
     uint32_t k = 0;
 
-    DPrint("col_flags: 0x%x\n", g_col_mask);
-    DPrint("col_size: 0x%x\n", g_col_size);
-    DPrint("hex_size: 0x%x\n", g_hex_size);
-
     uint32_t mask = g_col_mask;
-    uint32_t hex_col_size = TRIPLE_COL_SIZE;
-    uint32_t ascii_col_size = TRIPLE_COL_SIZE;
-    uint32_t unicode_col_size = TRIPLE_COL_SIZE;
-    uint32_t line_size = hex_col_size;
+    uint32_t hex_col_size = g_col_sizes.hex;
+    uint32_t ascii_col_size = g_col_sizes.ascii;
+    uint32_t unicode_col_size = g_col_sizes.unicode;
+    uint32_t line_size = g_col_sizes.line;
 
-    if ( mask & COL_MASK_HEX )
-    {
-        hex_col_size = TRIPLE_COL_SIZE;
-        ascii_col_size = TRIPLE_COL_SIZE;
-
-        // check for no char col in mask to set arbitray size
-        if ( g_col_size )
-            if ( (mask & (COL_MASK_HEX|COL_MASK_UNICODE|COL_MASK_ASCII)) == COL_MASK_HEX )
-                hex_col_size = g_col_size;
-
-        line_size = hex_col_size;
-    }
-    // there is no hex in here
-    else if ( mask & COL_MASK_ASCII )
-    {
-        ascii_col_size = ASCII_COL_SIZE;
-        if ( g_col_size )
-            ascii_col_size = g_col_size;
-
-        line_size = ascii_col_size;
-    }
-    // there is no hex in here
-    else if ( mask & COL_MASK_UNICODE )
-    {
-        unicode_col_size = UNICODE_COL_SIZE;
-        if ( g_col_size )
-            unicode_col_size = g_col_size;
-        line_size = unicode_col_size;
-
-    }
+    DPrint("buffer: %p\n", buffer);
+    DPrint("size: 0x%zx\n", size);
+    DPrint("offset: 0x%zx\n", offset);
+    DPrint("width: 0x%x\n", width);
+    DPrint("col_flags: 0x%x\n", g_col_mask);
+    DPrint("hex_size: 0x%x\n", g_hex_size);
+    DPrint("hex_col_size: 0x%x\n", hex_col_size);
+    DPrint("ascii_col_size: 0x%x\n", ascii_col_size);
+    DPrint("unicode_col_size: 0x%x\n", unicode_col_size);
+    DPrint("line_size: 0x%x\n", line_size);
 
     for ( i = 0; i < size; i += line_size, offset+=line_size )
     {
         if ( mask & COL_MASK_OFFSET )
         {
             printOffsetCol(offset, width);
+            //printOffsetCol(first_line?real_start:offset, width);
         }
         
         if ( mask & COL_MASK_HEX )
@@ -499,33 +454,6 @@ void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t 
 
     FLeave();
 }
-
-//void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t width, void (*printCol)(const uint8_t*, size_t, size_t, uint16_t))
-//{
-//    FEnter();
-//
-//    size_t i;
-//    uint8_t k = 0;
-//
-//    for ( i = 0; i < size; i += TRIPLE_COL_SIZE )
-//    {
-//        printOffsetCol(offset, width);
-//
-//        k = printHexCol8(buffer, i, size, TRIPLE_COL_SIZE);
-//
-//        fillHexGap(k);
-//
-//        printf("%c ", COL_SEPARATOR);
-//        
-//        printCol(buffer, i, size, TRIPLE_COL_SIZE);
-//
-//        printf("\n");
-//
-//        offset += TRIPLE_COL_SIZE;
-//    }
-//
-//    FLeave();
-//}
 
 void printOffsetCol(size_t offset, uint32_t width)
 {
@@ -763,19 +691,18 @@ PRINT_HEX_COL_XX(printHexCol64, 8, 16, uint64_t);
 
 void printPlainByteString(const uint8_t* buffer, size_t size)
 {
+    FEnter();
     size_t k = 0;
+    
+    for ( k = 0; k < skip_hex_bytes; k++ )
+        printf(BYTE_STR_GAP);
+
+    skip_hex_bytes = 0;
 
     for ( k = 0; k < size; k++ )
-    {
-        if ( skip_hex_bytes > 0 )
-        {
-            printf(HEX_GAP);
-            skip_hex_bytes--;
-            continue;
-        }
-          
         printf("%02x", buffer[k]);
-    }
+
+    FLeave();
 }
 
 void printCleanHexValue(const uint64_t v, const uint32_t width, const char gap)
