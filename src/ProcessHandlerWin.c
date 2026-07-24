@@ -327,7 +327,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
 
     char file_name[PATH_MAX] = {0};
     
-    if ( (mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
+    if ( (g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
         find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
     p_needle = needle;
@@ -344,7 +344,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
         return FALSE;
     }
 
-    if ( (mode_flags&MODE_FLAG_FIND) )
+    if ( (g_mode_flags&MODE_FLAG_FIND) )
         Finder_initFailure(p_needle, p_needle_ln, NULL);
 
     getRegionName(process, info.AllocationBase, file_name);
@@ -359,7 +359,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
         old_protect = 0;
 //		setRegionProtection(process, &info, PAGE_READONLY, &old_protect);
 
-        if ( (mode_flags&MODE_FLAG_FIND) )
+        if ( (g_mode_flags&MODE_FLAG_FIND) )
         {
             found = findNeedleInProcessMemoryBlock(info.BaseAddress, (DWORD)info.RegionSize, base_off, process, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )
@@ -534,7 +534,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
     n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
     base_off += n_size;
 
-    if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
+    if ( !(g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
         return 1;
 
     if ( base_off == region_size )
@@ -546,7 +546,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 
         if ( input == ENTER )
             n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
-        else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
+        else if ( (g_mode_flags&MODE_FLAG_FIND) && input == NEXT )
         {
             found = findNeedleInProcessMemoryBlock(base_addr, (DWORD)region_size, found + p_needle_ln, process, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )

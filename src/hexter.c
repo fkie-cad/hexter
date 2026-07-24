@@ -45,16 +45,16 @@
 #define WIN_PARAM_IDENTIFIER ('/')
 
 
-size_t file_size;
-char file_path[PATH_MAX];
+size_t g_file_size;
+char g_file_path[PATH_MAX];
 static size_t g_start;
 size_t g_length;
 static uint32_t g_skip_bytes;
 
 //uint8_t print_col_mask;
 
-uint32_t process_list_flags;
-uint32_t mode_flags;
+uint32_t g_process_list_flags;
+uint32_t g_mode_flags;
 uint32_t g_col_mask;
 uint32_t g_hex_size;
 col_sizes g_col_sizes;
@@ -162,13 +162,13 @@ int run(const char payload_format, const char* raw_payload)
 
     if ( run_mode == RUN_MODE_FILE )
     {
-        file_size = getSize(file_path);
-        if ( file_size == 0 && !(mode_flags&MODE_FLAG_INSERT) )
+        g_file_size = getSize(g_file_path);
+        if ( g_file_size == 0 && !(g_mode_flags&MODE_FLAG_INSERT) )
             return 0;
     }
     else if ( run_mode == RUN_MODE_PID )
     {
-        s = parseUint32(file_path, &pid, 0);
+        s = parseUint32(g_file_path, &pid, 0);
         if ( s != 0 )
             return -1;
 
@@ -196,63 +196,63 @@ int run(const char payload_format, const char* raw_payload)
         }
 #endif
 
-        file_size = getSizeOfProcess(pid);
-        if ( file_size == 0 )
+        g_file_size = getSizeOfProcess(pid);
+        if ( g_file_size == 0 )
             return -2;
     }
 
-    DPrint("file_path: %s\n", file_path);
-    DPrint("file_size: 0x%zx\n", file_size);
+    DPrint("file_path: %s\n", g_file_path);
+    DPrint("file_size: 0x%zx\n", g_file_size);
     DPrint("start: 0x%zx\n", g_start);
     DPrint("length: 0x%zx\n", g_length);
     //DPrint("print_col_mask only: %d\n", print_col_mask);
     DPrint("g_col_mask only: %d\n", g_col_mask);
-    DPrint("insert: %d\n", (mode_flags&MODE_FLAG_INSERT));
-    DPrint("overwrite: %d\n", (mode_flags&MODE_FLAG_OVERWRITE));
-    DPrint("find: %d\n", (mode_flags&MODE_FLAG_FIND));
-    DPrint("delete: %d\n", (mode_flags&MODE_FLAG_DELETE));
+    DPrint("insert: %d\n", (g_mode_flags&MODE_FLAG_INSERT));
+    DPrint("overwrite: %d\n", (g_mode_flags&MODE_FLAG_OVERWRITE));
+    DPrint("find: %d\n", (g_mode_flags&MODE_FLAG_FIND));
+    DPrint("delete: %d\n", (g_mode_flags&MODE_FLAG_DELETE));
     DPrint("\n");
 
-    if ( (mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_FIND)) && payload_format > 0 )
+    if ( (g_mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_FIND)) && payload_format > 0 )
     {
         payload_ln = parsePayload(payload_format, raw_payload, &payload);
         if ( payload == NULL)
             return 3;
-        if ( ((mode_flags & (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE))
+        if ( ((g_mode_flags & (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE))
             && payload_format == FORMAT_ASCII )
         {
             toUpperCaseA((char*)payload, payload_ln);
         }
     }
 
-    if ( (mode_flags&MODE_FLAG_INSERT) )
+    if ( (g_mode_flags&MODE_FLAG_INSERT) )
     {
-        s = insert(file_path, payload, payload_ln, g_start);
-        file_size = getSize(file_path);
+        s = insert(g_file_path, payload, payload_ln, g_start);
+        g_file_size = getSize(g_file_path);
     }
-    else if ( (mode_flags&MODE_FLAG_OVERWRITE) && run_mode == RUN_MODE_FILE )
+    else if ( (g_mode_flags&MODE_FLAG_OVERWRITE) && run_mode == RUN_MODE_FILE )
     {
-        overwrite(file_path, payload, payload_ln, g_start);
-        file_size = getSize(file_path);
+        overwrite(g_file_path, payload, payload_ln, g_start);
+        g_file_size = getSize(g_file_path);
     }
-    else if ( (mode_flags&MODE_FLAG_OVERWRITE) && run_mode == RUN_MODE_PID )
+    else if ( (g_mode_flags&MODE_FLAG_OVERWRITE) && run_mode == RUN_MODE_PID )
     {
         writeProcessMemory(pid, payload, payload_ln, g_start);
     }
-    else if ( (mode_flags&MODE_FLAG_DELETE) )
+    else if ( (g_mode_flags&MODE_FLAG_DELETE) )
     {
         if ( sanitizeDeleteParams() != 0 )
         {
             cleanUp(payload);
             return 1;
         }
-        deleteBytes(file_path, g_start, g_length);
-        file_size = getSize(file_path);
-        g_length = (DEFAULT_LENGTH <= file_size) ? DEFAULT_LENGTH : file_size;
+        deleteBytes(g_file_path, g_start, g_length);
+        g_file_size = getSize(g_file_path);
+        g_length = (DEFAULT_LENGTH <= g_file_size) ? DEFAULT_LENGTH : g_file_size;
         g_start = 0;
     }
 
-    if ( file_size == 0 )
+    if ( g_file_size == 0 )
         return -1;
 
     s = sanitizePrintParams(pid);
@@ -262,28 +262,28 @@ int run(const char payload_format, const char* raw_payload)
     setPrintingStyle();
     if ( run_mode == RUN_MODE_FILE )
     {
-        getFileNameL(file_path, &file_name);
+        getFileNameL(g_file_path, &file_name);
         printf("file: %s\n", file_name);
         print(g_start, g_skip_bytes, payload, payload_ln);
     }
     else if ( run_mode == RUN_MODE_PID )
     {
         printf("pid: %u\n", pid);
-        if ( process_list_flags & PROCESS_LIST_RUNNING_PROCESSES )
+        if ( g_process_list_flags & PROCESS_LIST_RUNNING_PROCESSES )
             listRunningProcesses();
-        if ( process_list_flags & PROCESS_LIST_MEMORY )
+        if ( g_process_list_flags & PROCESS_LIST_MEMORY )
             listProcessMemory(pid);
-        if ( process_list_flags & PROCESS_LIST_MODULES )
+        if ( g_process_list_flags & PROCESS_LIST_MODULES )
             listProcessModules(pid);
-        if ( process_list_flags & PROCESS_LIST_THREADS )
+        if ( g_process_list_flags & PROCESS_LIST_THREADS )
             listProcessThreads(pid);
-        if ( process_list_flags & (PROCESS_LIST_HEAPS | PROCESS_LIST_HEAP_BLOCKS) )
+        if ( g_process_list_flags & (PROCESS_LIST_HEAPS | PROCESS_LIST_HEAP_BLOCKS) )
         {
-            uint32_t flag = (process_list_flags & (PROCESS_LIST_HEAPS|PROCESS_LIST_HEAP_BLOCKS)) >> 3;
+            uint32_t flag = (g_process_list_flags & (PROCESS_LIST_HEAPS|PROCESS_LIST_HEAP_BLOCKS)) >> 3;
             listProcessHeaps(pid, flag);
         }
 
-        if ( process_list_flags == 0 )
+        if ( g_process_list_flags == 0 )
             printProcessRegions(pid, g_start, g_skip_bytes, payload, payload_ln);
     }
 
@@ -300,13 +300,13 @@ void cleanUp(uint8_t* payload)
 
 void initParameters()
 {
-    file_size = 0;
+    g_file_size = 0;
     g_start = 0;
     g_length = DEFAULT_LENGTH;
     g_skip_bytes = 0;
 
-    mode_flags = MODE_FLAG_CONTINUOUS_PRINTING;
-    process_list_flags = 0;
+    g_mode_flags = MODE_FLAG_CONTINUOUS_PRINTING;
+    g_process_list_flags = 0;
     //print_col_mask = 0;
     g_col_mask = 0;
     run_mode = RUN_MODE_NONE;
@@ -440,7 +440,7 @@ int parseArgs(int argc, char** argv)
         }
         else if ( isArgOfType(argv[i], "-pp") )
         {
-            mode_flags |= MODE_FLAG_CLEAN_PRINTING;
+            g_mode_flags |= MODE_FLAG_CLEAN_PRINTING;
         }
         else if ( isArgOfType(argv[i], "-pbs") )
         {
@@ -448,35 +448,35 @@ int parseArgs(int argc, char** argv)
         }
         else if ( isArgOfType(argv[i], "-d") )
         {
-            mode_flags |= MODE_FLAG_DELETE;
+            g_mode_flags |= MODE_FLAG_DELETE;
         }
         else if ( isArgOfType(argv[i], "-b") )
         {
-            mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+            g_mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
         }
         else if ( isArgOfType(argv[i], "-lpx") )
         {
-            process_list_flags |= PROCESS_LIST_MEMORY;
+            g_process_list_flags |= PROCESS_LIST_MEMORY;
         }
         else if ( isArgOfType(argv[i], "-lpm") )
         {
-            process_list_flags |= PROCESS_LIST_MODULES;
+            g_process_list_flags |= PROCESS_LIST_MODULES;
         }
         else if ( isArgOfType(argv[i], "-lpt") )
         {
-            process_list_flags |= PROCESS_LIST_THREADS;
+            g_process_list_flags |= PROCESS_LIST_THREADS;
         }
         else if ( isArgOfType(argv[i], "-lph") )
         {
-            process_list_flags |= PROCESS_LIST_HEAPS;
+            g_process_list_flags |= PROCESS_LIST_HEAPS;
         }
         else if ( isArgOfType(argv[i], "-lphb") )
         {
-            process_list_flags |= PROCESS_LIST_HEAP_BLOCKS;
+            g_process_list_flags |= PROCESS_LIST_HEAP_BLOCKS;
         }
         else if ( isArgOfType(argv[i], "-lrp") )
         {
-            process_list_flags |= PROCESS_LIST_RUNNING_PROCESSES;
+            g_process_list_flags |= PROCESS_LIST_RUNNING_PROCESSES;
         }
         else if ( isArgOfType(argv[i], "-file") )
         {
@@ -528,7 +528,7 @@ int parseArgs(int argc, char** argv)
         {
             if ( hasValue("-i", i, end_i))
             {
-                mode_flags |= MODE_FLAG_INSERT;
+                g_mode_flags |= MODE_FLAG_INSERT;
                 payload_arg_id = i;
                 i++;
             }
@@ -537,7 +537,7 @@ int parseArgs(int argc, char** argv)
         {
             if ( hasValue("-o", i, end_i))
             {
-                mode_flags |= MODE_FLAG_OVERWRITE;
+                g_mode_flags |= MODE_FLAG_OVERWRITE;
                 payload_arg_id = i;
                 i++;
             }
@@ -546,26 +546,26 @@ int parseArgs(int argc, char** argv)
         {
             if ( hasValue("-f", i, end_i))
             {
-                mode_flags |= MODE_FLAG_FIND;
+                g_mode_flags |= MODE_FLAG_FIND;
                 payload_arg_id = i;
                 i++;
             }
         }
         else if ( isArgOfType(argv[i], "-ci") )
         {
-            mode_flags |= MODE_FLAG_CASE_INSENSITIVE;
+            g_mode_flags |= MODE_FLAG_CASE_INSENSITIVE;
         }
         else if ( isArgOfType(argv[i], "-all") )
         {
-            mode_flags |= MODE_FLAG_FIND_ALL;
+            g_mode_flags |= MODE_FLAG_FIND_ALL;
         }
         else if ( isArgOfType(argv[i], "-pso") )
         {
-            mode_flags |= MODE_FLAG_PRINT_START_OFFSET;
+            g_mode_flags |= MODE_FLAG_PRINT_START_OFFSET;
         }
         else if ( isArgOfType(argv[i], "-pfo") )
         {
-            mode_flags |= MODE_FLAG_PRINT_START_OFFSET;
+            g_mode_flags |= MODE_FLAG_PRINT_START_OFFSET;
         }
         else if ( isArgOfType(argv[i], "-hs") )
         {
@@ -597,7 +597,7 @@ int parseArgs(int argc, char** argv)
     }
     
     
-    uint32_t f = mode_flags&(MODE_FLAG_FIND|MODE_FLAG_OVERWRITE|MODE_FLAG_INSERT|MODE_FLAG_DELETE);
+    uint32_t f = g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_OVERWRITE|MODE_FLAG_INSERT|MODE_FLAG_DELETE);
     if ( (f & (f-1)) != 0 )
     {
         EPrint("Overwrite, insert, delete and find have to be used exclusively!\n");
@@ -609,13 +609,13 @@ int parseArgs(int argc, char** argv)
     // check args
     //
 
-    if ( (mode_flags&MODE_FLAG_DELETE) && !length_found )
+    if ( (g_mode_flags&MODE_FLAG_DELETE) && !length_found )
     {
         EPrint("Could not parse length of part to delete! Pass -l 0, if you want to delete from -s to the end of file.\n");
         return -3;
     }
 
-    if ( run_mode == RUN_MODE_PID && (mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_DELETE)) > 0 )
+    if ( run_mode == RUN_MODE_PID && (g_mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_DELETE)) > 0 )
     {
         EPrint("Inserting or deleting is not supported in process mode!\n");
         return -4;
@@ -624,12 +624,12 @@ int parseArgs(int argc, char** argv)
 
     if ( run_mode == RUN_MODE_FILE )
     {
-        s = expandFilePath(source, file_path);
+        s = expandFilePath(source, g_file_path);
         if ( s != 0 )
             return s;
     }    
     else
-        snprintf(file_path, PATH_MAX, "%s", source);
+        snprintf(g_file_path, PATH_MAX, "%s", source);
     
     return 0;
 }
@@ -700,29 +700,29 @@ uint8_t hasValue(char* type, int i, int end_i)
 
 int sanitizeDeleteParams()
 {
-    if ( !(mode_flags&MODE_FLAG_DELETE) )
+    if ( !(g_mode_flags&MODE_FLAG_DELETE) )
         return 0;
     
     uint8_t info_line_break = 0;
 
-    if ( g_start >= file_size )
+    if ( g_start >= g_file_size )
     {
         EPrint("Start offset 0x%zx is greater then the file size of 0x%zx!\n",
-                g_start, file_size);
+                g_start, g_file_size);
         return 1;
     }
     
     if ( g_length == 0 )
     {
         printf("Info: Length is 0. Setting it to remaining file size 0x%zx!\n", 
-            file_size - g_start);
-        g_length = file_size - g_start;
+            g_file_size - g_start);
+        g_length = g_file_size - g_start;
         info_line_break = 1;
     }
     
-    if ( g_start + g_length > file_size )
+    if ( g_start + g_length > g_file_size )
     {
-        g_length = file_size - g_start;
+        g_length = g_file_size - g_start;
     }
 
     if ( info_line_break )
@@ -851,8 +851,8 @@ int sanitizePrintParams(uint32_t pid)
     //
     // check mode
 
-    if ( mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_DELETE) )
-        mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+    if ( g_mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_DELETE) )
+        g_mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
     col_size = getColSize(g_col_mask, &g_col_sizes);
     if ( col_size == 0 )
@@ -862,7 +862,7 @@ int sanitizePrintParams(uint32_t pid)
     }
 
     // normalize length to block size for continuous printing
-    if ( (mode_flags&MODE_FLAG_CONTINUOUS_PRINTING)
+    if ( (g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING)
         && g_col_mask != COL_MASK_BYTE_STRING )
     {
         if ( g_length % col_size != 0 )
@@ -875,9 +875,9 @@ int sanitizePrintParams(uint32_t pid)
     // check start offset
     if ( run_mode == RUN_MODE_FILE )
     {
-        if ( g_start >= file_size )
+        if ( g_start >= g_file_size )
         {
-            EPrint("Start offset 0x%zx is greater then the file size of 0x%zx!\n\n", g_start, file_size);
+            EPrint("Start offset 0x%zx is greater then the file size of 0x%zx!\n\n", g_start, g_file_size);
             return -1;
         }
     }
@@ -888,10 +888,10 @@ int sanitizePrintParams(uint32_t pid)
 
     // normalize start offset to block size
     // called after insert and overwrite
-    if ( !(mode_flags&(MODE_FLAG_FIND|MODE_FLAG_DELETE)) )
+    if ( !(g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_DELETE)) )
     {
         g_start = normalizeOffset(g_start, &g_skip_bytes, g_col_mask);
-        if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
+        if ( !(g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
             g_length += g_skip_bytes;
     }
 
@@ -917,14 +917,14 @@ int sanitizePrintParams(uint32_t pid)
 
 uint8_t keepLengthInFile()
 {
-    if ( g_start + g_length > file_size )
+    if ( g_start + g_length > g_file_size )
     {
         //printf("Info: Start offset 0x%zx plus length 0x%zx is greater then the file size 0x%zx\n"
         //    "Printing only to file size.\n",
-        //g_start + g_skip_bytes, (continuous_f) ? length : length - g_skip_bytes, file_size);
+        //g_start + g_skip_bytes, (continuous_f) ? length : length - g_skip_bytes, g_file_size);
 
-        g_length = file_size - g_start;
-        mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+        g_length = g_file_size - g_start;
+        g_mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
         return 0;
     }
     return 0;
@@ -1016,14 +1016,14 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
 HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _length)
 {
     initParameters();
-    int s = expandFilePath(_file_name, file_path);
+    int s = expandFilePath(_file_name, g_file_path);
     if ( s != 0 )
         return s;
 
     run_mode = RUN_MODE_FILE;
     g_start = _start;
     g_length = _length;
-    mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+    g_mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
 //  print_col_mask = print_col_mask | PRINT_HEX_MASK;
 
@@ -1045,17 +1045,17 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
 {
     initParameters();
 #ifdef _WIN32
-    snprintf(file_path, PATH_MAX, "%u", _pid);
+    snprintf(g_file_path, PATH_MAX, "%u", _pid);
 #else
-    snprintf(file_path, PATH_MAX, "%u", _pid);
+    snprintf(g_file_path, PATH_MAX, "%u", _pid);
 #endif
 
     run_mode = RUN_MODE_PID;
     g_start = _start;
     g_length = _length;
-    mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+    g_mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
-    process_list_flags = flags;
+    g_process_list_flags = flags;
 
     run(0, NULL);
 

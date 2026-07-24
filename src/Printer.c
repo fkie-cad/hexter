@@ -120,7 +120,7 @@ void print(size_t start, uint32_t skip_bytes, uint8_t* _needle, uint32_t _needle
     size_t nr_of_parts = g_length / buffer_size;
     if ( g_length % buffer_size != 0 ) nr_of_parts++;
 
-    if ( ARE_FLAGS_SET(mode_flags, (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) )
+    if ( ARE_FLAGS_SET(g_mode_flags, (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) )
         find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
     DPrint("start: 0x%zx\n", start);
@@ -129,16 +129,16 @@ void print(size_t start, uint32_t skip_bytes, uint8_t* _needle, uint32_t _needle
     DPrint("needle_ln: 0x%x\n", needle_ln);
     DPrint("buffer_size: 0x%zx\n", buffer_size);
     DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
-    DPrint("mode_flags: 0x%x\n", mode_flags);
+    DPrint("mode_flags: 0x%x\n", g_mode_flags);
     DPrint("find_flags: 0x%x\n", find_flags);
     DPrint("\n");
 
     errno = 0;
-    fi = fopen(file_path, "rb");
+    fi = fopen(g_file_path, "rb");
     errsv = errno;
     if ( !fi )
     {
-        EPrint("Could not open \"%s\"! (0x%x)\n", file_path, errsv);
+        EPrint("Could not open \"%s\"! (0x%x)\n", g_file_path, errsv);
         return;
     }
 
@@ -151,12 +151,12 @@ void print(size_t start, uint32_t skip_bytes, uint8_t* _needle, uint32_t _needle
     }
 
     Printer_setSkipBytes(skip_bytes);
-    if ( mode_flags&MODE_FLAG_FIND )
+    if ( g_mode_flags&MODE_FLAG_FIND )
     {
         Finder_initFailure(needle, needle_ln, NULL);
     }
     
-    printBlockLoop(nr_of_parts, buffer, fi, buffer_size, block_start, file_size);
+    printBlockLoop(nr_of_parts, buffer, fi, buffer_size, block_start, g_file_size);
 
 
 clean:
@@ -177,12 +177,12 @@ void setPrintingStyle()
 #ifdef CLEAN_PRINTING
     printHexValue = &printCleanHexValue;
 #elif defined(_LINUX)
-    if ( (mode_flags&MODE_FLAG_CLEAN_PRINTING) || !isatty(fileno(stdout)) )
+    if ( (g_mode_flags&MODE_FLAG_CLEAN_PRINTING) || !isatty(fileno(stdout)) )
         printHexValue = &printCleanHexValue;
     else
         printHexValue = &printAnsiFormatedHexValue;
 #elif defined(_WIN32)
-    if ( (mode_flags&MODE_FLAG_CLEAN_PRINTING) || !_isatty(_fileno(stdout)) )
+    if ( (g_mode_flags&MODE_FLAG_CLEAN_PRINTING) || !_isatty(_fileno(stdout)) )
         printHexValue = &printCleanHexValue;
     else
     {
@@ -217,8 +217,8 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer
 
     uint32_t skip_bytes = 0;
     size_t find_offset = block_start;
-    int continuing = (mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) ? 1 : 0;
-    char input = (mode_flags&MODE_FLAG_FIND) ? NEXT : ENTER;
+    int continuing = (g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) ? 1 : 0;
+    char input = (g_mode_flags&MODE_FLAG_FIND) ? NEXT : ENTER;
     
     DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
     DPrint("buffer: %p\n", buffer);
@@ -227,22 +227,22 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer
     DPrint("block_start: 0x%zx\n", block_start);
     DPrint("block_max: 0x%zx\n", block_max);
     DPrint("find_offset: 0x%zx\n", find_offset);
-    DPrint("file_size: 0x%zx\n", file_size);
+    DPrint("file_size: 0x%zx\n", g_file_size);
     DPrint("input: %c\n", input);
     DPrint("continuing: %u\n", continuing);
     
-    if ( block_start >= file_size )
+    if ( block_start >= g_file_size )
     {
         IPrint("block_start exceeds file size!\n");
         return;
     }
     
-    if ( (mode_flags&MODE_FLAG_PRINT_START_OFFSET) && !(mode_flags&MODE_FLAG_FIND) )
+    if ( (g_mode_flags&MODE_FLAG_PRINT_START_OFFSET) && !(g_mode_flags&MODE_FLAG_FIND) )
         printf("start: 0x%zx\n", block_start + skip_hex_bytes);
 
     do
     {
-        if ( (mode_flags&MODE_FLAG_FIND) && (input == NEXT) )
+        if ( (g_mode_flags&MODE_FLAG_FIND) && (input == NEXT) )
         {
             found = findNeedleInFP(needle, needle_ln, find_offset, fi, block_max, find_flags);
             if ( found == FIND_FAILURE )
@@ -268,7 +268,7 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer
                 _length = ALIGN_UP_BY(_length, g_length);
             }
 
-            if ( mode_flags&MODE_FLAG_PRINT_START_OFFSET )
+            if ( g_mode_flags&MODE_FLAG_PRINT_START_OFFSET )
                 printf("found: 0x%zx\n", found);
             block_start = printBlock(nr_of_parts, buffer, fi, buffer_size, block_start, block_max, _length);
         }
@@ -287,7 +287,7 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer
             break;
 
         // find all always wants next
-        if ( ARE_FLAGS_SET(mode_flags, (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL)) )
+        if ( ARE_FLAGS_SET(g_mode_flags, (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL)) )
             input = NEXT;
         // else wait for user decision
         else

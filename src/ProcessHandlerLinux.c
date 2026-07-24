@@ -780,7 +780,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
     p_needle_ln = needle_ln;
     uint32_t find_flags = 0;
     
-    if ( (mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
+    if ( (g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
         find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
     // check if /proc/pid/mem is accessible
@@ -797,7 +797,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
         return false;
     }
 
-    if ( (mode_flags&MODE_FLAG_FIND) )
+    if ( (g_mode_flags&MODE_FLAG_FIND) )
         Finder_initFailure(p_needle, p_needle_ln, NULL);
 
     while ( queryNextRegion(fp, &entry) )
@@ -847,7 +847,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
         if ( print_s == 1 )
             printRegionInfo(&entry, file_name);
 
-        if ( (mode_flags&MODE_FLAG_FIND) )
+        if ( (g_mode_flags&MODE_FLAG_FIND) )
         {
             found = findNeedleInProcessMemoryBlock(pid, entry.address, entry.size, base_off, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )
@@ -1000,7 +1000,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
         base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_length);
 //  printf(" - base_off: 0x%lx\n", base_off);
 
-    if ( !(mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
+    if ( !(g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
     {
         fclose(fp);
         return 1;
@@ -1014,7 +1014,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
             base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_length);
 //      printf(" -- base_off: 0x%lx\n", base_off);
         }
-        else if ( (mode_flags&MODE_FLAG_FIND) && input == NEXT )
+        else if ( (g_mode_flags&MODE_FLAG_FIND) && input == NEXT )
         {
             found = findNeedleInProcessMemoryBlock(pid, base_addr, size, found + p_needle_ln, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )

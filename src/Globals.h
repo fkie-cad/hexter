@@ -20,6 +20,7 @@
 #endif
 
 #ifdef _WIN32
+// warning C4996: '_getpid': The POSIX name for this item is deprecated. Instead, use the ISO C and C++ conformant name: _getpid.
     #define getpid _getpid
 #endif
 
@@ -70,8 +71,13 @@
 #define MAX_PAYLOAD_LN (0xFFFFFFFF)
 #define FIND_FAILURE SIZE_MAX
 
-extern size_t file_size;
-extern char file_path[PATH_MAX];
+extern size_t g_file_size;
+extern char g_file_path[PATH_MAX];
+//typedef struct _file {
+//    size_t size;
+//    char path[PATH_MAX]
+//} file;
+//extern file g_file_info;
 
 extern size_t g_length;
 
@@ -98,20 +104,16 @@ extern size_t g_length;
 #define MODE_FLAG_CASE_INSENSITIVE       (0x80)
 #define MODE_FLAG_PRINT_START_OFFSET    (0x100)
 
-extern uint32_t mode_flags;
+extern uint32_t g_mode_flags;
 
 extern uint32_t g_col_mask;
 extern uint32_t g_hex_size;
 
-//typedef struct print_flags {
-//    uint8_t col_mask;
-//    uint8_t hex_size;
-//    uint8_t main_col_size;
-//    uint32_t hex_col_size;
-//    uint32_t ascii_col_size;
-//    uint32_t unicode_col_size;
-//    uint32_t line_size;
-//};
+//typedef struct _print_flags {
+//    size_t length;
+//    uint32_t mode;
+//    uint32_t cols;
+//} print_flags;
 
 typedef struct _col_sizes {
     uint32_t custom;

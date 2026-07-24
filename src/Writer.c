@@ -50,7 +50,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
 
     // insertion is just complicated in the middle of a file
     // just write after the end of a file, if offset is bigger than file size
-    if ( offset > file_size )
+    if ( offset > g_file_size )
     {
         s = overwrite(path, payload, payload_ln, offset);
         FLeave();
@@ -312,7 +312,7 @@ int deleteBytes(const char* path, size_t start, size_t ln)
     size_t written;
     int s = 0;
 
-    if ( start > file_size )
+    if ( start > g_file_size )
         return -1;
 
     errno = 0;
@@ -326,10 +326,10 @@ int deleteBytes(const char* path, size_t start, size_t ln)
     }
 
     // If delete from start offset to end of file, just truncate.
-    if ( start + ln >= file_size )
+    if ( start + ln >= g_file_size )
     {
-        ln = file_size - start;
-        s = truncateFile(fp, file_size, ln);
+        ln = g_file_size - start;
+        s = truncateFile(fp, g_file_size, ln);
         goto clean;
     }
 
@@ -391,7 +391,7 @@ int deleteBytes(const char* path, size_t start, size_t ln)
         start += n;
     }
 
-    s = truncateFile(fp, file_size, ln);
+    s = truncateFile(fp, g_file_size, ln);
 
 clean:
     if ( fp )
