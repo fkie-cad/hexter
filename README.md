@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## VERSION
-1.9.2  
-Last changed: 22.07.2026
+1.9.3  
+Last changed: 23.07.2026
 
 
 ## REQUIREMENTS

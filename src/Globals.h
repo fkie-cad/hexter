@@ -42,7 +42,8 @@
     #define PATH_MAX _MAX_PATH
 #endif
 
-#define BLOCK_SIZE (0x400)
+#define BLOCK_SIZE (0x40)
+//#define BLOCK_SIZE (0x400)
 
 #define DEFAULT_LENGTH (0x100)
 //#define DEFAULT_ASCII_LENGTH (0x80)
