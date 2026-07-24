@@ -127,6 +127,9 @@ size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, 
     while ( n == buf_ln )
     {
 //      printf("\r0x%lx", offset);
+        if ( offset > max_offset )
+            break;
+
         if ( offset + read_size > max_offset )
             read_size = max_offset - offset;
 

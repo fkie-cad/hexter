@@ -1,5 +1,6 @@
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NONSTDC_NO_WARNINGS
 #endif
 
 #include "utils/env.h"
@@ -207,10 +208,16 @@ int run(const char payload_format, const char* raw_payload)
     DPrint("length: 0x%zx\n", g_length);
     //DPrint("print_col_mask only: %d\n", print_col_mask);
     DPrint("g_col_mask only: %d\n", g_col_mask);
-    DPrint("insert: %d\n", (g_mode_flags&MODE_FLAG_INSERT));
-    DPrint("overwrite: %d\n", (g_mode_flags&MODE_FLAG_OVERWRITE));
-    DPrint("find: %d\n", (g_mode_flags&MODE_FLAG_FIND));
-    DPrint("delete: %d\n", (g_mode_flags&MODE_FLAG_DELETE));
+    DPrint("g_mode_flags: 0x%x\n", g_mode_flags);
+    DPrint("  insert: %d\n", (g_mode_flags&MODE_FLAG_INSERT)>0);
+    DPrint("  overwrite: %d\n", (g_mode_flags&MODE_FLAG_OVERWRITE)>0);
+    DPrint("  delete: %d\n", (g_mode_flags&MODE_FLAG_DELETE)>0);
+    DPrint("  find: %d\n", (g_mode_flags&MODE_FLAG_FIND)>0);
+    DPrint("  find all: %d\n", (g_mode_flags&MODE_FLAG_FIND_ALL)>0);
+    DPrint("  continuous: %d\n", (g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING)>0);
+    DPrint("  clean printing: %d\n", (g_mode_flags&MODE_FLAG_CLEAN_PRINTING)>0);
+    DPrint("  case insensitive: %d\n", (g_mode_flags&MODE_FLAG_CASE_INSENSITIVE)>0);
+    DPrint("  print start offset: %d\n", (g_mode_flags&MODE_FLAG_PRINT_START_OFFSET)>0);
     DPrint("\n");
 
     if ( (g_mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_FIND)) && payload_format > 0 )
@@ -255,6 +262,7 @@ int run(const char payload_format, const char* raw_payload)
     if ( g_file_size == 0 )
         return -1;
 
+    
     s = sanitizePrintParams(pid);
     if ( s != 0 )
         return -1;
@@ -399,9 +407,12 @@ void printHelp()
 
 int parseArgs(int argc, char** argv)
 {
+    FEnter();
+
     int start_i = 1;
     int end_i = argc - 1;
-    int i, s;
+    int i = 0;
+    int s = 0;
     uint8_t length_found = 0;
     const char* source = NULL;
 
@@ -595,13 +606,14 @@ int parseArgs(int argc, char** argv)
         printUsage();
         return -1;
     }
-    
-    
+   
+    DPrint("g_mode_flags: 0x%x\n", g_mode_flags);
     uint32_t f = g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_OVERWRITE|MODE_FLAG_INSERT|MODE_FLAG_DELETE);
     if ( (f & (f-1)) != 0 )
     {
         EPrint("Overwrite, insert, delete and find have to be used exclusively!\n");
-        return -2;
+        s = -2;
+        goto clean;
     }
 
 
@@ -612,13 +624,15 @@ int parseArgs(int argc, char** argv)
     if ( (g_mode_flags&MODE_FLAG_DELETE) && !length_found )
     {
         EPrint("Could not parse length of part to delete! Pass -l 0, if you want to delete from -s to the end of file.\n");
-        return -3;
+        s = -3;
+        goto clean;
     }
 
     if ( run_mode == RUN_MODE_PID && (g_mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_DELETE)) > 0 )
     {
         EPrint("Inserting or deleting is not supported in process mode!\n");
-        return -4;
+        s = -4;
+        goto clean;
     }
     
 
@@ -626,12 +640,14 @@ int parseArgs(int argc, char** argv)
     {
         s = expandFilePath(source, g_file_path);
         if ( s != 0 )
-            return s;
+            goto clean;
     }    
     else
         snprintf(g_file_path, PATH_MAX, "%s", source);
     
-    return 0;
+clean:
+    FEnter();
+    return s;
 }
 
 uint8_t isArgOfType(const char* arg, const char* type)
@@ -843,7 +859,7 @@ int sanitizePrintParams(uint32_t pid)
 
     if ( g_col_sizes.custom > MAX_COL_SIZE )
     {
-        IPrint("Custom col size too big! Setting it to max is 0x%x\n", MAX_COL_SIZE);
+        IPrint("Custom col size too big! Setting it to 0x%x\n", MAX_COL_SIZE);
         g_col_sizes.custom = MAX_COL_SIZE;
     }
 
@@ -853,6 +869,11 @@ int sanitizePrintParams(uint32_t pid)
 
     if ( g_mode_flags&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_DELETE) )
         g_mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+    else if ( ARE_FLAGS_SET(g_mode_flags, (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL) ) )
+        g_mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+
+    //
+    // initialize col sizes
 
     col_size = getColSize(g_col_mask, &g_col_sizes);
     if ( col_size == 0 )
@@ -890,7 +911,7 @@ int sanitizePrintParams(uint32_t pid)
     // called after insert and overwrite
     if ( !(g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_DELETE)) )
     {
-        g_start = normalizeOffset(g_start, &g_skip_bytes, g_col_mask);
+        g_start = normalizeOffset(g_start, &g_skip_bytes);
         if ( !(g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
             g_length += g_skip_bytes;
     }
@@ -924,7 +945,7 @@ uint8_t keepLengthInFile()
         //g_start + g_skip_bytes, (continuous_f) ? length : length - g_skip_bytes, g_file_size);
 
         g_length = g_file_size - g_start;
-        g_mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+        //g_mode_flags &= ~MODE_FLAG_CONTINUOUS_PRINTING;
         return 0;
     }
     return 0;

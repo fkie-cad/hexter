@@ -269,19 +269,16 @@ uint8_t countHexWidth32(uint32_t value)
  * @param   remainder uint8_t the remainder
  * @return  size_t 
  */
-size_t normalizeOffset(size_t offset, uint32_t* remainder, uint32_t mask)
+size_t normalizeOffset(size_t offset, uint32_t* remainder)
 {
     FEnter();
     DPrint("offset: 0x%zx\n", offset);
     DPrint("remainder: %p => 0x%x\n", remainder, *remainder);
-    DPrint("mask: 0x%x\n", mask);
-    uint32_t col_size = getColSize(mask, &g_col_sizes);
-    *remainder = (uint32_t)(offset % col_size);
-
-    //if ( offset > *remainder )
-        offset -= *remainder;
     
-    DPrint("col_size: 0x%x\n", col_size);
+    *remainder = (uint32_t)(offset % g_col_sizes.line);
+    offset -= *remainder;
+    
+    DPrint("col_size: 0x%x\n", g_col_sizes.line);
     DPrint("=> remainder: 0x%x\n", *remainder);
     DPrint("=> offset: 0x%zx\n", offset);
     FLeave();

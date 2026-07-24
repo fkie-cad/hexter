@@ -136,5 +136,6 @@ extern col_sizes g_col_sizes;
 
 #define ARE_FLAGS_SET(__value__, __flags__) ((__value__)&(__flags__)) == (__flags__) 
 #define IS_FLAG_SET(__value__, __flags__) ((__value__)&(__flags__))
+#define IS_ONLY_ONE_FLAG_SET(__value__, __flags__, __expected__) (((__value__)&(__flags__))==(__expected__))
 
 #endif

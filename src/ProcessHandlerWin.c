@@ -375,7 +375,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
             else
             {
                 found = found - (uintptr_t) info.BaseAddress;
-                base_off = normalizeOffset(found, &skip_bytes, g_col_mask);
+                base_off = normalizeOffset(found, &skip_bytes);
                 Printer_setHighlightBytes(p_needle_ln);
                 Printer_setHighlightWait(skip_bytes);
                 skip_bytes = 0;
@@ -555,7 +555,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
                 break;
             }
             found -= (uintptr_t) base_addr;
-            base_off = normalizeOffset(found, &skip_bytes, g_col_mask);
+            base_off = normalizeOffset(found, &skip_bytes);
             Printer_setHighlightBytes(p_needle_ln);
             Printer_setHighlightWait(skip_bytes);
             skip_bytes = 0;

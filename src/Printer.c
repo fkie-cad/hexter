@@ -211,12 +211,11 @@ void Printer_cleanUp(uint8_t* buffer, FILE* fi)
     FLeave();
 }
 
-void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t block_start, size_t block_max)
+void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t start, size_t max_offset)
 {
     FEnter();
 
-    uint32_t skip_bytes = 0;
-    size_t find_offset = block_start;
+    size_t find_start_offset = start;
     int continuing = (g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) ? 1 : 0;
     char input = (g_mode_flags&MODE_FLAG_FIND) ? NEXT : ENTER;
     
@@ -224,71 +223,104 @@ void printBlockLoop(size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer
     DPrint("buffer: %p\n", buffer);
     DPrint("fi: %p\n", fi);
     DPrint("buffer_size: 0x%zx\n", buffer_size);
-    DPrint("block_start: 0x%zx\n", block_start);
-    DPrint("block_max: 0x%zx\n", block_max);
-    DPrint("find_offset: 0x%zx\n", find_offset);
+    DPrint("start: 0x%zx\n", start);
+    DPrint("max_offset: 0x%zx\n", max_offset);
+    DPrint("find_offset: 0x%zx\n", find_start_offset);
     DPrint("file_size: 0x%zx\n", g_file_size);
     DPrint("input: %c\n", input);
     DPrint("continuing: %u\n", continuing);
     
-    if ( block_start >= g_file_size )
+    if ( start >= g_file_size )
     {
-        IPrint("block_start exceeds file size!\n");
+        IPrint("start exceeds file size!\n");
         return;
     }
     
     if ( (g_mode_flags&MODE_FLAG_PRINT_START_OFFSET) && !(g_mode_flags&MODE_FLAG_FIND) )
-        printf("start: 0x%zx\n", block_start + skip_hex_bytes);
+        printf("start: 0x%zx\n", start + skip_hex_bytes);
+    if ( (g_mode_flags&MODE_FLAG_FIND) )
+        continuing = 1;
+
 
     do
     {
+        // -fx -b
+        if ((g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CONTINUOUS_PRINTING))==MODE_FLAG_FIND )
+            if (input == ENTER)
+                input = NEXT;
+
         if ( (g_mode_flags&MODE_FLAG_FIND) && (input == NEXT) )
         {
-            found = findNeedleInFP(needle, needle_ln, find_offset, fi, block_max, find_flags);
+            found = findNeedleInFP(needle, needle_ln, find_start_offset, fi, max_offset, find_flags);
             if ( found == FIND_FAILURE )
+            {
+                DPrint("Nothing found break.\n");
                 break;
-            find_offset = found+needle_ln;
+            }
+            find_start_offset = found+needle_ln;
             
-            block_start = normalizeOffset(found, &skip_bytes, g_col_mask);
+            uint32_t skip_bytes = 0;
+
+            start = normalizeOffset(found, &skip_bytes);
+            Printer_setSkipBytes(skip_bytes);
             Printer_setHighlightBytes(needle_ln);
-            Printer_setHighlightWait(skip_bytes);
-            skip_bytes = 0;
 
             printf("\n");
+            DPrint("skip_bytes: 0x%x\n", skip_bytes);
             DPrint("buffer_size: 0x%zx\n", buffer_size);
             DPrint("found: 0x%zx\n", found);
             DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
 
             // check if found needle exceeds current printing length
-            size_t _length = g_length;
-            size_t end = block_start + g_length;
+            size_t length = g_length;
+            if ( ((g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CONTINUOUS_PRINTING))==MODE_FLAG_FIND )
+                || (g_mode_flags&MODE_FLAG_FIND_ALL) )
+            {
+                length += skip_bytes;
+            }
+            size_t end = start + length;
+            
             if ( found + needle_ln > end )
             {
-                _length += needle_ln;
-                _length = ALIGN_UP_BY(_length, g_length);
+                length += needle_ln;
+                length = ALIGN_UP_BY(length, g_length);
             }
 
             if ( g_mode_flags&MODE_FLAG_PRINT_START_OFFSET )
                 printf("found: 0x%zx\n", found);
-            block_start = printBlock(nr_of_parts, buffer, fi, buffer_size, block_start, block_max, _length);
+            start = printBlock(nr_of_parts, buffer, fi, buffer_size, start, max_offset, length);
+
+            if ( find_start_offset >= max_offset )
+            {
+                DPrint("find_start_offset 0x%zx > max_offset 0x%zx.\n", find_start_offset, max_offset);
+                break;
+            }
         }
         else if ( input == ENTER )
         {
-            block_start = printBlock(nr_of_parts, buffer, fi, buffer_size, block_start, block_max, g_length);
+            start = printBlock(nr_of_parts, buffer, fi, buffer_size, start, max_offset, g_length);
+            
+            //if ( (start >= max_offset || start == SIZE_MAX)  )
+            if ( (start >= max_offset || start == SIZE_MAX) && !( g_mode_flags&MODE_FLAG_FIND ) )
+            {
+                DPrint("start 0x%zx > max_offset 0x%zx.\n", start, max_offset);
+                break;
+            }
         }
         else if ( input == QUIT )
             break;
         
-        // on break mode (-b) break;
-        if ( !continuing )
-            break;
+        //// on break mode (-b) break;
+        //if ( !continuing )
+        //    break;
 
-        if ( block_start == SIZE_MAX )
-            break;
 
         // find all always wants next
         if ( ARE_FLAGS_SET(g_mode_flags, (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL)) )
             input = NEXT;
+        // on break mode (-b) break;
+        else if ( !continuing )
+            break;
         // else wait for user decision
         else
             input = (char)_getch();
