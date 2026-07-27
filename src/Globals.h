@@ -54,8 +54,9 @@
 #define HEX_COL_SIZE (0x10)
 #define ASCII_HEX_COL_SIZE (0x10)
 #define ASCII_COL_SIZE (0x40)
+#define UNICODE_COL_SIZE_SMALL (0x10)
 #define UNICODE_COL_SIZE (0x80)
-#define BYTE_STRING_COL_SIZE (0x10)
+#define BYTE_STRING_COL_SIZE (0x1)
 
 #define MIN_PRINTABLE_ASCII_RANGE (0x20)
 #define MAX_PRINTABLE_ASCII_RANGE (0x7E)
@@ -70,16 +71,6 @@
 
 #define MAX_PAYLOAD_LN (0xFFFFFFFF)
 #define FIND_FAILURE SIZE_MAX
-
-extern size_t g_file_size;
-extern char g_file_path[PATH_MAX];
-//typedef struct _file {
-//    size_t size;
-//    char path[PATH_MAX]
-//} file;
-//extern file g_file_info;
-
-extern size_t g_length;
 
 //extern uint8_t print_col_mask;
 //#define PRINT_ASCII_MASK     (0x1)
@@ -104,15 +95,25 @@ extern size_t g_length;
 #define MODE_FLAG_CASE_INSENSITIVE       (0x80)
 #define MODE_FLAG_PRINT_START_OFFSET    (0x100)
 
+extern size_t g_file_size;
+extern char g_file_path[PATH_MAX];
+//typedef struct _file {
+//    size_t size;
+//    char path[PATH_MAX]
+//} file;
+//extern file g_file_info;
+
+extern size_t g_length;
 extern uint32_t g_mode_flags;
 
 extern uint32_t g_col_mask;
-extern uint32_t g_hex_size;
+extern uint32_t g_value_size;
 
 //typedef struct _print_flags {
 //    size_t length;
 //    uint32_t mode;
 //    uint32_t cols;
+//    uint32_t value_size;
 //} print_flags;
 
 typedef struct _col_sizes {

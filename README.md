@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## VERSION
-1.9.3  
-Last changed: 23.07.2026
+1.10.0  
+Last changed: 27.07.2026
 
 
 ## REQUIREMENTS
@@ -88,13 +88,18 @@ Optional Parameters:
  * -s size_t Start offset in hex or dec. Default = 0.
  * -l size_t Length of the part to display in hex or dec. Default = 0x100.
  * -b Force breaking, not continuous mode and print just one block.
- * Printing format:
-   * -pa ASCII only print.
-   * -pu UNICODE (utf-16) only print.
-   * -px HEX only print.
-   * -po Print address (only valid in combination with the other options).
-   * -pp Print plain, not console styled output. 
-   * -pbs Print plain byte string. 
+ * -pso Print start (real) offset.
+ * -vs Size of the printed hex values/groups. Maybe 1, 2, 4, 8. Defaults to 1.
+ * -pp Print plain, not console styled output.
+ * -cs Size of a printed column. Only respected if `-px`, `-pa`, `-pu` are not combined with each other.
+ * Printing layouts:  
+   (Not all possible combinations are allowed!)
+   * -po Print address column flag (1).
+   * -px Print HEX column flag (2).
+   * -pa Print ASCII column flag (4).
+   * -pu Print UNICODE (utf-16) column flag (8).
+   * -pbs Print plain byte string flag (0x10).
+   * -cm Set the desired column mask directly as the given number.
  * File manipulation/examination.
    * -d Delete -l bytes from offset -s. (File mode only.) Pass -l 0 to delete from -s to file end.
    * -i* Insert hex byte sequence (destructive!). Where * is a format option. (File mode only.)

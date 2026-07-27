@@ -296,7 +296,7 @@ uint32_t getColSize(uint32_t mask, col_sizes* cs)
     {
         cs->hex = HEX_COL_SIZE;
         cs->ascii = ASCII_HEX_COL_SIZE;
-        cs->unicode = UNICODE_COL_SIZE;
+        cs->unicode = UNICODE_COL_SIZE_SMALL;
 
         // check for no char col in mask to set arbitray size
         if ( cs->custom )

@@ -39,8 +39,8 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME "hexter"
-#define BIN_VS "1.9.3"
-#define BIN_LAST_CHANGED "23.07.2026"
+#define BIN_VS "1.10.0"
+#define BIN_LAST_CHANGED "27.07.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -57,7 +57,7 @@ static uint32_t g_skip_bytes;
 uint32_t g_process_list_flags;
 uint32_t g_mode_flags;
 uint32_t g_col_mask;
-uint32_t g_hex_size;
+uint32_t g_value_size;
 col_sizes g_col_sizes;
 //uint32_t g_col_size;
 //
@@ -356,13 +356,18 @@ void printHelp()
            " * -s:size_t Start offset. Default = 0.\n"
            " * -l:size_t Length of the part to display. Default = 0x100.\n"
            " * -b Force breaking mode. Will terminate after the first displayed block.\n"
-           " * Printing format:\n"
-           "   * -pa ASCII only print.\n"
-           "   * -pu UNICODE (utf-16) only print.\n"
-           "   * -px HEX only print.\n"
-           "   * -po Print address (only valid in combination with the other options).\n"
-           "   * -pp Print plain, not console styled output.\n"
-           "   * -pbs Print plain byte string.\n"
+           " * -pso Print start (real) offset.\n"
+           " * -vs Size of the printed hex values/groups. Maybe 1, 2, 4, 8. Defaults to 1.\n"
+           " * -pp Print plain, not console styled output.\n"
+           " * -cs Size of a printed column. Only respected if -px, -pa, -pu are not combined with each other.\n"
+           " * Printing layouts:\n"
+           "   (Not all possible combinations are allowed!)\n"
+           "   * -po Print address column flag (1).\n"
+           "   * -px Print HEX column flag (2).\n"
+           "   * -pa Print ASCII column flag (4).\n"
+           "   * -pu Print UNICODE (utf-16) column flag (8).\n"
+           "   * -pbs Print plain byte string flag (0x10).\n"
+           "   * -cm Set the desired column mask directly as the given number.\n"
            " * File manipulation/examination.\n"
            "   * -d Delete -l bytes from offset -s. (File mode only.). Pass -l 0 to delete from -s to file end.\n"
            "   * -i* Insert hex byte sequence (destructive!). Where * is a format option. (File mode only.)\n"
@@ -382,7 +387,7 @@ void printHelp()
            "     * -ci: case insensitive (for ascii search only).\n"
            "     * -all: Find all occurrences.\n"
            "     * -pfo: Print the exact found offset separately.\n"
-//         " * -e:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
+//         " * -ie:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
            " * -pid only options:\n"
            "   * -lpx List entire process memory layout.\n"
            "   * -lpm List all process modules.\n"
@@ -423,23 +428,19 @@ int parseArgs(int argc, char** argv)
 
         if ( isArgOfType(argv[i], "-px") )
         { 
-            //print_col_mask = print_col_mask | PRINT_HEX_MASK;
-            g_col_mask = g_col_mask | COL_MASK_HEX;
+            g_col_mask |= COL_MASK_HEX;
         }
         else if ( isArgOfType(argv[i], "-pa") )
         {
-            //print_col_mask = print_col_mask | PRINT_ASCII_MASK;
-            g_col_mask = g_col_mask | COL_MASK_ASCII;
+            g_col_mask |= COL_MASK_ASCII;
         }
         else if ( isArgOfType(argv[i], "-pu") )
         {
-            //print_col_mask = print_col_mask | PRINT_UNICODE_MASK;
-            g_col_mask = g_col_mask | COL_MASK_UNICODE;
+            g_col_mask |= COL_MASK_UNICODE;
         }
         else if ( isArgOfType(argv[i], "-po") )
         {
-            //print_col_mask = print_col_mask | PRINT_OFFSET_MASK;
-            g_col_mask = g_col_mask | COL_MASK_OFFSET;
+            g_col_mask |= COL_MASK_OFFSET;
         }
         else if ( isArgOfType(argv[i], "-cm") )
         {
@@ -455,7 +456,7 @@ int parseArgs(int argc, char** argv)
         }
         else if ( isArgOfType(argv[i], "-pbs") )
         {
-            g_col_mask = COL_MASK_BYTE_STRING;
+            g_col_mask |= COL_MASK_BYTE_STRING;
         }
         else if ( isArgOfType(argv[i], "-d") )
         {
@@ -578,11 +579,11 @@ int parseArgs(int argc, char** argv)
         {
             g_mode_flags |= MODE_FLAG_PRINT_START_OFFSET;
         }
-        else if ( isArgOfType(argv[i], "-hs") )
+        else if ( isArgOfType(argv[i], "-vs") )
         {
-            if ( hasValue("-hs", i, end_i))
+            if ( hasValue("-vs", i, end_i))
             {
-                s = parseUint32(argv[i + 1], &g_hex_size, 0);
+                s = parseUint32(argv[i + 1], &g_value_size, 0);
                 i++;
             }
         }
@@ -814,41 +815,46 @@ int sanitizePrintParams(uint32_t pid)
             EPrint("Ascii and unicode printing can't be combined!\n");
             return -5;
         }
-        //if ( g_col_mask == COL_MASK_OFFSET )
-        //{
-        //    EPrint("Printing only offsets is not provided! Please select one or more of -pa, -pu, -px.\n");
-        //    return -6;
-        //}
+        if ( g_col_mask == COL_MASK_OFFSET )
+        {
+            EPrint("Printing only offsets is not provided! Please select one or more of -pa, -pu, -px.\n");
+            return -6;
+        }
         DPrint("g_col_mask: 0x%x\n", g_col_mask);
         if ( ( g_col_mask < COL_MASK_OFFSET || g_col_mask > (COL_MASK_OFFSET|COL_MASK_HEX|COL_MASK_UNICODE) )
-            && ( !IS_FLAG_SET(g_col_mask, COL_MASK_BYTE_STRING) || !ARE_FLAGS_SET(g_col_mask, COL_MASK_BYTE_STRING) ) )
+            && ( g_col_mask != COL_MASK_BYTE_STRING && g_col_mask != (COL_MASK_OFFSET|COL_MASK_BYTE_STRING) ) )
         {
             EPrint("Invalid column flags!\n");
-            return -6;
+            return -7;
         }
     }
 
     //
     // check hex size
 
-    if ( !g_hex_size )
-        g_hex_size = 1;
+    if ( !g_value_size )
+        g_value_size = 1;
+    if ( (g_mode_flags & MODE_FLAG_FIND) && g_value_size != 1 )
+    {
+        IPrint("In find mode, currently just a hex size of 1 is supported!\n");
+        g_value_size = 1;
+    }
 
     int is_aligned = 0;
-    is_aligned = alignValueUpToHexSize(g_hex_size, &g_length);
+    is_aligned = alignValueUpToHexSize(g_value_size, &g_length);
     if ( is_aligned ) { 
         IPrint("Aligned length up tp 0x%zx bytes!\n", g_length) }
 
-    is_aligned = alignValueDownToHexSize(g_hex_size, &g_start);
+    is_aligned = alignValueDownToHexSize(g_value_size, &g_start);
     if ( is_aligned ) { 
         IPrint("Aligned start down to 0x%zx bytes!\n", g_start) }
 
     size_t value = g_col_sizes.custom;
-    is_aligned = (uint32_t)alignValueDownToHexSize(g_hex_size, &value);
+    is_aligned = (uint32_t)alignValueDownToHexSize(g_value_size, &value);
     if ( is_aligned )
     {
-        if ( value < g_hex_size )
-            value = g_hex_size;
+        if ( value < g_value_size )
+            value = g_value_size;
         g_col_sizes.custom = (uint32_t)value;
         IPrint("Aligned custom col size to 0x%x bytes!\n", g_col_sizes.custom)
     }
