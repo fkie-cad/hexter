@@ -836,7 +836,7 @@ int sanitizePrintParams(uint32_t pid)
         g_value_size = 1;
     if ( (g_mode_flags & MODE_FLAG_FIND) && g_value_size != 1 )
     {
-        IPrint("In find mode, currently just a hex size of 1 is supported!\n");
+        IPrint("In find mode, currently just a hex value size of 1 is supported!\n");
         g_value_size = 1;
     }
 
