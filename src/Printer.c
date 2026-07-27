@@ -46,7 +46,6 @@ static void printUnicodeCol(const uint8_t* buffer, size_t i, size_t size, uint32
 
 void printPlainByteString(const uint8_t* buffer, size_t size);
 
-static void printHexCols(const uint8_t* buffer, size_t size);
 static uint32_t printHexCol8(const uint8_t* buffer, size_t i, size_t size, uint32_t col_size);
 static uint32_t printHexCol16(const uint8_t* buffer, size_t i, size_t size, uint32_t col_size);
 static uint32_t printHexCol32(const uint8_t* buffer, size_t i, size_t size, uint32_t col_size);
@@ -600,10 +599,10 @@ uint32_t __name__(const uint8_t* buffer, size_t i, size_t size, uint32_t col_siz
     return k; \
 }
 
-PRINT_HEX_COL_XX(printHexCol8, 1, 2, uint8_t);
-PRINT_HEX_COL_XX(printHexCol16, 2, 4, uint16_t);
-PRINT_HEX_COL_XX(printHexCol32, 4, 8, uint32_t);
-PRINT_HEX_COL_XX(printHexCol64, 8, 16, uint64_t);
+PRINT_HEX_COL_XX(printHexCol8, 1, 2, uint8_t)
+PRINT_HEX_COL_XX(printHexCol16, 2, 4, uint16_t)
+PRINT_HEX_COL_XX(printHexCol32, 4, 8, uint32_t)
+PRINT_HEX_COL_XX(printHexCol64, 8, 16, uint64_t)
 
 void printPlainByteString(const uint8_t* buffer, size_t size)
 {

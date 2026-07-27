@@ -9,7 +9,7 @@ Compiles and runs under
 
 
 ## VERSION
-1.10.0  
+1.10.1  
 Last changed: 27.07.2026
 
 
