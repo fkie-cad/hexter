@@ -46,7 +46,7 @@ typedef struct ProcStat
 //	int session; // %d The session ID of the process.
 //	int tty_nr; // %d The controlling terminal of the process.  (The minor device number is contained in the combination of bits 31 to 20 and 7 to 0; the major device number is in bits 15 to 8.)
 //	int tpgid; // %d The ID of the foreground process group of the controlling terminal of the process.
-    uint16_t flags; // %u The kernel flags word of the process.  For bit meanings, see the PF_* defines in the Linux kernel source file include/linux/sched.h. Details depend on the kernel version.The format for this field was %lu before Linux 2.6.
+    uint32_t flags; // %u The kernel flags word of the process.  For bit meanings, see the PF_* defines in the Linux kernel source file include/linux/sched.h. Details depend on the kernel version.The format for this field was %lu before Linux 2.6.
 //	uint32_t minflt; // %lu The number of minor faults the process has made which have not required loading a memory page from disk.
 //	uint32_t cminflt; // %lu The number of minor faults that the process's waited-for children have made.
 //	uint32_t majflt; // %lu The number of major faults the process has made which have required loading a memory page from disk.
@@ -60,7 +60,7 @@ typedef struct ProcStat
     int32_t num_threads; // %ld Number of threads in this process (since Linux 2.6). Before kernel 2.6, this field was hard coded to 0 as a placeholder for an earlier removed field.
 //	int32_t itrealvalue; // %ld The time in jiffies before the next SIGALRM is sent to the process due to an interval timer.  Since kernel 2.6.17, this field is no longer maintained, and is hard coded as 0.
 //	uint64_t starttime; // %llu The time the process started after system boot. In kernels before Linux 2.6, this value was expressed in jiffies.  Since Linux 2.6, the value is expressed in clock ticks (divide by sysconf(_SC_CLK_TCK)). The format for this field was %lu before Linux 2.6.
-    uint32_t vsize; // %lu Virtual memory size in bytes.
+    uint64_t vsize; // %lu Virtual memory size in bytes.
     int32_t rss; // %ld Resident Set Size: number of pages the process has in real memory.  This is just the pages which count toward text, data, or stack space.  This does not include pages which have not been demand-loaded in, or which are swapped out.
 //	uint32_t rsslim; // %lu Current soft limit in bytes on the rss of the process; see the description of RLIMIT_RSS in getrlimituint32_t.
 //	uint32_t startcode; // %lu  [PT] The address above which program text can run.
@@ -506,6 +506,7 @@ Bool getProcName(uint32_t pid, char* name, size_t name_size)
  */
 Bool getProcStat(uint32_t pid, ProcStat* proc_stat)
 {
+    int s = 0;
     FILE* fp = NULL;
     char line[LINE_BUFFER_SPACE];
     const uint8_t bucket_max = 53;
@@ -531,12 +532,37 @@ Bool getProcStat(uint32_t pid, ProcStat* proc_stat)
         return false;
     }
 
-    parseUint32(bucket[3], &proc_stat->ppid, 10);
+    s = parseUint32(bucket[3], &proc_stat->ppid, 10);
+    if ( s != 0 )
+    {
+        EPrint("Parsing ppid failed! (0x%x)\n", s);
+        return false;
+    }
     proc_stat->state = bucket[2][0];
-    parseUint16(bucket[8], &proc_stat->flags, 10);
-    parseUint32(bucket[19], (uint32_t*)&proc_stat->num_threads, 10);
-    parseUint32(bucket[22], &proc_stat->vsize, 10);
-    parseUint32(bucket[23], (uint32_t*)&proc_stat->rss, 10);
+    s = parseUint32(bucket[8], &proc_stat->flags, 10);
+    if ( s != 0 )
+    {
+        EPrint("Parsing flags failed! (0x%x)\n", s);
+        return false;
+    }
+    s = parseUint32(bucket[19], (uint32_t*)&proc_stat->num_threads, 10);
+    if ( s != 0 )
+    {
+        EPrint("Parsing num_threads failed! (0x%x)\n", s);
+        return false;
+    }
+    s = parseUint64(bucket[22], &proc_stat->vsize, 10);
+    if ( s != 0 )
+    {
+        EPrint("Parsing vsize failed! (0x%x)\n", s);
+        return false;
+    }
+    s = parseUint32(bucket[23], (uint32_t*)&proc_stat->rss, 10);
+    if ( s != 0 )
+    {
+        EPrint("Parsing rss failed! (0x%x)\n", s);
+        return false;
+    }
 
     return true;
 }
@@ -1107,7 +1133,7 @@ void processdir(const struct dirent *dir)
     if ( !getProcStat(pid, &proc_stat) )
         printf("Failed to parse /proc/pid/stat");
 
-    printf("0x%08x | 0x%08x | %8u | 0x%08x | 0x%08x | %8s | %s\n",
+    printf("0x%08x | 0x%08x | %8u | 0x%16lx | 0x%08x | %8s | %s\n",
             pid, proc_stat.ppid, proc_stat.num_threads, proc_stat.vsize, proc_stat.rss, getStateString(proc_stat.state), proc_name);
 }
 
