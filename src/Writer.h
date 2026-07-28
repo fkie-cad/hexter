@@ -1,6 +1,8 @@
 #ifndef HEXTER_SRC_WRITER_H
 #define HEXTER_SRC_WRITER_H
 
+
+
 uint32_t payloadParseByte(
     const char* arg, 
     uint8_t** payload
@@ -56,21 +58,21 @@ uint32_t payloadParsePlainBytes(
 
 
 int insert(
-    const char* file_path, 
+    FILE_INFO* file_info, 
     uint8_t* payload, 
     uint32_t payload_ln, 
     size_t offset
 );
 
 int overwrite(
-    const char* file_path, 
+    FILE_INFO* file_info,  
     uint8_t* payload, 
     uint32_t payload_ln, 
     size_t offset
 );
 
 int deleteBytes(
-    const char* file_path, 
+    FILE_INFO* file_info, 
     size_t start, 
     size_t length
 );

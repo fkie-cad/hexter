@@ -16,11 +16,10 @@
     #include <io.h>
 #endif
 
-//#include "utils/common_fileio.h"
-//#include "utils/Strings.h"
-#include "Writer.h"
 #include "Globals.h"
-//#include "utils/Converter.h"
+#include "Writer.h"
+
+
 
 static int truncateFile(FILE* fp, size_t file_size, size_t ln);
 
@@ -29,12 +28,12 @@ static int truncateFile(FILE* fp, size_t file_size, size_t ln);
 /**
  * Insert payload into file.
  *
- * @param file_path
+ * @param file_info FILE_INFO*
  * @param payload
  * @param payload_ln
  * @param offset
  */
-int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offset)
+int insert(FILE_INFO* file_info, uint8_t* payload, uint32_t payload_ln, size_t offset)
 {
     FEnter();
 
@@ -50,9 +49,9 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
 
     // insertion is just complicated in the middle of a file
     // just write after the end of a file, if offset is bigger than file size
-    if ( offset > g_file_size )
+    if ( offset > file_info->size )
     {
-        s = overwrite(path, payload, payload_ln, offset);
+        s = overwrite(file_info, payload, payload_ln, offset);
         FLeave();
         return s;
     }
@@ -70,17 +69,17 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
     // "ab+" results in strange behaviour
     // that's why this construct is used
     //errno = 0;
-    fp = fopen(path, "rb+");
+    fp = fopen(file_info->path, "rb+");
     //int errsv = errno;
     if ( !fp )
     {
         errno = 0;
-        fp = fopen(path, "wb+");
+        fp = fopen(file_info->path, "wb+");
         errsv = errno;
         if ( !fp )
         {
             s = errsv;
-            EPrint("Could not open \"%s\"! (0x%x)\n", path, s);
+            EPrint("Could not open \"%s\"! (0x%x)\n", file_info->path, s);
             goto clean;
         }
     }
@@ -94,7 +93,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
         if ( s != 0 )
         {
             s = errsv;
-            EPrint("FSeek in \"%s\"! (0x%x)\n", path, errsv);
+            EPrint("FSeek in \"%s\"! (0x%x)\n", file_info->path, errsv);
             goto clean;
         }
 
@@ -104,7 +103,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
         if ( ferror(fp) )
         {
             s = errsv;
-            EPrint("fread in \"%s\"! (0x%x)\n", path, s);
+            EPrint("fread in \"%s\"! (0x%x)\n", file_info->path, s);
             goto clean;
         }
 
@@ -114,7 +113,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
         if ( s != 0 )
         {
             s = errsv;
-            EPrint("FSeek in \"%s\"! (0x%x)\n", path, errsv);
+            EPrint("FSeek in \"%s\"! (0x%x)\n", file_info->path, errsv);
             goto clean;
         }
 
@@ -124,7 +123,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
         if ( ferror(fp) )
         {
             s = errsv;
-            EPrint("fwrite in \"%s\"! (0x%x)\n", path, errsv);
+            EPrint("fwrite in \"%s\"! (0x%x)\n", file_info->path, errsv);
             goto clean;
         }
 
@@ -138,7 +137,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
             if ( ferror(fp) )
             {
                 s = errsv;
-                EPrint("fwrite in \"%s\"! (0x%x)\n", path, errsv);
+                EPrint("fwrite in \"%s\"! (0x%x)\n", file_info->path, errsv);
                 goto clean;
             }
 
@@ -172,7 +171,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
         if ( s != 0 )
         {
             s = errsv;
-            EPrint("FSeek in \"%s\"! (0x%x)\n", path, errsv);
+            EPrint("FSeek in \"%s\"! (0x%x)\n", file_info->path, errsv);
             goto clean;
         }
         
@@ -183,7 +182,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
         if ( ferror(fp) )
         {
             s = errsv;
-            EPrint("fwrite in \"%s\"! (0x%x)\n", path, errsv);
+            EPrint("fwrite in \"%s\"! (0x%x)\n", file_info->path, errsv);
             goto clean;
         }
     }
@@ -196,7 +195,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
         if ( s != 0 )
         {
             s = errsv;
-            EPrint("FSeek in \"%s\"! (0x%x)\n", path, errsv);
+            EPrint("FSeek in \"%s\"! (0x%x)\n", file_info->path, errsv);
             goto clean;
         }
         
@@ -207,7 +206,7 @@ int insert(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offse
         if ( ferror(fp) )
         {
             s = errsv;
-            EPrint("fwrite in \"%s\"! (0x%x)\n", path, errsv);
+            EPrint("fwrite in \"%s\"! (0x%x)\n", file_info->path, errsv);
             goto clean;
         }
     }
@@ -225,12 +224,12 @@ clean:
 /**
  * Overwrite bytes in file with payload.
  *
- * @param    file_path char*
+ * @param    file_info FILE_INFO*
  * @param    payload uint8_t* the bytes to write
  * @param    payload_ln uint32_t the ln of the bytes to write
  * @param    offset size_t the offset to write the bytes at
  */
-int overwrite(const char* path, uint8_t* payload, uint32_t payload_ln, size_t offset)
+int overwrite(FILE_INFO* file_info, uint8_t* payload, uint32_t payload_ln, size_t offset)
 {
     FILE* fp = NULL;
     int s = 0;
@@ -246,12 +245,12 @@ int overwrite(const char* path, uint8_t* payload, uint32_t payload_ln, size_t of
     // end backup
 
     errno = 0;
-    fp = fopen(path, "rb+");
+    fp = fopen(file_info->path, "rb+");
     int errsv = errno;
     if ( !fp )
     {
         s = errsv;
-        EPrint("Could not open \"%s\"! (0x%x)\n", path, s);
+        EPrint("Could not open \"%s\"! (0x%x)\n", file_info->path, s);
         return s;
     }
     // backup
@@ -275,7 +274,7 @@ int overwrite(const char* path, uint8_t* payload, uint32_t payload_ln, size_t of
     if ( s != 0 )
     {
         s = errsv;
-        EPrint("FSeek in \"%s\"! (0x%x)\n", path, errsv);
+        EPrint("FSeek in \"%s\"! (0x%x)\n", file_info->path, errsv);
         goto clean;
     }
 
@@ -284,7 +283,7 @@ int overwrite(const char* path, uint8_t* payload, uint32_t payload_ln, size_t of
     if ( ferror(fp) )
     {
         s = errsv;
-        EPrint("fwrite in \"%s\"! (0x%x)\n", path, errsv);
+        EPrint("fwrite in \"%s\"! (0x%x)\n", file_info->path, errsv);
         goto clean;
     }
 
@@ -302,7 +301,7 @@ clean:
  * @param start size_t start offset of the deletion.
  * @param ln size_t ln of the bytes to delete.
  */
-int deleteBytes(const char* path, size_t start, size_t ln)
+int deleteBytes(FILE_INFO* file_info, size_t start, size_t ln)
 {
     uint8_t buf[BLOCK_SIZE];
     size_t n = BLOCK_SIZE;
@@ -312,24 +311,24 @@ int deleteBytes(const char* path, size_t start, size_t ln)
     size_t written;
     int s = 0;
 
-    if ( start > g_file_size )
+    if ( start > file_info->size )
         return -1;
 
     errno = 0;
-    fp = fopen(path, "rb+");
+    fp = fopen(file_info->path, "rb+");
     int errsv = errno;
     if ( !fp )
     {
         s = errsv;
-        EPrint("Could not open \"%s\"! (0x%x)\n", path, s);
+        EPrint("Could not open \"%s\"! (0x%x)\n", file_info->path, s);
         return s;
     }
 
     // If delete from start offset to end of file, just truncate.
-    if ( start + ln >= g_file_size )
+    if ( start + ln >= file_info->size )
     {
-        ln = g_file_size - start;
-        s = truncateFile(fp, g_file_size, ln);
+        ln = file_info->size - start;
+        s = truncateFile(fp, file_info->size, ln);
         goto clean;
     }
 
@@ -340,7 +339,7 @@ int deleteBytes(const char* path, size_t start, size_t ln)
     if ( s != 0 )
     {
         s = errsv;
-        EPrint("FSeek in \"%s\"! (0x%x)\n", path, errsv);
+        EPrint("FSeek in \"%s\"! (0x%x)\n", file_info->path, errsv);
         goto clean;
     }
 
@@ -354,7 +353,7 @@ int deleteBytes(const char* path, size_t start, size_t ln)
         if ( s != 0 )
         {
             s = errsv;
-            EPrint("FSeek failed in \"%s\"! (0x%x)\n", path, s);
+            EPrint("FSeek failed in \"%s\"! (0x%x)\n", file_info->path, s);
             goto clean;
         }
 
@@ -363,7 +362,7 @@ int deleteBytes(const char* path, size_t start, size_t ln)
         if ( ferror(fp) )
         {
             s = errsv;
-            EPrint("fread failed in \"%s\"! (0x%x)\n", path, s);
+            EPrint("fread failed in \"%s\"! (0x%x)\n", file_info->path, s);
             goto clean;
         }
 
@@ -373,7 +372,7 @@ int deleteBytes(const char* path, size_t start, size_t ln)
         if ( s != 0 )
         {
             s = errsv;
-            EPrint("FSeek failed in \"%s\"! (0x%x)\n", path, s);
+            EPrint("FSeek failed in \"%s\"! (0x%x)\n", file_info->path, s);
             goto clean;
         }
 
@@ -382,7 +381,7 @@ int deleteBytes(const char* path, size_t start, size_t ln)
         if ( ferror(fp) )
         {
             s = errsv;
-            EPrint("fwrite failed in \"%s\"! (0x%x)\n", path, s);
+            EPrint("fwrite failed in \"%s\"! (0x%x)\n", file_info->path, s);
             goto clean;
         }
 
@@ -391,7 +390,7 @@ int deleteBytes(const char* path, size_t start, size_t ln)
         start += n;
     }
 
-    s = truncateFile(fp, g_file_size, ln);
+    s = truncateFile(fp, file_info->size, ln);
 
 clean:
     if ( fp )

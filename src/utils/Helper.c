@@ -290,13 +290,13 @@ size_t normalizeOffset(size_t offset, uint32_t* remainder)
  *
  * @return  uint8_t the col size
  */
-uint32_t getColSize(uint32_t mask, col_sizes* cs)
+uint32_t getColSize(uint32_t mask, COL_SIZES* cs)
 {
     if ( mask & COL_MASK_HEX )
     {
         cs->hex = HEX_COL_SIZE;
         cs->ascii = ASCII_HEX_COL_SIZE;
-        cs->unicode = UNICODE_COL_SIZE_SMALL;
+        cs->unicode = UNICODE_HEX_COL_SIZE;
 
         // check for no char col in mask to set arbitray size
         if ( cs->custom )

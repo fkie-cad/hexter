@@ -46,15 +46,16 @@
 //#define BLOCK_SIZE (0x40)
 #define BLOCK_SIZE (0x400)
 
+// max col size bound to block size
+// for bigger size printing gets more complicated
 #define MAX_COL_SIZE (BLOCK_SIZE)
 
 #define DEFAULT_LENGTH (0x100)
-//#define DEFAULT_ASCII_LENGTH (0x80)
 
 #define HEX_COL_SIZE (0x10)
 #define ASCII_HEX_COL_SIZE (0x10)
 #define ASCII_COL_SIZE (0x40)
-#define UNICODE_COL_SIZE_SMALL (0x10)
+#define UNICODE_HEX_COL_SIZE (0x10)
 #define UNICODE_COL_SIZE (0x80)
 #define BYTE_STRING_COL_SIZE (0x1)
 
@@ -95,36 +96,37 @@
 #define MODE_FLAG_CASE_INSENSITIVE       (0x80)
 #define MODE_FLAG_PRINT_START_OFFSET    (0x100)
 
-extern size_t g_file_size;
-extern char g_file_path[PATH_MAX];
-//typedef struct _file {
-//    size_t size;
-//    char path[PATH_MAX]
-//} file;
-//extern file g_file_info;
+//extern size_t g_file_size;
+//extern char g_file_path[PATH_MAX];
+typedef struct _FILE_INFO {
+    size_t size;
+    char path[PATH_MAX];
+} FILE_INFO;
+//extern FILE_INFO g_file_info;
 
-extern size_t g_length;
-extern uint32_t g_mode_flags;
+//extern size_t g_length;
+//extern uint32_t g_mode_flags;
+//extern uint32_t g_col_mask;
+//extern uint32_t g_value_size;
+typedef struct _PRINT_FLAGS {
+    size_t length;
+    size_t start;
+    uint32_t skip;
+    uint32_t mode;
+    uint32_t cols;
+    uint32_t value_size;
+} PRINT_FLAGS;
+extern PRINT_FLAGS g_print_flags;
 
-extern uint32_t g_col_mask;
-extern uint32_t g_value_size;
-
-//typedef struct _print_flags {
-//    size_t length;
-//    uint32_t mode;
-//    uint32_t cols;
-//    uint32_t value_size;
-//} print_flags;
-
-typedef struct _col_sizes {
+typedef struct _COL_SIZES {
     uint32_t custom;
     uint8_t main;
     uint32_t hex;
     uint32_t ascii;
     uint32_t unicode;
     uint32_t line;
-} col_sizes;
-extern col_sizes g_col_sizes;
+} COL_SIZES;
+extern COL_SIZES g_col_sizes;
 
 
 #ifndef ALIGN_UP_BY

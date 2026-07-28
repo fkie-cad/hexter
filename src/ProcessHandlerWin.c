@@ -115,7 +115,7 @@ uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start)
 
         if ( addressIsInRegionRange(*start, (size_t) base_addr, (DWORD)info.RegionSize) )
         {
-//			info_line_break = keepLengthInModule(p, &info, process, *start, &g_length);
+//            info_line_break = keepLengthInModule(p, &info, process, *start, &g_print_flags.length);
             CloseHandle(process);
             return info_line_break;
         }
@@ -286,7 +286,7 @@ int writeProcessMemory(uint32_t pid, uint8_t* payload, uint32_t payload_ln, size
     {
         last_error = GetLastError();
         printf(" - Error (0x%lx): WriteProcessMemory %zu bytes at 0x%p\n", last_error, bytes_written, base_addr);
-//		printError("WriteProcessMemory", last_error);
+//        printError("WriteProcessMemory", last_error);
     }
 
     s = VirtualProtectEx(process, base_addr, payload_ln, old_protect, &old_protect);
@@ -294,7 +294,7 @@ int writeProcessMemory(uint32_t pid, uint8_t* payload, uint32_t payload_ln, size
     {
         last_error = GetLastError();
         printf(" - Error (0x%lx): VirtualProtect at 0x%p\n", last_error, base_addr);
-//		printError("VirtualProtect", last_error);
+//        printError("VirtualProtect", last_error);
     }
 
     CloseHandle(process);
@@ -327,7 +327,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
 
     char file_name[PATH_MAX] = {0};
     
-    if ( (g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
+    if ( (g_print_flags.mode&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
         find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
     p_needle = needle;
@@ -344,22 +344,22 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
         return FALSE;
     }
 
-    if ( (g_mode_flags&MODE_FLAG_FIND) )
+    if ( (g_print_flags.mode&MODE_FLAG_FIND) )
         Finder_initFailure(p_needle, p_needle_ln, NULL);
 
     getRegionName(process, info.AllocationBase, file_name);
     info_p = info.BaseAddress;
     last_base = info.AllocationBase;
-//	base_off = start - (size_t) info.AllocationBase; // ?? why not info.BaseAddress ??
+//  base_off = start - (size_t) info.AllocationBase; // ?? why not info.BaseAddress ??
     base_off = start - (size_t) info.BaseAddress; // ?? why not info.BaseAddress ??
     printModuleRegionInfo(&info, file_name, info_p, process);
 
     while ( s )
     {
         old_protect = 0;
-//		setRegionProtection(process, &info, PAGE_READONLY, &old_protect);
+//      setRegionProtection(process, &info, PAGE_READONLY, &old_protect);
 
-        if ( (g_mode_flags&MODE_FLAG_FIND) )
+        if ( (g_print_flags.mode&MODE_FLAG_FIND) )
         {
             found = findNeedleInProcessMemoryBlock(info.BaseAddress, (DWORD)info.RegionSize, base_off, process, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )
@@ -382,10 +382,10 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
             }
         }
 
-//		Printer_setSkipBytes(skip_bytes);
+//        Printer_setSkipBytes(skip_bytes);
         print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found, find_flags);
 
-//		setRegionProtection(process, &info, old_protect, &old_protect);
+//        setRegionProtection(process, &info, old_protect, &old_protect);
 
         if ( !getNextPrintableRegion(process, &info, &info_p, file_name, print_s, last_base) )
             break;
@@ -406,7 +406,7 @@ void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name
 {
     size_t module_size = getModuleSize(p, *info, process);
     printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) ((uintptr_t) info->AllocationBase + module_size));
-//	printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
+//    printf("%s (0x%p - 0x%p):\n", file_name, (BYTE*) info->AllocationBase, (BYTE*) info->AllocationBase + info->RegionSize);
 }
 
 BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD new_protect, DWORD* old_protect)
@@ -501,7 +501,7 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
     char f_path[PATH_MAX] = {0};
     DWORD s;
 
-//	GetModuleBaseNameA(process, base, f_path, f_path_size); // sometimes not valid
+//    GetModuleBaseNameA(process, base, f_path, f_path_size); // sometimes not valid
     s = GetMappedFileNameA(process, base, f_path, f_path_size);
     if ( s == 0 )
     {
@@ -534,19 +534,19 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
     n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
     base_off += n_size;
 
-    if ( !(g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
+    if ( !(g_print_flags.mode&MODE_FLAG_CONTINUOUS_PRINTING) )
         return 1;
 
     if ( base_off == region_size )
         return 0;
 
-    while ( n_size > 0 && n_size == g_length )
+    while ( n_size > 0 && n_size == g_print_flags.length )
     {
         input = (char)_getch();
 
         if ( input == ENTER )
             n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
-        else if ( (g_mode_flags&MODE_FLAG_FIND) && input == NEXT )
+        else if ( (g_print_flags.mode&MODE_FLAG_FIND) && input == NEXT )
         {
             found = findNeedleInProcessMemoryBlock(base_addr, (DWORD)region_size, found + p_needle_ln, process, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )
@@ -561,7 +561,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
             skip_bytes = 0;
 
             printf("\n");
-//			SetConsoleTitle();
+//            SetConsoleTitle();
             n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
         }
         else if ( input == QUIT )
@@ -594,14 +594,14 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
 size_t
 printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_size, uint8_t* buffer)
 {
-//	size_t n_size = 0;
+//    size_t n_size = 0;
     size_t n_read = 0;
     size_t read_size = 0;
     size_t block_start = base_off;
-    size_t end = block_start + g_length;
+    size_t end = block_start + g_print_flags.length;
     size_t p;
-    size_t nr_of_parts = g_length / BLOCK_SIZE;
-    if ( g_length % BLOCK_SIZE != 0 )
+    size_t nr_of_parts = g_print_flags.length / BLOCK_SIZE;
+    if ( g_print_flags.length % BLOCK_SIZE != 0 )
         nr_of_parts++;
     
     for ( p = 0; p < nr_of_parts; p++ )
@@ -620,7 +620,7 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
         if ( n_read )
             printPart(buffer, (size_t) base_addr + block_start, n_read, offset_col_width);
         
-//		n_size += n_read;
+//        n_size += n_read;
         block_start += n_read;
     }
     return block_start - base_off;
@@ -629,12 +629,12 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
 /**
  * Read process memory bytes at base + offset into block.
  *
- * @param	base_addr BYTE* base address of module region
- * @param	base_off size_t offset into base of module region
- * @param	region_size DWORD size of module region
- * @param	n_size size_t number of bytes to read
- * @param	process HANDLE target process
- * @param	block uint8_t* pre-allocated block to store read bytes in
+ * @param    base_addr BYTE* base address of module region
+ * @param    base_off size_t offset into base of module region
+ * @param    region_size DWORD size of module region
+ * @param    n_size size_t number of bytes to read
+ * @param    process HANDLE target process
+ * @param    block uint8_t* pre-allocated block to store read bytes in
  * @return size_t number of read bytes
  */
 size_t readProcessBlock(BYTE* base_addr, size_t base_off, DWORD region_size, size_t n_size, HANDLE process,
@@ -677,11 +677,11 @@ BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, u
           VirtualQueryEx(process, info_p, info, sizeof(*info)) == sizeof(*info);
           info_p += info->RegionSize )
     {
-//		printf(" - check: 0x%p, 0x%p, \n", info->BaseAddress, info->RegionSize);
+//        printf(" - check: 0x%p, 0x%p, \n", info->BaseAddress, info->RegionSize);
         if ( !isAccessibleRegion(info) )
             continue;
 
-//		printf(" - - is accessable: 0x%p, 0x%p, 0x%p, \n", address, info->BaseAddress, info->RegionSize);
+//        printf(" - - is accessable: 0x%p, 0x%p, 0x%p, \n", address, info->BaseAddress, info->RegionSize);
         if ( address < (uintptr_t)info->BaseAddress )
             return FALSE;
         if ( addressIsInRegionRange(address, (size_t) info->BaseAddress, (DWORD)info->RegionSize) )
@@ -700,19 +700,19 @@ BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, u
 // */
 //BOOL getModule(size_t address, HANDLE snap, MODULEENTRY32* me32)
 //{
-//	do
-//	{
-//		if ( addressIsInRegionRange(address, (size_t) me32->modBaseAddr, me32->modBaseSize))
-//			return TRUE;
-//	}
-//	while ( Module32Next(snap, me32) );
-//	return FALSE;
+//    do
+//    {
+//        if ( addressIsInRegionRange(address, (size_t) me32->modBaseAddr, me32->modBaseSize))
+//            return TRUE;
+//    }
+//    while ( Module32Next(snap, me32) );
+//    return FALSE;
 //}
 
 BOOL addressIsInRegionRange(size_t address, size_t base, DWORD size)
 {
     size_t end = base + size;
-//	printf(" - - - addressIsInRegionRange: 0x%p, 0x%p, 0x%p, \n", address, base, end);
+//    printf(" - - - addressIsInRegionRange: 0x%p, 0x%p, 0x%p, \n", address, base, end);
     return base <= address && address < end;
 }
 
@@ -800,7 +800,7 @@ BOOL openProcessAndSnapAndME(HANDLE* process, HANDLE* snap, MODULEENTRY32* me32,
 
 BOOL openProcess(HANDLE* process, uint32_t pid)
 {
-//	uint32_t lpExitCode = 0;
+//    uint32_t lpExitCode = 0;
 
     uint32_t access = PROCESS_VM_OPERATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION;
     //uint32_t access = PROCESS_ALL_ACCESS;
@@ -811,12 +811,12 @@ BOOL openProcess(HANDLE* process, uint32_t pid)
         printf("ERROR (0x%lx): OpenProcess %u failed\n", GetLastError(), pid);
         return FALSE;
     }
-//	GetExitCodeProcess(process, &lpExitCode);
-//	if ( lpExitCode != STILL_ACTIVE )
-//	{
-//		printf("Process %u not running.\n", pid);
-//		return FALSE;
-//	}
+//    GetExitCodeProcess(process, &lpExitCode);
+//    if ( lpExitCode != STILL_ACTIVE )
+//    {
+//        printf("Process %u not running.\n", pid);
+//        return FALSE;
+//    }
     return TRUE;
 }
 
@@ -904,7 +904,7 @@ Bool listProcessMemory(uint32_t pid)
 
 int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 {
-//	size_t usage = 0;
+//    size_t usage = 0;
     char f_path[PATH_MAX+1];
     char* file_name;
     DWORD f_path_size = PATH_MAX;
@@ -921,8 +921,8 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
 
     printf("%-11s%s" , getMemoryTypeString(info->Type), SEPARATOR);
 
-//	if ((info->State == MEM_COMMIT) && (info->Type == MEM_PRIVATE))
-//		usage +=info->RegionSize;
+//    if ((info->State == MEM_COMMIT) && (info->Type == MEM_PRIVATE))
+//        usage +=info->RegionSize;
 
     guard = 0;
     nocache = 0;
@@ -943,7 +943,7 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info)
         printf("0x%-16lx%s", info->AllocationProtect, SEPARATOR);
     
     memset(f_path, 0, MAX_PATH);
-//	if ( GetModuleBaseNameA(process, info->AllocationBase, f_path, f_path_size) )
+//    if ( GetModuleBaseNameA(process, info->AllocationBase, f_path, f_path_size) )
     if ( GetMappedFileNameA(process, info->AllocationBase, f_path, f_path_size) )
     {
         f_path[PATH_MAX] = 0;
@@ -971,13 +971,13 @@ BOOL isAccessibleRegion(MEMORY_BASIC_INFORMATION* mbi)
 
     return (mbi->Protect & PAGE_R_W_E) > 0;
     
-//	return	!( mbi->State == MEM_FREE && mbi->Protect == PAGE_NOACCESS )
-//	return	mbi->Protect != PAGE_NOACCESS
-//			&&
-//			!( mbi->State == MEM_RESERVE && (mbi->Type == MEM_PRIVATE||mbi->Type == MEM_MAPPED) && mbi->Protect == 0 )
-//			&&
-//			!( mbi->State == MEM_RESERVE && mbi->Type == MEM_MAPPED && mbi->Protect == 0 )
-//			;
+//    return    !( mbi->State == MEM_FREE && mbi->Protect == PAGE_NOACCESS )
+//    return    mbi->Protect != PAGE_NOACCESS
+//            &&
+//            !( mbi->State == MEM_RESERVE && (mbi->Type == MEM_PRIVATE||mbi->Type == MEM_MAPPED) && mbi->Protect == 0 )
+//            &&
+//            !( mbi->State == MEM_RESERVE && mbi->Type == MEM_MAPPED && mbi->Protect == 0 )
+//            ;
 }
 
 const char* getMemoryStateString(DWORD state)
@@ -1042,31 +1042,31 @@ const char* getProtectString(DWORD protect)
         case 0:
             return("None");
         case PAGE_NOACCESS:
-//			return("No Access");
+//            return("No Access");
             return(" ---");
         case PAGE_READONLY:
-//			return("Read Only");
+//            return("Read Only");
             return(" r--");
         case PAGE_READWRITE:
-//			return("Read/Write");
+//            return("Read/Write");
             return(" rw-");
         case PAGE_WRITECOPY:
-//			return("Copy on Write");
+//            return("Copy on Write");
             return(" rc-");
         case PAGE_EXECUTE:
-//			return("Execute only");
+//            return("Execute only");
             return(" --x");
         case PAGE_EXECUTE_READ:
-//			return("Execute/Read");
+//            return("Execute/Read");
             return(" r-x");
         case PAGE_EXECUTE_READWRITE:
-//			return("Execute/Read/Write");
+//            return("Execute/Read/Write");
             return(" rwx");
         case PAGE_EXECUTE_WRITECOPY:
-//			return("COW Executable");
+//            return("COW Executable");
             return(" rcx");
         case PAGE_TARGETS_INVALID:
-//		case PAGE_TARGETS_NO_UPDATE:
+//        case PAGE_TARGETS_NO_UPDATE:
             return("invd");
             //return("NO_UPDATE/INVALID");
         case PAGE_GUARD | PAGE_EXECUTE:
@@ -1243,13 +1243,13 @@ void printRunningProcessInfo(PROCESSENTRY32* pe32)
     if ( process )
     {
         priorityClass = GetPriorityClass(process);
-//			if ( !priorityClass )
-//				printf("ERROR: GetPriorityClass\n");
+//            if ( !priorityClass )
+//                printf("ERROR: GetPriorityClass\n");
         CloseHandle(process);
         readable = true;
     }
-//		else
-//			printf("ERROR: OpenProcess\n");
+//        else
+//            printf("ERROR: OpenProcess\n");
 
     if (!readable)
     {

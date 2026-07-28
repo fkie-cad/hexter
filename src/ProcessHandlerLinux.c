@@ -120,7 +120,7 @@ static Bool isReadableRegion(ProcMapsEntry *entry);
 static Bool addressIsInRegionRange(uint64_t address, uint64_t base, uint64_t size);
 static void setModuleEndAddress(ProcMapsEntry *entry, FILE *fp);
 static uint64_t getModuleEndAddress(ProcMapsEntry *module, FILE* fp);
-//static Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *g_length);
+//static Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *g_print_flags.length);
 
 static void printRegionInfo(ProcMapsEntry* entry, const char* file_name);
 static Bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t printed_module_base);
@@ -319,7 +319,7 @@ uint8_t makeStartHitAccessableMemory(uint32_t pid, uint64_t *start)
         if ( addressIsInRegionRange(*start, entry.address, entry.size) )
         {
             setModuleEndAddress(&entry, fp);
-//			info_line_break = keepLengthInModule(&entry, *start, &g_length);
+//			info_line_break = keepLengthInModule(&entry, *start, &g_print_flags.length);
             fclose(fp);
             return info_line_break;
         }
@@ -392,13 +392,13 @@ uint64_t getModuleEndAddress(ProcMapsEntry *module, FILE* fp)
     return end_address;
 }
 
-//Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *g_length)
+//Bool keepLengthInModule(ProcMapsEntry *entry, uint64_t start, uint64_t *g_print_flags.length)
 //{
 //	uint64_t base_off = start - entry->address;
-//	if ( base_off + *g_length > entry->size )
+//	if ( base_off + *g_print_flags.length > entry->size )
 //	{
-//		printf("Info: Length 0x%lx does not fit in region!\nSetting it to 0x%lx!\n", *g_length, entry->size - base_off);
-//		*g_length = entry->size - base_off;
+//		printf("Info: Length 0x%lx does not fit in region!\nSetting it to 0x%lx!\n", *g_print_flags.length, entry->size - base_off);
+//		*g_print_flags.length = entry->size - base_off;
 //		return true;
 //	}
 //	return false;
@@ -767,10 +767,12 @@ int printProcessHeap(ProcMapsEntry* entry, uint32_t last_module_inode, size_t li
  */
 int writeProcessMemory(uint32_t pid, uint8_t *payload, uint32_t payload_ln, uint64_t start)
 {
-    char file[64];
-    sprintf(file, "/proc/%u/%s", pid, "mem");
-    file[63] = 0;
-    overwrite(file, payload, payload_ln, start);
+    FILE_INFO fi = { 0 };
+    sprintf(fi.path, "/proc/%u/%s", pid, "mem");
+    //char file[64];
+    //sprintf(file, "/proc/%u/%s", pid, "mem");
+    //file[63] = 0;
+    overwrite(&fi, payload, payload_ln, start);
 
     return 0;
 }
@@ -806,7 +808,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
     p_needle_ln = needle_ln;
     uint32_t find_flags = 0;
     
-    if ( (g_mode_flags&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
+    if ( (g_print_flags.mode&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
         find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
     // check if /proc/pid/mem is accessible
@@ -823,7 +825,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
         return false;
     }
 
-    if ( (g_mode_flags&MODE_FLAG_FIND) )
+    if ( (g_print_flags.mode&MODE_FLAG_FIND) )
         Finder_initFailure(p_needle, p_needle_ln, NULL);
 
     while ( queryNextRegion(fp, &entry) )
@@ -873,7 +875,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
         if ( print_s == 1 )
             printRegionInfo(&entry, file_name);
 
-        if ( (g_mode_flags&MODE_FLAG_FIND) )
+        if ( (g_print_flags.mode&MODE_FLAG_FIND) )
         {
             found = findNeedleInProcessMemoryBlock(pid, entry.address, entry.size, base_off, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )
@@ -992,8 +994,8 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
     uint32_t skip_bytes;
     int s = 0;
     uint16_t block_size = BLOCK_SIZE;
-    uint64_t nr_of_parts = g_length / block_size;
-    if ( g_length % block_size != 0 ) nr_of_parts++;
+    uint64_t nr_of_parts = g_print_flags.length / block_size;
+    if ( g_print_flags.length % block_size != 0 ) nr_of_parts++;
     uint64_t base_end = base_addr + size;
 
     // older linux ??
@@ -1023,10 +1025,10 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 
     // prevent auto print, if next region of a module is accessed, to prevent printing two blocks at once
     if ( print_s == 1 )
-        base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_length);
+        base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_print_flags.length);
 //  printf(" - base_off: 0x%lx\n", base_off);
 
-    if ( !(g_mode_flags&MODE_FLAG_CONTINUOUS_PRINTING) )
+    if ( !(g_print_flags.mode&MODE_FLAG_CONTINUOUS_PRINTING) )
     {
         fclose(fp);
         return 1;
@@ -1037,10 +1039,10 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 
         if ( input == ENTER )
         {
-            base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_length);
+            base_off = printBlock(nr_of_parts, block, fp, block_size, base_off, base_end, g_print_flags.length);
 //      printf(" -- base_off: 0x%lx\n", base_off);
         }
-        else if ( (g_mode_flags&MODE_FLAG_FIND) && input == NEXT )
+        else if ( (g_print_flags.mode&MODE_FLAG_FIND) && input == NEXT )
         {
             found = findNeedleInProcessMemoryBlock(pid, base_addr, size, found + p_needle_ln, p_needle, p_needle_ln, find_flags);
             if ( found == FIND_FAILURE )
@@ -1056,7 +1058,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
             skip_bytes = 0;
 
             printf("\n");
-            base_off = printBlock(nr_of_parts, block, fp, block_size, base_addr+base_off, base_end, g_length);
+            base_off = printBlock(nr_of_parts, block, fp, block_size, base_addr+base_off, base_end, g_print_flags.length);
         }
         else if ( input == QUIT )
         {

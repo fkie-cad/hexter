@@ -6,13 +6,13 @@
 #define LIGHT_STYLE "\033[38;2;150;150;150m"
 
 void print(
-    size_t start, 
-    uint32_t skip_bytes, 
+    FILE_INFO* file_info, 
+    PRINT_FLAGS *print_flags, 
     uint8_t* needle, 
     uint32_t needle_ln
 );
 
-void setPrintingStyle();
+void setPrintingStyle(uint32_t mode);
 
 void Printer_cleanUp(
     uint8_t* block, 
