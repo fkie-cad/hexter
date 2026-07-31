@@ -427,7 +427,7 @@ void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t 
     uint32_t mask = g_print_flags.cols;
     uint32_t hex_col_size = g_col_sizes.hex;
     uint32_t ascii_col_size = g_col_sizes.ascii;
-    uint32_t unicode_col_size = g_col_sizes.unicode;
+    //uint32_t unicode_col_size = g_col_sizes.unicode;
     uint32_t line_size = g_col_sizes.line;
 
     DPrint("buffer: %p\n", buffer);
@@ -438,7 +438,7 @@ void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t 
     DPrint("value_size: 0x%x\n", g_print_flags.value_size);
     DPrint("hex_col_size: 0x%x\n", hex_col_size);
     DPrint("ascii_col_size: 0x%x\n", ascii_col_size);
-    DPrint("unicode_col_size: 0x%x\n", unicode_col_size);
+    //DPrint("unicode_col_size: 0x%x\n", unicode_col_size);
     DPrint("line_size: 0x%x\n", line_size);
 
     for ( i = 0; i < size; i += line_size, offset+=line_size )
@@ -459,7 +459,7 @@ void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t 
                 default: k = printHexCol8(buffer, i, size, hex_col_size); break; // 1 : 16
             }
             
-            if ( IS_FLAG_SET(mask, (COL_MASK_ASCII|COL_MASK_UNICODE)) )
+            if ( IS_FLAG_SET(mask, (COL_MASK_ASCII)) )
             {
                 fillHexGap(k, hex_col_size, g_print_flags.value_size);
                 printf("%c ", COL_SEPARATOR);
@@ -470,10 +470,10 @@ void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t 
         {
             printAsciiCol(buffer, i, size, ascii_col_size);
         }
-        else if ( mask & COL_MASK_UNICODE )
-        {
-            printUnicodeCol(buffer, i, size, unicode_col_size);
-        }
+        //else if ( mask & COL_MASK_UNICODE )
+        //{
+        //    printUnicodeCol(buffer, i, size, unicode_col_size);
+        //}
 
         printf("\n");
     }

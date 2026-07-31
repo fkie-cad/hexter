@@ -55,8 +55,8 @@
 #define HEX_COL_SIZE (0x10)
 #define ASCII_HEX_COL_SIZE (0x10)
 #define ASCII_COL_SIZE (0x40)
-#define UNICODE_HEX_COL_SIZE (0x10)
-#define UNICODE_COL_SIZE (0x80)
+//#define UNICODE_HEX_COL_SIZE (0x10)
+//#define UNICODE_COL_SIZE (0x80)
 #define BYTE_STRING_COL_SIZE (0x1)
 
 #define MIN_PRINTABLE_ASCII_RANGE (0x20)
@@ -73,17 +73,10 @@
 #define MAX_PAYLOAD_LN (0xFFFFFFFF)
 #define FIND_FAILURE SIZE_MAX
 
-//extern uint8_t print_col_mask;
-//#define PRINT_ASCII_MASK     (0x1)
-//#define PRINT_UNICODE_MASK   (0x2)
-//#define PRINT_HEX_MASK       (0x4)
-//#define PRINT_OFFSET_MASK    (0x8)
-//#define PRINT_BYTES_STRING  (0x10)
-
 #define COL_MASK_OFFSET (0x1)
 #define COL_MASK_HEX (0x2)
 #define COL_MASK_ASCII (0x4)
-#define COL_MASK_UNICODE (0x8)
+//#define COL_MASK_UNICODE (0x8)
 #define COL_MASK_BYTE_STRING (0x10)
 
 #define MODE_FLAG_INSERT                 (0x01)
@@ -123,7 +116,7 @@ typedef struct _COL_SIZES {
     uint8_t main;
     uint32_t hex;
     uint32_t ascii;
-    uint32_t unicode;
+    //uint32_t unicode;
     uint32_t line;
 } COL_SIZES;
 extern COL_SIZES g_col_sizes;

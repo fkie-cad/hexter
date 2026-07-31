@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## VERSION
-1.10.2  
-Last changed: 27.07.2026
+1.10.14  
+Last changed: 31.07.2026
 
 
 ## REQUIREMENTS
@@ -91,13 +91,12 @@ Optional Parameters:
  * -pso Print start (real) offset.
  * -vs Size of the printed hex values/groups. Maybe 1, 2, 4, 8. Defaults to 1.
  * -pp Print plain, not console styled output.
- * -cs Size of a printed column. Only respected if `-px`, `-pa`, `-pu` are not combined with each other.
+ * -cs Size of a printed column. Only respected if `-px`, `-pa` are not combined with each other.
  * Printing layouts:  
    (Not all possible combinations are allowed!)
    * -po Print address column flag (1).
    * -px Print HEX column flag (2).
    * -pa Print ASCII column flag (4).
-   * -pu Print UNICODE (utf-16) column flag (8).
    * -pbs Print plain byte string flag (0x10).
    * -cm Set the desired column mask directly as the given number.
  * File manipulation/examination.

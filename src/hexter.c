@@ -39,8 +39,8 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME "hexter"
-#define BIN_VS "1.10.12"
-#define BIN_LAST_CHANGED "27.07.2026"
+#define BIN_VS "1.10.14"
+#define BIN_LAST_CHANGED "31.07.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -352,13 +352,13 @@ void printHelp()
            " * -pso Print start (real) offset.\n"
            " * -vs Size of the printed hex values/groups. Maybe 1, 2, 4, 8. Defaults to 1.\n"
            " * -pp Print plain, not console styled output.\n"
-           " * -cs Size of a printed column. Only respected if -px, -pa, -pu are not combined with each other.\n"
+           " * -cs Size of a printed column. Only respected if -px, -pa are not combined with each other.\n"
            " * Printing layouts:\n"
            "   (Not all possible combinations are allowed!)\n"
            "   * -po Print address column flag (1).\n"
            "   * -px Print HEX column flag (2).\n"
            "   * -pa Print ASCII column flag (4).\n"
-           "   * -pu Print UNICODE (utf-16) column flag (8).\n"
+           //"   * -pu Print UNICODE (utf-16) column flag (8).\n"
            "   * -pbs Print plain byte string flag (0x10).\n"
            "   * -cm Set the desired column mask directly as the given number.\n"
            " * File manipulation/examination.\n"
@@ -427,10 +427,10 @@ int parseArgs(int argc, char** argv)
         {
             g_print_flags.cols |= COL_MASK_ASCII;
         }
-        else if ( isArgOfType(argv[i], "-pu") )
-        {
-            g_print_flags.cols |= COL_MASK_UNICODE;
-        }
+        //else if ( isArgOfType(argv[i], "-pu") )
+        //{
+        //    g_print_flags.cols |= COL_MASK_UNICODE;
+        //}
         else if ( isArgOfType(argv[i], "-po") )
         {
             g_print_flags.cols |= COL_MASK_OFFSET;
@@ -801,19 +801,19 @@ int sanitizePrintParams(uint32_t pid)
     }
     else
     {
-        uint32_t f = g_print_flags.cols&(COL_MASK_ASCII|COL_MASK_UNICODE);
-        if ( (f & (f-1)) != 0 )
-        {
-            EPrint("Ascii and unicode printing can't be combined!\n");
-            return -5;
-        }
+        //uint32_t f = g_print_flags.cols&(COL_MASK_ASCII|COL_MASK_UNICODE);
+        //if ( (f & (f-1)) != 0 )
+        //{
+        //    EPrint("Ascii and unicode printing can't be combined!\n");
+        //    return -5;
+        //}
         if ( g_print_flags.cols == COL_MASK_OFFSET )
         {
-            EPrint("Printing only offsets is not provided! Please select one or more of -pa, -pu, -px.\n");
+            EPrint("Printing only offsets is not provided! Please select one or more of -pa, -px.\n");
             return -6;
         }
         DPrint("g_print_flags.cols: 0x%x\n", g_print_flags.cols);
-        if ( ( g_print_flags.cols < COL_MASK_OFFSET || g_print_flags.cols > (COL_MASK_OFFSET|COL_MASK_HEX|COL_MASK_UNICODE) )
+        if ( ( g_print_flags.cols < COL_MASK_OFFSET || g_print_flags.cols > (COL_MASK_OFFSET|COL_MASK_HEX|COL_MASK_ASCII) )
             && ( g_print_flags.cols != COL_MASK_BYTE_STRING && g_print_flags.cols != (COL_MASK_OFFSET|COL_MASK_BYTE_STRING) ) )
         {
             EPrint("Invalid column flags!\n");
