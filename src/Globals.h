@@ -89,18 +89,12 @@
 #define MODE_FLAG_CASE_INSENSITIVE       (0x80)
 #define MODE_FLAG_PRINT_START_OFFSET    (0x100)
 
-//extern size_t g_file_size;
-//extern char g_file_path[PATH_MAX];
 typedef struct _FILE_INFO {
     size_t size;
     char path[PATH_MAX];
 } FILE_INFO;
 //extern FILE_INFO g_file_info;
 
-//extern size_t g_length;
-//extern uint32_t g_mode_flags;
-//extern uint32_t g_col_mask;
-//extern uint32_t g_value_size;
 typedef struct _PRINT_FLAGS {
     size_t length;
     size_t start;
@@ -120,6 +114,11 @@ typedef struct _COL_SIZES {
     uint32_t line;
 } COL_SIZES;
 extern COL_SIZES g_col_sizes;
+
+typedef struct _FIND_CFG {
+    uint32_t find_max_count; // max number of found entries before break
+} FIND_CFG;
+extern FIND_CFG g_find_cfg;
 
 
 #ifndef ALIGN_UP_BY

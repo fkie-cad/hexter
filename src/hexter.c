@@ -39,8 +39,8 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME "hexter"
-#define BIN_VS "1.10.14"
-#define BIN_LAST_CHANGED "31.07.2026"
+#define BIN_VS "1.11.0"
+#define BIN_LAST_CHANGED "07.08.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -61,6 +61,7 @@ static uint32_t g_process_list_flags;
 //uint32_t g_value_size;
 PRINT_FLAGS g_print_flags;
 COL_SIZES g_col_sizes;
+FIND_CFG g_find_cfg;
 
 typedef enum RunMode { RUN_MODE_NONE, RUN_MODE_FILE, RUN_MODE_PID } RunMode;
 static RunMode run_mode;
@@ -302,14 +303,21 @@ void cleanUp(uint8_t* payload)
 
 void initParameters()
 {
+    memset(&g_find_cfg, 0, sizeof(g_find_cfg));
+    memset(&g_col_sizes, 0, sizeof(g_col_sizes));
+    memset(&g_print_flags, 0, sizeof(g_print_flags));
+
     g_file_info.size = 0;
+
     g_print_flags.start = 0;
     g_print_flags.length = DEFAULT_LENGTH;
     g_print_flags.skip = 0;
-
     g_print_flags.mode = MODE_FLAG_CONTINUOUS_PRINTING;
-    g_process_list_flags = 0;
     g_print_flags.cols = 0;
+
+
+    g_process_list_flags = 0;
+
     run_mode = RUN_MODE_NONE;
 
     payload_arg_id = -1;
@@ -350,7 +358,7 @@ void printHelp()
            " * -l:size_t Length of the part to display. Default = 0x100.\n"
            " * -b Force breaking mode. Will terminate after the first displayed block.\n"
            " * -pso Print start (real) offset.\n"
-           " * -vs Size of the printed hex values/groups. Maybe 1, 2, 4, 8. Defaults to 1.\n"
+           " * -hvs Size of the printed hex values/groups. Maybe 1, 2, 4, 8. Defaults to 1.\n"
            " * -pp Print plain, not console styled output.\n"
            " * -cs Size of a printed column. Only respected if -px, -pa are not combined with each other.\n"
            " * Printing layouts:\n"
@@ -377,10 +385,11 @@ void printHelp()
            "     * %c: quad word (uint64).\n"
            "     Except for the string types, all values have to be passed as hex values, omitting `0x`.\n"
            "   * Find options:\n"
-           "     * -ci: case insensitive (for ascii search only).\n"
+           "     * -ci: Case insensitive (for ascii search only).\n"
            "     * -all: Find all occurrences.\n"
            "     * -pfo: Print the exact found offset separately.\n"
-//         " * -ie:uint8_t Endianess of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
+           "     * -mfc: Number of max findable occurrences from the start.\n"
+//         " * -ie:uint8_t Endianness of payload (little: 1, big:2). Defaults to 1 = little endian.\n"
            " * -pid only options:\n"
            "   * -lpx List entire process memory layout.\n"
            "   * -lpm List all process modules.\n"
@@ -402,6 +411,22 @@ void printHelp()
     printf("\n");
     printf("In continuous mode press ENTER to continue, 'n' to find next or 'q' to quit.\n");
 }
+
+#define BREAK_ON_NO_VALUE(_a_, _i_, _end_i_, _s_) \
+            if ( !hasValue(_a_, _i_, _end_i_) ) \
+            { \
+                EPrint("Missing value for "_a_"!\n"); \
+                _s_ = -1; \
+                break; \
+            }
+
+#define BREAK_ON_FAILED_INT_PARSING(_a_, _i_, _end_i_, _s_) \
+            if ( _s_ != 0 ) \
+            { \
+                EPrint("Parsing "_a_" value failed!\n"); \
+                _s_ = -1; \
+                break; \
+            }
 
 int parseArgs(int argc, char** argv)
 {
@@ -437,11 +462,12 @@ int parseArgs(int argc, char** argv)
         }
         else if ( isArgOfType(argv[i], "-cm") )
         {
-            if ( hasValue("-cm", i, end_i))
-            {
-                s = parseUint32(argv[i + 1], &g_print_flags.cols, 0);
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-cm", i, end_i, s);
+
+            s = parseUint32(argv[i + 1], &g_print_flags.cols, 0);
+            BREAK_ON_FAILED_INT_PARSING("-cm", i, end_i, s)
+
+            i++;
         }
         else if ( isArgOfType(argv[i], "-pp") )
         {
@@ -485,76 +511,62 @@ int parseArgs(int argc, char** argv)
         }
         else if ( isArgOfType(argv[i], "-file") )
         {
-            if ( hasValue("-file", i, end_i) )
-            {
-                source = argv[i + 1];
-                run_mode = RUN_MODE_FILE;
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-file", i, end_i, s);
+            
+            source = argv[i + 1];
+            run_mode = RUN_MODE_FILE;
+            i++;
         }
         else if ( isArgOfType(argv[i], "-pid") )
         {
-            if ( hasValue("-pid", i, end_i) )
-            {
-                source = argv[i + 1];
-                run_mode = RUN_MODE_PID;
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-pid", i, end_i, s);
+
+            source = argv[i + 1];
+            run_mode = RUN_MODE_PID;
+            i++;
         }
         else if ( isArgOfType(argv[i], "-s") )
         {
-            if ( hasValue("-s", i, end_i) )
-            {
-                s = parseSizeAuto(argv[i + 1], &g_print_flags.start);
-                if ( s != 0 )
-                {
-                    IPrint("Could not parse start. Setting it to %u!\n", 0);
-                    g_print_flags.start = 0x00;
-                }
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-s", i, end_i, s);
+
+            s = parseSizeAuto(argv[i + 1], &g_print_flags.start);
+            BREAK_ON_FAILED_INT_PARSING("-s", i, end_i, s);
+
+            i++;
         }
         else if ( isArgOfType(argv[i], "-l") )
         {
-            if ( hasValue("-l", i, end_i) )
-            {
-                s = parseSizeAuto(argv[i + 1], &g_print_flags.length);
-                if ( s != 0 )
-                {
-                    IPrint("Could not parse length. Setting it to 0x%x!\n", DEFAULT_LENGTH);
-                    g_print_flags.length = DEFAULT_LENGTH;
-                }
-                else
-                    length_found = 1;
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-l", i, end_i, s);
+
+            s = parseSizeAuto(argv[i + 1], &g_print_flags.length);
+            BREAK_ON_FAILED_INT_PARSING("-l", i, end_i, s);
+
+            length_found = 1;
+            i++;
         }
         else if ( isFormatArgOfType(argv[i], "-i") )
         {
-            if ( hasValue("-i", i, end_i))
-            {
-                g_print_flags.mode |= MODE_FLAG_INSERT;
-                payload_arg_id = i;
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-i", i, end_i, s);
+
+            g_print_flags.mode |= MODE_FLAG_INSERT;
+            payload_arg_id = i;
+            i++;
         }
         else if ( isFormatArgOfType(argv[i], "-o") )
         {
-            if ( hasValue("-o", i, end_i))
-            {
-                g_print_flags.mode |= MODE_FLAG_OVERWRITE;
-                payload_arg_id = i;
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-o", i, end_i, s);
+
+            g_print_flags.mode |= MODE_FLAG_OVERWRITE;
+            payload_arg_id = i;
+            i++;
         }
         else if ( isFormatArgOfType(argv[i], "-f") )
         {
-            if ( hasValue("-f", i, end_i))
-            {
-                g_print_flags.mode |= MODE_FLAG_FIND;
-                payload_arg_id = i;
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-f", i, end_i, s);
+
+            g_print_flags.mode |= MODE_FLAG_FIND;
+            payload_arg_id = i;
+            i++;
         }
         else if ( isArgOfType(argv[i], "-ci") )
         {
@@ -564,6 +576,15 @@ int parseArgs(int argc, char** argv)
         {
             g_print_flags.mode |= MODE_FLAG_FIND_ALL;
         }
+        else if ( isArgOfType(argv[i], "-mfc") )
+        {
+            BREAK_ON_NO_VALUE("-mfc", i, end_i, s);
+            
+            s = parseUint32(argv[i + 1], &g_find_cfg.find_max_count, 0);
+            BREAK_ON_FAILED_INT_PARSING("-mfc", i, end_i, s);
+
+            i++;
+        }
         else if ( isArgOfType(argv[i], "-pso") )
         {
             g_print_flags.mode |= MODE_FLAG_PRINT_START_OFFSET;
@@ -572,26 +593,35 @@ int parseArgs(int argc, char** argv)
         {
             g_print_flags.mode |= MODE_FLAG_PRINT_START_OFFSET;
         }
-        else if ( isArgOfType(argv[i], "-vs") )
+        else if ( isArgOfType(argv[i], "-hvs") )
         {
-            if ( hasValue("-vs", i, end_i))
-            {
-                s = parseUint32(argv[i + 1], &g_print_flags.value_size, 0);
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-hvs", i, end_i, s);
+
+            s = parseUint32(argv[i + 1], &g_print_flags.value_size, 0);
+            BREAK_ON_FAILED_INT_PARSING("-hvs", i, end_i, s);
+
+            i++;
         }
         else if ( isArgOfType(argv[i], "-cs") )
         {
-            if ( hasValue("-cs", i, end_i))
-            {
-                s = parseUint32(argv[i + 1], &g_col_sizes.custom, 0);
-                i++;
-            }
+            BREAK_ON_NO_VALUE("-cs", i, end_i, s);
+
+            s = parseUint32(argv[i + 1], &g_col_sizes.custom, 0);
+            BREAK_ON_FAILED_INT_PARSING("-cs", i, end_i, s);
+
+            i++;
         }
         else
         {
-            IPrint("Unknown arg type \"%s\"\n", argv[i]);
+            EPrint("Unknown arg type \"%s\"\n", argv[i]);
+            s = -1;
+            break;
         }
+    }
+
+    if ( s != 0 )
+    {
+        return s;
     }
 
     if ( run_mode == RUN_MODE_NONE )
@@ -676,8 +706,8 @@ uint8_t isCheckForVersion(const char* arg1)
 uint8_t isFormatArgOfType(char* arg, char* type)
 {
     uint8_t i, j;
-    uint8_t arg_ln = (uint8_t)strnlen(arg, 10);
-    uint8_t type_ln = (uint8_t)strnlen(type, 10);
+    uint8_t arg_ln = (uint8_t)strlen(arg);
+    uint8_t type_ln = (uint8_t)strlen(type);
 
     if ( arg_ln <= type_ln )
         return 0;
@@ -692,7 +722,7 @@ uint8_t isFormatArgOfType(char* arg, char* type)
     j = i;
     for ( i = 0; i < format_types_ln; i++ )
         if ( format_types[i] == arg[j] )
-            return 1;
+            return arg[j+1]==0;
 
     return 0;
 }

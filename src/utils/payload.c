@@ -400,6 +400,14 @@ uint32_t payloadParseReversedPlainBytes(const char* arg, uint8_t** payload)
     uint8_t temp;
     uint32_t payload_ln = payloadParsePlainBytes(arg, payload);
 
+    // p = 1,2,3,4,5
+    // i=0,j=4
+    // p = 5,2,3,4,1
+    // i=1,j=3
+    // p = 5,4,3,2,1
+    // i=2,j=2
+    // break
+    // p = 5,4,3,2,1
     for ( i = 0, j = payload_ln-1; i < payload_ln; i++, j-- )
     {
         if ( j <= i )

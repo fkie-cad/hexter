@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## VERSION
-1.10.14  
-Last changed: 31.07.2026
+1.11.0  
+Last changed: 07.08.2026
 
 
 ## REQUIREMENTS
@@ -89,7 +89,7 @@ Optional Parameters:
  * -l size_t Length of the part to display in hex or dec. Default = 0x100.
  * -b Force breaking, not continuous mode and print just one block.
  * -pso Print start (real) offset.
- * -vs Size of the printed hex values/groups. Maybe 1, 2, 4, 8. Defaults to 1.
+ * -hvs Size of the printed hex values/groups. Maybe 1, 2, 4, 8. Defaults to 1.
  * -pp Print plain, not console styled output.
  * -cs Size of a printed column. Only respected if `-px`, `-pa` are not combined with each other.
  * Printing layouts:  
@@ -115,9 +115,10 @@ Optional Parameters:
      * q: quad word.  
      Except for the string types, all values have to be passed as hex values, omitting `0x`.  
    * Find options:
-     * -ci: case insensitive (for ascii search only).
-     * -all: find all occurrences.
+     * -ci: Case insensitive (for ascii search only).
+     * -all: Find all occurrences.
      * -pfo: Print the exact found offset separately.
+     * -mfc: Number of max findable occurrences from the start.
  * -pid only:
    * -lpx List entire process memory layout.
    * -lpm List all process modules.

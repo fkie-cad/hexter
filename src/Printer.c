@@ -210,6 +210,7 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
     size_t find_start_offset = start;
     int continuing = (g_print_flags.mode&MODE_FLAG_CONTINUOUS_PRINTING) ? 1 : 0;
     char input = (g_print_flags.mode&MODE_FLAG_FIND) ? NEXT : ENTER;
+    size_t found_count = 0;
     
     DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
     DPrint("buffer: %p\n", buffer);
@@ -245,7 +246,7 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
     {
         // -fx -b
         if ((g_print_flags.mode&(MODE_FLAG_FIND|MODE_FLAG_CONTINUOUS_PRINTING))==MODE_FLAG_FIND )
-            if (input == ENTER)
+            if ( input == ENTER )
                 input = NEXT;
 
         if ( (g_print_flags.mode&MODE_FLAG_FIND) && (input == NEXT) )
@@ -293,6 +294,16 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
             {
                 DPrint("find_start_offset 0x%zx > max_offset 0x%zx.\n", find_start_offset, max_offset);
                 break;
+            }
+
+            if ( g_find_cfg.find_max_count )
+            {
+                found_count++;
+                if ( g_find_cfg.find_max_count && found_count == g_find_cfg.find_max_count )
+                {
+                    DPrint("max find count of 0x%zx reached!\n", found_count);
+                    break;
+                }
             }
         }
         else if ( input == ENTER )
