@@ -7,7 +7,7 @@
 
 void print(
     FILE_INFO* file_info, 
-    PRINT_FLAGS *print_flags, 
+    PRINT_CFG *print_flags, 
     uint8_t* needle, 
     uint32_t needle_ln
 );
@@ -20,6 +20,7 @@ void Printer_cleanUp(
 );
 
 size_t printBlock(
+    PRINT_CFG *print_flags, 
     size_t nr_of_parts, 
     uint8_t* buffer, 
     FILE* fi, 
@@ -30,6 +31,7 @@ size_t printBlock(
 );
 
 void printPart(
+    PRINT_CFG *print_flags, 
     const uint8_t* block, 
     size_t block_start, 
     size_t size, 

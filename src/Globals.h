@@ -95,15 +95,16 @@ typedef struct _FILE_INFO {
 } FILE_INFO;
 //extern FILE_INFO g_file_info;
 
-typedef struct _PRINT_FLAGS {
-    size_t length;
+typedef struct _PRINT_CFG {
+    size_t block_length;
     size_t start;
+    size_t end;
     uint32_t skip;
     uint32_t mode;
     uint32_t cols;
     uint32_t value_size;
-} PRINT_FLAGS;
-extern PRINT_FLAGS g_print_flags;
+} PRINT_CFG;
+extern PRINT_CFG g_print_flags;
 
 typedef struct _COL_SIZES {
     uint32_t custom;

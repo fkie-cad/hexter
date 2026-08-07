@@ -540,7 +540,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
     if ( base_off == region_size )
         return 0;
 
-    while ( n_size > 0 && n_size == g_print_flags.length )
+    while ( n_size > 0 && n_size == g_print_flags.block_length )
     {
         input = (char)_getch();
 
@@ -598,10 +598,10 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
     size_t n_read = 0;
     size_t read_size = 0;
     size_t block_start = base_off;
-    size_t end = block_start + g_print_flags.length;
+    size_t end = block_start + g_print_flags.block_length;
     size_t p;
-    size_t nr_of_parts = g_print_flags.length / BLOCK_SIZE;
-    if ( g_print_flags.length % BLOCK_SIZE != 0 )
+    size_t nr_of_parts = g_print_flags.block_length / BLOCK_SIZE;
+    if ( g_print_flags.block_length % BLOCK_SIZE != 0 )
         nr_of_parts++;
     
     for ( p = 0; p < nr_of_parts; p++ )
@@ -618,7 +618,7 @@ printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_
         n_read = readProcessBlock(base_addr, block_start, region_size, read_size, process, buffer);
         uint8_t offset_col_width = countHexWidth64((size_t) base_addr + region_size);
         if ( n_read )
-            printPart(buffer, (size_t) base_addr + block_start, n_read, offset_col_width);
+            printPart(&g_print_flags, buffer, (size_t) base_addr + block_start, n_read, offset_col_width);
         
 //        n_size += n_read;
         block_start += n_read;

@@ -39,27 +39,18 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME "hexter"
-#define BIN_VS "1.11.0"
+#define BIN_VS "1.11.1"
 #define BIN_LAST_CHANGED "07.08.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
 
 
-//size_t g_file_size;
-//char g_file_path[PATH_MAX];
 FILE_INFO g_file_info;
-
-//static size_t g_start;
-//static uint32_t g_skip_bytes;
 
 static uint32_t g_process_list_flags;
 
-//size_t g_length;
-//uint32_t g_mode_flags;
-//uint32_t g_col_mask;
-//uint32_t g_value_size;
-PRINT_FLAGS g_print_flags;
+PRINT_CFG g_print_flags;
 COL_SIZES g_col_sizes;
 FIND_CFG g_find_cfg;
 
@@ -106,7 +97,8 @@ static uint32_t parsePayload(const char format, const char* value, uint8_t** pay
 static int run(const char payload_format, const char* raw_payload);
 static void cleanUp(uint8_t* payload);
 
-static uint8_t keepLengthInFile(size_t start, size_t size, size_t* length);
+static uint8_t keepLengthPrintingRange(size_t start, size_t end, size_t* length);
+//static uint8_t keepLengthInFile(size_t start, size_t size, size_t* length);
 
 #ifdef DILLER
 HEXTER_API
@@ -201,7 +193,8 @@ int run(const char payload_format, const char* raw_payload)
     DPrint("file_path: %s\n", g_file_info.path);
     DPrint("file_size: 0x%zx\n", g_file_info.size);
     DPrint("start: 0x%zx\n", g_print_flags.start);
-    DPrint("length: 0x%zx\n", g_print_flags.length);
+    DPrint("end: 0x%zx\n", g_print_flags.end);
+    DPrint("length: 0x%zx\n", g_print_flags.block_length);
     DPrint("col_mask only: %d\n", g_print_flags.cols);
     DPrint("mode: 0x%x\n", g_print_flags.mode);
     DPrint("  insert: %d\n", (g_print_flags.mode&MODE_FLAG_INSERT)>0);
@@ -248,9 +241,9 @@ int run(const char payload_format, const char* raw_payload)
             cleanUp(payload);
             return 1;
         }
-        deleteBytes(&g_file_info, g_print_flags.start, g_print_flags.length);
+        deleteBytes(&g_file_info, g_print_flags.start, g_print_flags.block_length);
         g_file_info.size = getSize(g_file_info.path);
-        g_print_flags.length = (DEFAULT_LENGTH <= g_file_info.size) ? DEFAULT_LENGTH : g_file_info.size;
+        g_print_flags.block_length = (DEFAULT_LENGTH <= g_file_info.size) ? DEFAULT_LENGTH : g_file_info.size;
         g_print_flags.start = 0;
     }
 
@@ -310,7 +303,7 @@ void initParameters()
     g_file_info.size = 0;
 
     g_print_flags.start = 0;
-    g_print_flags.length = DEFAULT_LENGTH;
+    g_print_flags.block_length = DEFAULT_LENGTH;
     g_print_flags.skip = 0;
     g_print_flags.mode = MODE_FLAG_CONTINUOUS_PRINTING;
     g_print_flags.cols = 0;
@@ -355,6 +348,7 @@ void printHelp()
     printf(" * -file:string A file name to show the hex source of.\n"
            " * -pid:size_t A process id to print the virtuel memory and process info. Pass 0 for your own process.\n"
            " * -s:size_t Start offset. Default = 0.\n"
+           " * -e:size_t End offset. Default = file size. (File mode only.)\n"
            " * -l:size_t Length of the part to display. Default = 0x100.\n"
            " * -b Force breaking mode. Will terminate after the first displayed block.\n"
            " * -pso Print start (real) offset.\n"
@@ -534,11 +528,20 @@ int parseArgs(int argc, char** argv)
 
             i++;
         }
+        else if ( isArgOfType(argv[i], "-e") )
+        {
+            BREAK_ON_NO_VALUE("-e", i, end_i, s);
+
+            s = parseSizeAuto(argv[i + 1], &g_print_flags.end);
+            BREAK_ON_FAILED_INT_PARSING("-e", i, end_i, s);
+
+            i++;
+        }
         else if ( isArgOfType(argv[i], "-l") )
         {
             BREAK_ON_NO_VALUE("-l", i, end_i, s);
 
-            s = parseSizeAuto(argv[i + 1], &g_print_flags.length);
+            s = parseSizeAuto(argv[i + 1], &g_print_flags.block_length);
             BREAK_ON_FAILED_INT_PARSING("-l", i, end_i, s);
 
             length_found = 1;
@@ -752,17 +755,17 @@ int sanitizeDeleteParams()
         return 1;
     }
     
-    if ( g_print_flags.length == 0 )
+    if ( g_print_flags.block_length == 0 )
     {
         printf("Info: Length is 0. Setting it to remaining file size 0x%zx!\n", 
             g_file_info.size - g_print_flags.start);
-        g_print_flags.length = g_file_info.size - g_print_flags.start;
+        g_print_flags.block_length = g_file_info.size - g_print_flags.start;
         info_line_break = 1;
     }
     
-    if ( g_print_flags.start + g_print_flags.length > g_file_info.size )
+    if ( g_print_flags.start + g_print_flags.block_length > g_file_info.size )
     {
-        g_print_flags.length = g_file_info.size - g_print_flags.start;
+        g_print_flags.block_length = g_file_info.size - g_print_flags.start;
     }
 
     if ( info_line_break )
@@ -825,6 +828,11 @@ int sanitizePrintParams(uint32_t pid)
     
     //
     // check col flags
+    //
+    // set to default mode if nothing is set
+    // else check validity of mask
+    //
+
     if ( !g_print_flags.cols )
     {
         g_print_flags.cols = (COL_MASK_OFFSET|COL_MASK_HEX|COL_MASK_ASCII);
@@ -853,6 +861,10 @@ int sanitizePrintParams(uint32_t pid)
 
     //
     // check hex size
+    //
+    // default is 1
+    // find mode forces 1
+    //
 
     if ( !g_print_flags.value_size )
         g_print_flags.value_size = 1;
@@ -861,11 +873,14 @@ int sanitizePrintParams(uint32_t pid)
         IPrint("In find mode, currently just a hex value size of 1 is supported!\n");
         g_print_flags.value_size = 1;
     }
+    
+    //
+    // align block length to hex value size
 
     int is_aligned = 0;
-    is_aligned = alignValueUpToValueSize(g_print_flags.value_size, &g_print_flags.length);
+    is_aligned = alignValueUpToValueSize(g_print_flags.value_size, &g_print_flags.block_length);
     if ( is_aligned ) { 
-        IPrint("Aligned length up tp 0x%zx bytes!\n", g_print_flags.length) }
+        IPrint("Aligned length up tp 0x%zx bytes!\n", g_print_flags.block_length) }
 
     is_aligned = alignValueDownToValueSize(g_print_flags.value_size, &g_print_flags.start);
     if ( is_aligned ) { 
@@ -884,6 +899,7 @@ int sanitizePrintParams(uint32_t pid)
 
     //
     // check col size
+    // max col size is buffer size for uncomplicated printing
 
     if ( g_col_sizes.custom > MAX_COL_SIZE )
     {
@@ -910,25 +926,36 @@ int sanitizePrintParams(uint32_t pid)
         return -1;
     }
 
-    // normalize length to block size for continuous printing
+    // normalize block_length to block size for continuous printing
     if ( (g_print_flags.mode&MODE_FLAG_CONTINUOUS_PRINTING)
         && g_print_flags.cols != COL_MASK_BYTE_STRING )
     {
-        if ( g_print_flags.length % col_size != 0 )
+        if ( g_print_flags.block_length % col_size != 0 )
         {
-            g_print_flags.length = (size_t)ALIGN_UP_BY(g_print_flags.length, col_size);
-            IPrint("Normalized length to 0x%zx\n", g_print_flags.length);
+            g_print_flags.block_length = (size_t)ALIGN_UP_BY(g_print_flags.block_length, col_size);
+            IPrint("Normalized length to 0x%zx\n", g_print_flags.block_length);
         }
     }
+    
+    // 
+    // set end to file size if not set or exceeding it
+    if ( !g_print_flags.end || g_print_flags.end > g_file_info.size )
+        g_print_flags.end = g_file_info.size;
+
 
     // check start offset
     if ( run_mode == RUN_MODE_FILE )
     {
-        if ( g_print_flags.start >= g_file_info.size )
+        if ( g_print_flags.start >= g_print_flags.end )
         {
-            EPrint("Start offset 0x%zx is greater then the file size of 0x%zx!\n\n", g_print_flags.start, g_file_info.size);
+            EPrint("Start offset 0x%zx is greater then the end offset of 0x%zx!\n\n", g_print_flags.start, g_print_flags.end);
             return -1;
         }
+        //if ( g_print_flags.start >= g_file_info.size )
+        //{
+        //    EPrint("Start offset 0x%zx is greater then the file size of 0x%zx!\n\n", g_print_flags.start, g_file_info.size);
+        //    return -1;
+        //}
     }
     else if ( run_mode == RUN_MODE_PID )
     {
@@ -941,19 +968,20 @@ int sanitizePrintParams(uint32_t pid)
     {
         g_print_flags.start = normalizeOffset(g_print_flags.start, &g_print_flags.skip);
         if ( !(g_print_flags.mode&MODE_FLAG_CONTINUOUS_PRINTING) )
-            g_print_flags.length += g_print_flags.skip;
+            g_print_flags.block_length += g_print_flags.skip;
     }
 
-    // check length
+    // check block_length
     if ( run_mode == RUN_MODE_FILE )
-        info_line_break = keepLengthInFile(g_print_flags.start, g_file_info.size, &g_print_flags.length);
+        info_line_break = keepLengthPrintingRange(g_print_flags.start, g_print_flags.end, &g_print_flags.block_length);
+        //info_line_break = keepLengthInFile(g_print_flags.start, g_file_info.size, &g_print_flags.block_length);
 //  else if ( type == RUN_MODE_PID )
 //      info_line_break = keepLengthInModule(pid);
 
-    if ( g_print_flags.length == 0 )
+    if ( g_print_flags.block_length == 0 )
     {
         printf("Info: Length is 0. Setting to 0x%x!\n", DEFAULT_LENGTH);
-        g_print_flags.length = DEFAULT_LENGTH;
+        g_print_flags.block_length = DEFAULT_LENGTH;
         info_line_break = 1;
     }
 
@@ -964,20 +992,35 @@ int sanitizePrintParams(uint32_t pid)
     return 0;
 }
 
-uint8_t keepLengthInFile(size_t start, size_t size, size_t* length)
+uint8_t keepLengthPrintingRange(size_t start, size_t end, size_t* length)
 {
-    if ( start + *length > size )
+    if ( start + *length > end )
     {
         //printf("Info: Start offset 0x%zx plus length 0x%zx is greater then the file size 0x%zx\n"
         //    "Printing only to file size.\n",
         //start, *length, size);
         
-        *length = size - start;
+        *length = end - start;
         //g_print_flags.mode &= ~MODE_FLAG_CONTINUOUS_PRINTING;
         return 0;
     }
     return 0;
 }
+
+//uint8_t keepLengthInFile(size_t start, size_t size, size_t* length)
+//{
+//    if ( start + *length > size )
+//    {
+//        //printf("Info: Start offset 0x%zx plus length 0x%zx is greater then the file size 0x%zx\n"
+//        //    "Printing only to file size.\n",
+//        //start, *length, size);
+//        
+//        *length = size - start;
+//        //g_print_flags.mode &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+//        return 0;
+//    }
+//    return 0;
+//}
 
 /**
  * Parse payload from
@@ -1006,13 +1049,13 @@ uint32_t parsePayload(const char format, const char* value, uint8_t** payload)
         }
         case FORMAT_FILL_BYTE:
         {
-            if ( g_print_flags.length > MAX_PAYLOAD_LN )
+            if ( g_print_flags.block_length > MAX_PAYLOAD_LN )
             {
                 IPrint("Fill byte length is greater than 0x%x (%u). Setting to 0x%x (%u)!\n", MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN, MAX_PAYLOAD_LN);
-                g_print_flags.length = MAX_PAYLOAD_LN;
+                g_print_flags.block_length = MAX_PAYLOAD_LN;
             }
-            ln = payloadParseFillBytes(value, payload, g_print_flags.length);
-            g_print_flags.length = DEFAULT_LENGTH;
+            ln = payloadParseFillBytes(value, payload, g_print_flags.block_length);
+            g_print_flags.block_length = DEFAULT_LENGTH;
             break;
         }
         case FORMAT_WORD:
@@ -1072,7 +1115,7 @@ HEXTER_API int hexter_printFile(const char* _file_name, size_t _start, size_t _l
     run_mode = RUN_MODE_FILE;
     
     g_print_flags.start = _start;
-    g_print_flags.length = _length;
+    g_print_flags.block_length = _length;
     g_print_flags.mode &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
     run(0, NULL);
@@ -1100,7 +1143,7 @@ HEXTER_API int hexter_printProcess(uint32_t _pid, size_t _start, size_t _length,
 
     run_mode = RUN_MODE_PID;
     g_print_flags.start = _start;
-    g_print_flags.length = _length;
+    g_print_flags.block_length = _length;
     g_print_flags.mode &= ~MODE_FLAG_CONTINUOUS_PRINTING;
 
     g_process_list_flags = flags;

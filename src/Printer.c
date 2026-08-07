@@ -34,9 +34,9 @@
 #define BLANK_GAP_C ' '
 #define SEPARATOR_GAP_C '-'
 
-static void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t block_start, size_t block_max);
+static void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t block_start, size_t block_max);
 
-static void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t width);
+static void printTripleCols(PRINT_CFG *print_flags, const uint8_t* buffer, size_t size, size_t offset, uint8_t width);
 
 static void fillHexGap(uint32_t k, uint32_t col_size, uint32_t hex_size);
 
@@ -97,7 +97,7 @@ static uint32_t find_flags = 0;
  * If buffer_size % col_size != 0 some more adjustments have to be taken to the col printings.
  * I.e. the index has to be passed and returned and the new line has to check for block and size.
  */
-void print(FILE_INFO* file_info, PRINT_FLAGS *print_flags, uint8_t* _needle, uint32_t _needle_ln)
+void print(FILE_INFO* file_info, PRINT_CFG *print_flags, uint8_t* _needle, uint32_t _needle_ln)
 {
     FEnter();
 
@@ -109,13 +109,14 @@ void print(FILE_INFO* file_info, PRINT_FLAGS *print_flags, uint8_t* _needle, uin
     uint8_t* buffer = NULL;
     size_t block_start = print_flags->start;
     size_t buffer_size = BLOCK_SIZE;
-    size_t nr_of_parts = print_flags->length / buffer_size;
-    if ( print_flags->length % buffer_size != 0 ) nr_of_parts++;
+    size_t nr_of_parts = print_flags->block_length / buffer_size;
+    if ( print_flags->block_length % buffer_size != 0 ) nr_of_parts++;
 
     if ( ARE_FLAGS_SET(print_flags->mode, (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) )
         find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
     DPrint("start: 0x%zx\n", print_flags->start);
+    DPrint("end: 0x%zx\n", print_flags->end);
     DPrint("skip_bytes: 0x%x\n", print_flags->skip);
     DPrint("needle: %p\n", needle);
     DPrint("needle_ln: 0x%x\n", needle_ln);
@@ -148,7 +149,7 @@ void print(FILE_INFO* file_info, PRINT_FLAGS *print_flags, uint8_t* _needle, uin
         Finder_initFailure(needle, needle_ln, NULL);
     }
     
-    printBlockLoop(file_info, nr_of_parts, buffer, fi, buffer_size, block_start, file_info->size);
+    printBlockLoop(print_flags, nr_of_parts, buffer, fi, buffer_size, block_start, print_flags->end);
 
 
 clean:
@@ -203,13 +204,13 @@ void Printer_cleanUp(uint8_t* buffer, FILE* fi)
     FLeave();
 }
 
-void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t start, size_t max_offset)
+void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t start, size_t max_offset)
 {
     FEnter();
 
     size_t find_start_offset = start;
-    int continuing = (g_print_flags.mode&MODE_FLAG_CONTINUOUS_PRINTING) ? 1 : 0;
-    char input = (g_print_flags.mode&MODE_FLAG_FIND) ? NEXT : ENTER;
+    int continuing = (print_flags->mode&MODE_FLAG_CONTINUOUS_PRINTING) ? 1 : 0;
+    char input = (print_flags->mode&MODE_FLAG_FIND) ? NEXT : ENTER;
     size_t found_count = 0;
     
     DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
@@ -219,37 +220,41 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
     DPrint("start: 0x%zx\n", start);
     DPrint("max_offset: 0x%zx\n", max_offset);
     DPrint("find_offset: 0x%zx\n", find_start_offset);
-    DPrint("file_size: 0x%zx\n", file_info->size);
     DPrint("input: %c\n", input);
     DPrint("continuing: %u\n", continuing);
     
-    if ( start >= file_info->size )
+    //if ( start >= file_info->size )
+    //{
+    //    IPrint("start exceeds file size!\n");
+    //    return;
+    //}
+    if ( start >= print_flags->end )
     {
-        IPrint("start exceeds file size!\n");
+        IPrint("start exceeds printing range!\n");
         return;
     }
     
-    if ( (g_print_flags.mode&MODE_FLAG_PRINT_START_OFFSET) && !(g_print_flags.mode&MODE_FLAG_FIND) )
+    if ( (print_flags->mode&MODE_FLAG_PRINT_START_OFFSET) && !(print_flags->mode&MODE_FLAG_FIND) )
         printf("start: 0x%zx\n", start + skip_hex_bytes);
     
-    if ( ARE_FLAGS_SET(g_print_flags.cols, (COL_MASK_BYTE_STRING|COL_MASK_OFFSET) ) )
+    if ( ARE_FLAGS_SET(print_flags->cols, (COL_MASK_BYTE_STRING|COL_MASK_OFFSET) ) )
     {
         size_t start_offset = start + skip_hex_bytes;
         uint8_t offset_width = countHexWidth64(start_offset);
         printOffsetCol(start_offset, offset_width);
     }
 
-    if ( (g_print_flags.mode&MODE_FLAG_FIND) )
+    if ( (print_flags->mode&MODE_FLAG_FIND) )
         continuing = 1;
 
     do
     {
         // -fx -b
-        if ((g_print_flags.mode&(MODE_FLAG_FIND|MODE_FLAG_CONTINUOUS_PRINTING))==MODE_FLAG_FIND )
+        if ((print_flags->mode&(MODE_FLAG_FIND|MODE_FLAG_CONTINUOUS_PRINTING))==MODE_FLAG_FIND )
             if ( input == ENTER )
                 input = NEXT;
 
-        if ( (g_print_flags.mode&MODE_FLAG_FIND) && (input == NEXT) )
+        if ( (print_flags->mode&MODE_FLAG_FIND) && (input == NEXT) )
         {
             found = findNeedleInFP(needle, needle_ln, find_start_offset, fi, max_offset, find_flags);
             if ( found == FIND_FAILURE )
@@ -272,9 +277,9 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
             DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
 
             // check if found needle exceeds current printing length
-            size_t length = g_print_flags.length;
-            if ( ((g_print_flags.mode&(MODE_FLAG_FIND|MODE_FLAG_CONTINUOUS_PRINTING))==MODE_FLAG_FIND )
-                || (g_print_flags.mode&MODE_FLAG_FIND_ALL) )
+            size_t length = print_flags->block_length;
+            if ( ((print_flags->mode&(MODE_FLAG_FIND|MODE_FLAG_CONTINUOUS_PRINTING))==MODE_FLAG_FIND )
+                || (print_flags->mode&MODE_FLAG_FIND_ALL) )
             {
                 length += skip_bytes;
             }
@@ -283,12 +288,12 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
             if ( found + needle_ln > end )
             {
                 length += needle_ln;
-                length = ALIGN_UP_BY(length, g_print_flags.length);
+                length = ALIGN_UP_BY(length, print_flags->block_length);
             }
 
-            if ( g_print_flags.mode&MODE_FLAG_PRINT_START_OFFSET )
+            if ( print_flags->mode&MODE_FLAG_PRINT_START_OFFSET )
                 printf("found: 0x%zx\n", found);
-            start = printBlock(nr_of_parts, buffer, fi, buffer_size, start, max_offset, length);
+            start = printBlock(print_flags, nr_of_parts, buffer, fi, buffer_size, start, max_offset, length);
 
             if ( find_start_offset >= max_offset )
             {
@@ -299,7 +304,7 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
             if ( g_find_cfg.find_max_count )
             {
                 found_count++;
-                if ( g_find_cfg.find_max_count && found_count == g_find_cfg.find_max_count )
+                if ( found_count == g_find_cfg.find_max_count )
                 {
                     DPrint("max find count of 0x%zx reached!\n", found_count);
                     break;
@@ -308,10 +313,10 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
         }
         else if ( input == ENTER )
         {
-            start = printBlock(nr_of_parts, buffer, fi, buffer_size, start, max_offset, g_print_flags.length);
+            start = printBlock(print_flags, nr_of_parts, buffer, fi, buffer_size, start, max_offset, print_flags->block_length);
             
             //if ( (start >= max_offset || start == SIZE_MAX)  )
-            if ( (start >= max_offset || start == SIZE_MAX) && !( g_print_flags.mode&MODE_FLAG_FIND ) )
+            if ( (start >= max_offset || start == SIZE_MAX) && !( print_flags->mode&MODE_FLAG_FIND ) )
             {
                 DPrint("start 0x%zx > max_offset 0x%zx.\n", start, max_offset);
                 break;
@@ -321,7 +326,7 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
             break;
         
         // find all always wants next
-        if ( ARE_FLAGS_SET(g_print_flags.mode, (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL)) )
+        if ( ARE_FLAGS_SET(print_flags->mode, (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL)) )
             input = NEXT;
         // on break mode (-b) break;
         else if ( !continuing )
@@ -336,10 +341,11 @@ void printBlockLoop(FILE_INFO* file_info, size_t nr_of_parts, uint8_t* buffer, F
 }
 
 //
-// read in a min(buffer_size, g_print_flags.length) of file bytes and print length bytes of it in a loop
+// read in a min(buffer_size, print_flags->length) of file bytes and print length bytes of it in a loop
 // 
 //
 size_t printBlock(
+    PRINT_CFG *print_flags, 
     size_t nr_of_parts, 
     uint8_t* buffer, 
     FILE* fi, 
@@ -403,7 +409,7 @@ size_t printBlock(
             break;
         }
 
-        printPart(buffer, read_start, size, offset_width);
+        printPart(print_flags, buffer, read_start, size, offset_width);
 
         read_start += read_size;
     }
@@ -416,26 +422,26 @@ clean:
     return read_start;
 }
 
-void printPart(const uint8_t* buffer, size_t block_start, size_t size, uint8_t offset_width)
+void printPart(PRINT_CFG *print_flags, const uint8_t* buffer, size_t block_start, size_t size, uint8_t offset_width)
 {
     FEnter();
     
-    if ( g_print_flags.cols == COL_MASK_BYTE_STRING || g_print_flags.cols == (COL_MASK_OFFSET|COL_MASK_BYTE_STRING) )
+    if ( print_flags->cols == COL_MASK_BYTE_STRING || print_flags->cols == (COL_MASK_OFFSET|COL_MASK_BYTE_STRING) )
         printPlainByteString(buffer, size);
     else
-        printTripleCols(buffer, size, block_start, offset_width);
+        printTripleCols(print_flags, buffer, size, block_start, offset_width);
     
     FLeave();
 }
 
-void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t width)
+void printTripleCols(PRINT_CFG *print_flags, const uint8_t* buffer, size_t size, size_t offset, uint8_t width)
 {
     FEnter();
 
     size_t i;
     uint32_t k = 0;
 
-    uint32_t mask = g_print_flags.cols;
+    uint32_t mask = print_flags->cols;
     uint32_t hex_col_size = g_col_sizes.hex;
     uint32_t ascii_col_size = g_col_sizes.ascii;
     //uint32_t unicode_col_size = g_col_sizes.unicode;
@@ -445,8 +451,8 @@ void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t 
     DPrint("size: 0x%zx\n", size);
     DPrint("offset: 0x%zx\n", offset);
     DPrint("width: 0x%x\n", width);
-    DPrint("col_flags: 0x%x\n", g_print_flags.cols);
-    DPrint("value_size: 0x%x\n", g_print_flags.value_size);
+    DPrint("col_flags: 0x%x\n", print_flags->cols);
+    DPrint("value_size: 0x%x\n", print_flags->value_size);
     DPrint("hex_col_size: 0x%x\n", hex_col_size);
     DPrint("ascii_col_size: 0x%x\n", ascii_col_size);
     //DPrint("unicode_col_size: 0x%x\n", unicode_col_size);
@@ -462,7 +468,7 @@ void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t 
         
         if ( mask & COL_MASK_HEX )
         {
-            switch ( g_print_flags.value_size )
+            switch ( print_flags->value_size )
             {
                 case 2:  k = printHexCol16(buffer, i, size, hex_col_size); break; // 2,4,... : 16
                 case 4:  k = printHexCol32(buffer, i, size, hex_col_size); break; // 4,8,... : 16
@@ -472,7 +478,7 @@ void printTripleCols(const uint8_t* buffer, size_t size, size_t offset, uint8_t 
             
             if ( IS_FLAG_SET(mask, (COL_MASK_ASCII)) )
             {
-                fillHexGap(k, hex_col_size, g_print_flags.value_size);
+                fillHexGap(k, hex_col_size, print_flags->value_size);
                 printf("%c ", COL_SEPARATOR);
             }
         }

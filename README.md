@@ -9,7 +9,7 @@ Compiles and runs under
 
 
 ## VERSION
-1.11.0  
+1.11.1  
 Last changed: 07.08.2026
 
 
@@ -86,6 +86,7 @@ Optional Parameters:
  * -file string A path to file.
  * -pid uint32_t A process id.
  * -s size_t Start offset in hex or dec. Default = 0.
+ * -e:size_t End offset. Default = file size. (File mode only.)
  * -l size_t Length of the part to display in hex or dec. Default = 0x100.
  * -b Force breaking, not continuous mode and print just one block.
  * -pso Print start (real) offset.
