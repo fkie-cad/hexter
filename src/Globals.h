@@ -130,7 +130,7 @@ extern FIND_CFG g_find_cfg;
 #define ALIGN_DOWN_BY(__value__, __align__) ((uint64_t)(__value__) & ~((uint64_t)(__align__) - 1))
 #endif
 
-#define ARE_FLAGS_SET(__value__, __flags__) ((__value__)&(__flags__)) == (__flags__) 
+#define ARE_FLAGS_SET(__value__, __flags__) (((__value__)&(__flags__)) == (__flags__))
 #define IS_FLAG_SET(__value__, __flags__) ((__value__)&(__flags__))
 #define IS_ONLY_ONE_FLAG_SET(__value__, __flags__, __expected__) (((__value__)&(__flags__))==(__expected__))
 

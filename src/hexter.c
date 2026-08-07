@@ -33,13 +33,14 @@
 #elif defined(_WIN32)
     #include <process.h>
     #include <time.h>
+    #include <io.h>
     #include "utils/win/processes.h"
     #include "ProcessHandlerWin.h"
 #endif
 #include "utils/Strings.h"
 
 #define BIN_NAME "hexter"
-#define BIN_VS "1.11.1"
+#define BIN_VS "1.11.2"
 #define BIN_LAST_CHANGED "07.08.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
@@ -909,12 +910,36 @@ int sanitizePrintParams(uint32_t pid)
 
     
     //
-    // check mode
+    // force breaking mode for special scenarios
 
     if ( g_print_flags.mode&(MODE_FLAG_INSERT|MODE_FLAG_OVERWRITE|MODE_FLAG_DELETE) )
         g_print_flags.mode &= ~MODE_FLAG_CONTINUOUS_PRINTING;
     else if ( ARE_FLAGS_SET(g_print_flags.mode, (MODE_FLAG_FIND|MODE_FLAG_FIND_ALL) ) )
         g_print_flags.mode &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+
+    // 
+    // if stdout is redirected, set some special rules
+#if defined(_LINUX)
+    if ( !isatty(fileno(stdout)) || !isatty(fileno(stdin)) )
+#elif defined(_WIN32)
+    if ( !_isatty(_fileno(stdout)) || !_isatty(_fileno(stdin)) )
+#endif
+    {
+        // always set breaking mode
+        g_print_flags.mode &= ~MODE_FLAG_CONTINUOUS_PRINTING;
+
+        // if in find mode
+        if ( IS_FLAG_SET(g_print_flags.mode, MODE_FLAG_FIND) && !IS_FLAG_SET(g_print_flags.mode, MODE_FLAG_FIND_ALL) )
+        {
+            // if not -all, set -all
+            g_print_flags.mode |= MODE_FLAG_FIND_ALL;
+            // if not -mfc limit unknown result to 1
+            if ( !g_find_cfg.find_max_count )
+            {
+                g_find_cfg.find_max_count = 1;
+            }
+        }
+    }
 
     //
     // initialize col sizes
@@ -936,16 +961,16 @@ int sanitizePrintParams(uint32_t pid)
             IPrint("Normalized length to 0x%zx\n", g_print_flags.block_length);
         }
     }
-    
-    // 
-    // set end to file size if not set or exceeding it
-    if ( !g_print_flags.end || g_print_flags.end > g_file_info.size )
-        g_print_flags.end = g_file_info.size;
 
 
     // check start offset
     if ( run_mode == RUN_MODE_FILE )
     {
+        // 
+        // set end to file size if not set or exceeding it
+        if ( !g_print_flags.end || g_print_flags.end > g_file_info.size )
+            g_print_flags.end = g_file_info.size;
+
         if ( g_print_flags.start >= g_print_flags.end )
         {
             EPrint("Start offset 0x%zx is greater then the end offset of 0x%zx!\n\n", g_print_flags.start, g_print_flags.end);
