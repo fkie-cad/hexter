@@ -115,7 +115,7 @@ uint8_t makeStartHitAccessableMemory(uint32_t pid, size_t* start)
 
         if ( addressIsInRegionRange(*start, (size_t) base_addr, (DWORD)info.RegionSize) )
         {
-//            info_line_break = keepLengthInModule(p, &info, process, *start, &g_print_flags.length);
+//            info_line_break = keepLengthInModule(p, &info, process, *start, &g_print_flags.block_length);
             CloseHandle(process);
             return info_line_break;
         }
