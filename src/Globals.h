@@ -91,6 +91,7 @@
 
 #define FIND_FLAG_CASE_INSENSITIVE (0x1)
 #define FIND_FLAG_ASCII            (0x2)
+#define FIND_FLAG_UNICODE          (0x4)
 
 
 typedef struct _FILE_INFO {

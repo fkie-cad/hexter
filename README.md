@@ -116,7 +116,7 @@ Optional Parameters:
      * q: quad word.  
      Except for the string types, all values have to be passed as hex values, omitting `0x`.  
    * Find options:
-     * -ci: Case insensitive (for ascii search only).
+     * -ci: Case insensitive (ascii range, for -fa and -fu search).
      * -all: Find all occurrences.
      * -pfo: Print the exact found offset separately.
      * -mfc: Number of max findable occurrences from the start.

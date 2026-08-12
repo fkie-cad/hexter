@@ -136,8 +136,11 @@ size_t findNeedleInFP(const uint8_t* needle, uint32_t needle_ln, size_t offset, 
         fseek(fi, offset, SEEK_SET);
         n = fread(buf, 1, read_size, fi);
         
-        if ( ARE_FLAGS_SET(flags, (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII)) )
+        if ( flags & FIND_FLAG_CASE_INSENSITIVE )
         {
+            // Works for -fa and -fu (utf-16le ascii): 
+            // only 'a'-'z' bytes are touched, 
+            // the 0x00 high bytes of ascii-range utf-16 code units are left as is.
             toUpperCaseA((char*)buf, n);
         };
 

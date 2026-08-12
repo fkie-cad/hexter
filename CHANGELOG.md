@@ -1,9 +1,15 @@
 # Change Log
 
 
+## v1.11.4 - 2026/08/12
+
+- -ci case insensitive search now also works for -fu (utf-16le) in the ascii range
+
+
+
 ## v1.11.3 - 2026/08/11
 
-- fixed /ci bug for /fu
+- fixed /ci bug for /fu, which wrongly partly was applied to /fu searches too
 - added change log
 - refactoring
 

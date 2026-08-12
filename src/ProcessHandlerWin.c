@@ -741,7 +741,7 @@ findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, 
     {
         n_size = readProcessBlock(base_addr, base_off, base_size, BLOCK_SIZE, process, find_buf);
         
-        if ( ARE_FLAGS_SET(find_cfg->flags, (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII)) )
+        if ( find_cfg->flags & FIND_FLAG_CASE_INSENSITIVE )
         {
             toUpperCaseA((char*)find_buf, n_size);
         };

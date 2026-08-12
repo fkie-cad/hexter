@@ -40,8 +40,8 @@
 #include "utils/Strings.h"
 
 #define BIN_NAME "hexter"
-#define BIN_VS "1.11.3"
-#define BIN_LAST_CHANGED "11.08.2026"
+#define BIN_VS "1.11.4"
+#define BIN_LAST_CHANGED "12.08.2026"
 
 #define LIN_PARAM_IDENTIFIER ('-')
 #define WIN_PARAM_IDENTIFIER ('/')
@@ -219,10 +219,14 @@ int run(const char payload_format, const char* raw_payload, FIND_CFG *find_cfg)
         if ( payload == NULL)
             return 3;
 
-        if ( ARE_FLAGS_SET(g_print_flags.mode, (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) && payload_format == FORMAT_ASCII )
+        if ( ARE_FLAGS_SET(g_print_flags.mode, (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE))
+             && ( payload_format == FORMAT_ASCII || payload_format == FORMAT_UNICODE ) )
         {
+            // For utf-16le (-fu) ascii text the high bytes are 0x00, 
+            // so uppercasing the low letter bytes with toUpperCaseA works the same as for ascii (-fa).
             toUpperCaseA((char*)payload, payload_ln);
-            find_cfg->flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
+            find_cfg->flags = FIND_FLAG_CASE_INSENSITIVE
+                | ( payload_format == FORMAT_ASCII ? FIND_FLAG_ASCII : FIND_FLAG_UNICODE );
         }
     }
 
@@ -390,7 +394,7 @@ void printHelp()
            "     * %c: quad word (uint64).\n"
            "     Except for the string types, all values have to be passed as hex values, omitting `0x`.\n"
            "   * Find options:\n"
-           "     * -ci: Case insensitive (for ascii search only).\n"
+           "     * -ci: Case insensitive (ascii range, for -fa and -fu search).\n"
            "     * -all: Find all occurrences.\n"
            "     * -pfo: Print the exact found offset separately.\n"
            "     * -mfc: Number of max findable occurrences from the start.\n"
