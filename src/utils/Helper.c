@@ -273,7 +273,7 @@ size_t normalizeOffset(size_t offset, uint32_t* remainder)
 {
     FEnter();
     DPrint("offset: 0x%zx\n", offset);
-    DPrint("remainder: %p => 0x%x\n", remainder, *remainder);
+    DPrint("remainder: %p => 0x%x\n", (void*)remainder, *remainder);
     
     *remainder = (uint32_t)(offset % g_col_sizes.line);
     offset -= *remainder;

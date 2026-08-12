@@ -211,7 +211,7 @@ void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer,
     
     DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
     DPrint("buffer: %p\n", buffer);
-    DPrint("fi: %p\n", fi);
+    DPrint("fi: %p\n", (void*)fi);
     DPrint("buffer_size: 0x%zx\n", buffer_size);
     DPrint("start: 0x%zx\n", start);
     DPrint("max_offset: 0x%zx\n", max_offset);
@@ -374,7 +374,7 @@ size_t printBlock(
     
     DPrint("  nr_of_parts: 0x%zx\n", nr_of_parts);
     DPrint("  buffer: %p\n", buffer);
-    DPrint("  fi: %p\n", fi);
+    DPrint("  fi: %p\n", (void*)fi);
     DPrint("  buffer_size: 0x%zx\n", buffer_size);
     DPrint("  read_start: 0x%zx\n", read_start);
     DPrint("  read_max: 0x%zx\n", read_max);

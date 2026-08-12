@@ -6,8 +6,8 @@
 #ifdef DEBUG_PRINT
 #define debug_info(...) { printf("[d] "); printf(__VA_ARGS__); }
 #define DPrint(...) { printf("[d] "); printf(__VA_ARGS__); }
-#define FEnter() printf("[>] %s()\n", __FUNCTION__);
-#define FLeave() printf("[<] %s()\n", __FUNCTION__);
+#define FEnter() printf("[>] %s()\n", __func__);
+#define FLeave() printf("[<] %s()\n", __func__);
 #else
 #define debug_info(...)
 #define DPrint(...)
