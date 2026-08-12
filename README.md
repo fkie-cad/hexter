@@ -9,8 +9,8 @@ Compiles and runs under
 
 
 ## VERSION
-1.11.2  
-Last changed: 07.08.2026
+1.11.3  
+Last changed: 11.08.2026
 
 
 ## REQUIREMENTS
@@ -133,7 +133,7 @@ Either use -file or -pid, not both.
 The program runs in continuous mode by default, expect for the -i, -o and -d option, or if the -b option is set.  
 Step through the file by pressing ENTER.  
 Quit with "q".  
-If searching something in continuous mode, type "n" to find next occurrence.  
+If searching something, type "n" to find the next occurrence.  
 The length value will be padded to fit a block size in continuous mode.  
 
 ### EXAMPLES

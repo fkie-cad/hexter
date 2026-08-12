@@ -126,8 +126,8 @@ static void printRegionInfo(ProcMapsEntry* entry, const char* file_name);
 static Bool skipQuittedModuleRegions(ProcMapsEntry* entry, int print_s, uint64_t printed_module_base);
 static Bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base);
 static Bool queryNextRegion(FILE* fp, ProcMapsEntry* entry);
-static int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s, uint32_t find_flags);
-static uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const uint8_t* needle, uint32_t needle_ln, uint32_t flags);
+static int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s, FIND_CFG *find_cfg);
+static uint64_t findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, FIND_CFG *find_cfg);
 
 static int filter(const struct dirent *dir);
 static void processdir(const struct dirent *dir);
@@ -136,8 +136,8 @@ static const uint8_t map_entry_col_width[6] = { 16, 5, 8, 5, 8, 8 };
 #define LINE_BUFFER_SPACE 513
 static const uint16_t line_size = 512;
 
-static uint8_t* p_needle = NULL;
-static uint32_t p_needle_ln;
+//static uint8_t* p_needle = NULL;
+//static uint32_t p_needle_ln;
 static int errsv = 0;
 
 /**
@@ -788,7 +788,7 @@ int writeProcessMemory(uint32_t pid, uint8_t *payload, uint32_t payload_ln, uint
  * @param needle_ln
  * @return
  */
-Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint8_t* needle, uint32_t needle_ln)
+Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, FIND_CFG *find_cfg)
 {
     FILE* fp;
     ProcMapsEntry entry;
@@ -804,12 +804,12 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
     uint64_t last_base = 0;
     uint64_t printed_module_base = 0;
 
-    p_needle = needle;
-    p_needle_ln = needle_ln;
-    uint32_t find_flags = 0;
+    //p_needle = needle;
+    //p_needle_ln = needle_ln;
+    //uint32_t find_flags = 0;
     
-    if ( (g_print_flags.mode&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
-        find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
+    //if ( (g_print_flags.mode&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
+        //find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
 
     // check if /proc/pid/mem is accessible
     if ( !fopenProcessMemory(pid, &fp, "r") )
@@ -826,7 +826,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
     }
 
     if ( (g_print_flags.mode&MODE_FLAG_FIND) )
-        Finder_initFailure(p_needle, p_needle_ln, NULL);
+        Finder_initFailure(find_cfg->needle, find_cfg->needle_ln, NULL);
 
     while ( queryNextRegion(fp, &entry) )
     {
@@ -877,7 +877,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
 
         if ( (g_print_flags.mode&MODE_FLAG_FIND) )
         {
-            found = findNeedleInProcessMemoryBlock(pid, entry.address, entry.size, base_off, p_needle, p_needle_ln, find_flags);
+            found = findNeedleInProcessMemoryBlock(pid, entry.address, entry.size, base_off, find_cfg);
             if ( found == FIND_FAILURE )
             {
                 printed_module_base = entry.base;
@@ -888,7 +888,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
             {
                 found = found - entry.address;
                 base_off = normalizeOffset(found, &skip_bytes);
-                Printer_setHighlightBytes(p_needle_ln);
+                Printer_setHighlightBytes(find_cfg->needle_ln);
                 Printer_setHighlightWait(skip_bytes);
                 skip_bytes = 0;
                 print_s = 1;
@@ -896,7 +896,7 @@ Bool printProcessRegions(uint32_t pid, uint64_t start, uint32_t skip_bytes, uint
         }
 
 //		Printer_setSkipBytes(skip_bytes);
-        print_s = printRegionProcessMemory(pid, entry.address, base_off, entry.size, found, print_s, find_flags);
+        print_s = printRegionProcessMemory(pid, entry.address, base_off, entry.size, found, print_s, find_cfg);
 
         printed_module_base = entry.base;
         base_off = 0;
@@ -919,7 +919,7 @@ Bool queryNextRegion(FILE* fp, ProcMapsEntry* entry)
 
     if ( !parseProcMapsLine(line, entry) )
     {
-        printf("ERROR: could not parse entry!\n");
+        EPrint("Could not parse entry!\n");
         return false;
     }
 
@@ -959,18 +959,17 @@ Bool reachedNextModule(uint64_t printed_module_base, uint64_t entry_base)
  * @return uint64_t absolute found address
  */
 uint64_t
-findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, const uint8_t* needle, uint32_t needle_ln, uint32_t flags)
+findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_size, uint64_t offset, FIND_CFG *find_cfg)
 {
     FILE* fp;
     uint64_t found = FIND_FAILURE;
-//	print("findNeedleInProcessMemoryBlock(0x%lx, 0x%lx, 0x%lx)\n", base_addr, base_size, offset);
 
     if ( !fopenProcessMemory(pid, &fp, "r") )
     {
         printf("ERROR (%x): Could not open process %u memory.\n", errsv, pid);
         return false;
     }
-    found = findNeedleInFP(needle, needle_ln, base_addr+offset, fp, base_addr+base_size, flags);
+    found = findNeedleInFP(find_cfg->needle, find_cfg->needle_ln, base_addr+offset, fp, base_addr+base_size, find_cfg->flags);
 
     fclose(fp);
     return found;
@@ -986,7 +985,7 @@ findNeedleInProcessMemoryBlock(uint32_t pid, uint64_t base_addr, uint64_t base_s
  * @param print_s int auto print flag
  * @return 0 if end of block is reached, 1 if forced to quit
  */
-int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s, uint32_t find_flags)
+int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off, uint64_t size, uint64_t found, int print_s, FIND_CFG *find_cfg)
 {
     FILE* fp;
     uint8_t block[BLOCK_SIZE] = {0};
@@ -1026,7 +1025,6 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
     // prevent auto print, if next region of a module is accessed, to prevent printing two blocks at once
     if ( print_s == 1 )
         base_off = printBlock(&g_print_flags, nr_of_parts, block, fp, block_size, base_off, base_end, g_print_flags.block_length);
-//  printf(" - base_off: 0x%lx\n", base_off);
 
     if ( !(g_print_flags.mode&MODE_FLAG_CONTINUOUS_PRINTING) )
     {
@@ -1040,11 +1038,10 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
         if ( input == ENTER )
         {
             base_off = printBlock(&g_print_flags, nr_of_parts, block, fp, block_size, base_off, base_end, g_print_flags.block_length);
-//      printf(" -- base_off: 0x%lx\n", base_off);
         }
         else if ( (g_print_flags.mode&MODE_FLAG_FIND) && input == NEXT )
         {
-            found = findNeedleInProcessMemoryBlock(pid, base_addr, size, found + p_needle_ln, p_needle, p_needle_ln, find_flags);
+            found = findNeedleInProcessMemoryBlock(pid, base_addr, size, found + find_cfg->needle_ln, find_cfg);
             if ( found == FIND_FAILURE )
             {
                 s = 0;
@@ -1053,7 +1050,7 @@ int printRegionProcessMemory(uint32_t pid, uint64_t base_addr, uint64_t base_off
 
             found -= base_addr;
             base_off = normalizeOffset(found, &skip_bytes);
-            Printer_setHighlightBytes(p_needle_ln);
+            Printer_setHighlightBytes(find_cfg->needle_ln);
             Printer_setHighlightWait(skip_bytes);
             skip_bytes = 0;
 

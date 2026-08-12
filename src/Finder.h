@@ -2,10 +2,6 @@
 #define HEXTER_SRC_FINDER_H
 
 
-#define FIND_FLAG_CASE_INSENSITIVE (0x1)
-#define FIND_FLAG_ASCII            (0x2)
-
-
 int Finder_initFailure(
     const uint8_t* needle, 
     uint32_t needle_ln,

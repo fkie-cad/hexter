@@ -29,7 +29,7 @@ BOOL queryNextRegion(HANDLE process, uint8_t** p, MEMORY_BASIC_INFORMATION* info
 BOOL queryNextAccessibleRegion(HANDLE process, uint8_t** p, MEMORY_BASIC_INFORMATION* info);
 BOOL queryNextAccessibleBaseRegion(HANDLE process, uint8_t** p, MEMORY_BASIC_INFORMATION* info);
 size_t printMemoryBlock(HANDLE process, BYTE* base_addr, size_t base_off, DWORD region_size, uint8_t* buffer);
-size_t findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, const uint8_t* needle, uint32_t needle_ln, uint32_t flags);
+size_t findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, FIND_CFG *find_cfg);
 BOOL openSnapAndME(HANDLE* snap, MODULEENTRY32* me32, uint32_t pid, DWORD dwFlags);
 BOOL openSnap(HANDLE* snap, uint32_t pid, DWORD dwFlags);
 BOOL openME(HANDLE* snap, MODULEENTRY32* me32);
@@ -48,7 +48,7 @@ int printMemoryInfo(HANDLE process, MEMORY_BASIC_INFORMATION* info);
 int iterateProcessMemory(HANDLE process, MEMORY_BASIC_INFORMATION* info, MemInfoCallback cb);
 const char* getMemoryStateString(DWORD state);
 const char* getMemoryTypeString(DWORD type);
-int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, uint32_t find_flags);
+int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, FIND_CFG *find_cfg);
 BOOL getRegion(size_t address, HANDLE process, MEMORY_BASIC_INFORMATION* info, uint8_t* info_p);
 BOOL getRegionName(HANDLE process, PVOID base, char* file_name);
 //BOOL notAccessibleRegion(MEMORY_BASIC_INFORMATION* info);
@@ -58,8 +58,8 @@ BOOL setRegionProtection(HANDLE process, MEMORY_BASIC_INFORMATION* info, DWORD n
 void printModuleRegionInfo(MEMORY_BASIC_INFORMATION* info, const char* file_name, uint8_t* p, HANDLE process);
 void printRunningProcessInfo(PROCESSENTRY32* pe32);
 
-static uint8_t* p_needle = NULL;
-static uint32_t p_needle_ln;
+//static uint8_t* p_needle = NULL;
+//static uint32_t p_needle_ln;
 
 static WORD wOldColorAttrs;
 static HANDLE hStdout;
@@ -311,7 +311,7 @@ int writeProcessMemory(uint32_t pid, uint8_t* payload, uint32_t payload_ln, size
  * @param needle_ln
  * @return
  */
-BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_t* needle, uint32_t needle_ln)
+BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, FIND_CFG *find_cfg)
 {
     HANDLE process;
     MEMORY_BASIC_INFORMATION info;
@@ -323,15 +323,11 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
 
     size_t base_off;
     size_t found = FIND_FAILURE;
-    uint32_t find_flags = 0;
 
     char file_name[PATH_MAX] = {0};
     
-    if ( (g_print_flags.mode&(MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) == (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE) )
-        find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
-
-    p_needle = needle;
-    p_needle_ln = needle_ln;
+    //p_needle = find_cfg->needle;
+    //p_needle_ln = find_cfg->needle_ln;
 
     if ( !openProcess(&process, pid) )
         return FALSE;
@@ -345,13 +341,13 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
     }
 
     if ( (g_print_flags.mode&MODE_FLAG_FIND) )
-        Finder_initFailure(p_needle, p_needle_ln, NULL);
+        Finder_initFailure(find_cfg->needle, find_cfg->needle_ln, NULL);
 
     getRegionName(process, info.AllocationBase, file_name);
     info_p = info.BaseAddress;
     last_base = info.AllocationBase;
 //  base_off = start - (size_t) info.AllocationBase; // ?? why not info.BaseAddress ??
-    base_off = start - (size_t) info.BaseAddress; // ?? why not info.BaseAddress ??
+    base_off = start - (size_t) info.BaseAddress; //
     printModuleRegionInfo(&info, file_name, info_p, process);
 
     while ( s )
@@ -361,7 +357,7 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
 
         if ( (g_print_flags.mode&MODE_FLAG_FIND) )
         {
-            found = findNeedleInProcessMemoryBlock(info.BaseAddress, (DWORD)info.RegionSize, base_off, process, p_needle, p_needle_ln, find_flags);
+            found = findNeedleInProcessMemoryBlock(info.BaseAddress, (DWORD)info.RegionSize, base_off, process, find_cfg);
             if ( found == FIND_FAILURE )
             {
                 setRegionProtection(process, &info, old_protect, &old_protect);
@@ -376,14 +372,14 @@ BOOL printProcessRegions(uint32_t pid, size_t start, uint32_t skip_bytes, uint8_
             {
                 found = found - (uintptr_t) info.BaseAddress;
                 base_off = normalizeOffset(found, &skip_bytes);
-                Printer_setHighlightBytes(p_needle_ln);
+                Printer_setHighlightBytes(find_cfg->needle_ln);
                 Printer_setHighlightWait(skip_bytes);
                 skip_bytes = 0;
             }
         }
 
 //        Printer_setSkipBytes(skip_bytes);
-        print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found, find_flags);
+        print_s = printRegionProcessMemory(process, info.BaseAddress, base_off, info.RegionSize, found, find_cfg);
 
 //        setRegionProtection(process, &info, old_protect, &old_protect);
 
@@ -523,7 +519,7 @@ BOOL getRegionName(HANDLE process, PVOID base, char* file_name)
  * @param found size_t if something has been searched, the found offset.
  * @return int 0 if end of block is reached, 1 if forced to quit
  */
-int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, uint32_t find_flags)
+int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, SIZE_T region_size, size_t found, FIND_CFG *find_cfg)
 {
     size_t n_size = 0;
     uint8_t buffer[BLOCK_SIZE] = {0};
@@ -548,7 +544,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
             n_size = printMemoryBlock(process, base_addr, base_off, (DWORD)region_size, buffer);
         else if ( (g_print_flags.mode&MODE_FLAG_FIND) && input == NEXT )
         {
-            found = findNeedleInProcessMemoryBlock(base_addr, (DWORD)region_size, found + p_needle_ln, process, p_needle, p_needle_ln, find_flags);
+            found = findNeedleInProcessMemoryBlock(base_addr, (DWORD)region_size, found + find_cfg->needle_ln, process, find_cfg);
             if ( found == FIND_FAILURE )
             {
                 s = 0;
@@ -556,7 +552,7 @@ int printRegionProcessMemory(HANDLE process, BYTE* base_addr, size_t base_off, S
             }
             found -= (uintptr_t) base_addr;
             base_off = normalizeOffset(found, &skip_bytes);
-            Printer_setHighlightBytes(p_needle_ln);
+            Printer_setHighlightBytes(find_cfg->needle_ln);
             Printer_setHighlightWait(skip_bytes);
             skip_bytes = 0;
 
@@ -727,7 +723,7 @@ BOOL addressIsInRegionRange(size_t address, size_t base, DWORD size)
  * @return size_t absolute found address
  */
 size_t
-findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, const uint8_t* needle, uint32_t needle_ln, uint32_t flags)
+findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, HANDLE process, FIND_CFG *find_cfg)
 {
     size_t found = FIND_FAILURE;
     size_t block_i;
@@ -737,24 +733,24 @@ findNeedleInProcessMemoryBlock(BYTE* base_addr, DWORD base_size, size_t offset, 
     uint8_t find_buf[BLOCK_SIZE] = {0};
     
     DPrint("Find: ");
-    for ( block_i = 0; block_i < needle_ln; block_i++ )
-        DPrint("%02x", p_needle[block_i]);
+    for ( block_i = 0; block_i < find_cfg->needle_ln; block_i++ )
+        DPrint("%02x", find_cfg->needle[block_i]);
     DPrint("\n");
 
     while ( n_size && n_size == BLOCK_SIZE )
     {
         n_size = readProcessBlock(base_addr, base_off, base_size, BLOCK_SIZE, process, find_buf);
         
-        if ( (flags&(FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII)) == (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII) )
+        if ( ARE_FLAGS_SET(find_cfg->flags, (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII)) )
         {
             toUpperCaseA((char*)find_buf, n_size);
         };
 
-        block_i = findNeedleInBlock(needle, needle_ln, find_buf, &j, n_size);
+        block_i = findNeedleInBlock(find_cfg->needle, find_cfg->needle_ln, find_buf, &j, n_size);
 
-        if ( j == needle_ln )
+        if ( j == find_cfg->needle_ln )
         {
-            found = (uintptr_t) base_addr + base_off + block_i - needle_ln + 1;
+            found = (uintptr_t) base_addr + base_off + block_i - find_cfg->needle_ln + 1;
             break;
         }
 

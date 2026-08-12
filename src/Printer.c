@@ -34,7 +34,7 @@
 #define BLANK_GAP_C ' '
 #define SEPARATOR_GAP_C '-'
 
-static void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t block_start, size_t block_max);
+static void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t block_start, size_t block_max, FIND_CFG *find_cfg);
 
 static void printTripleCols(PRINT_CFG *print_flags, const uint8_t* buffer, size_t size, size_t offset, uint8_t width);
 
@@ -84,10 +84,9 @@ static uint32_t highlight_unicode_bytes = 0;
 static int32_t highlight_ascii_wait = 0;
 static int32_t highlight_unicode_wait = 0;
 
-static uint8_t* needle = NULL;
-static uint32_t needle_ln;
-static size_t found = 0;
-static uint32_t find_flags = 0;
+//static uint8_t* g_needle = NULL;
+//static uint32_t g_needle_ln;
+static size_t g_found = 0;
 
 
 
@@ -97,12 +96,12 @@ static uint32_t find_flags = 0;
  * If buffer_size % col_size != 0 some more adjustments have to be taken to the col printings.
  * I.e. the index has to be passed and returned and the new line has to check for block and size.
  */
-void print(FILE_INFO* file_info, PRINT_CFG *print_flags, uint8_t* _needle, uint32_t _needle_ln)
+void print(FILE_INFO* file_info, PRINT_CFG *print_flags, FIND_CFG *find_cfg)
 {
     FEnter();
 
-    needle = _needle;
-    needle_ln = _needle_ln;
+    //g_needle = find_cfg->needle;
+    //g_needle_ln = find_cfg->needle_ln;
     
     int errsv;
     FILE* fi;
@@ -112,18 +111,15 @@ void print(FILE_INFO* file_info, PRINT_CFG *print_flags, uint8_t* _needle, uint3
     size_t nr_of_parts = print_flags->block_length / buffer_size;
     if ( print_flags->block_length % buffer_size != 0 ) nr_of_parts++;
 
-    if ( ARE_FLAGS_SET(print_flags->mode, (MODE_FLAG_FIND|MODE_FLAG_CASE_INSENSITIVE)) )
-        find_flags = (FIND_FLAG_CASE_INSENSITIVE|FIND_FLAG_ASCII);
-
     DPrint("start: 0x%zx\n", print_flags->start);
     DPrint("end: 0x%zx\n", print_flags->end);
     DPrint("skip_bytes: 0x%x\n", print_flags->skip);
-    DPrint("needle: %p\n", needle);
-    DPrint("needle_ln: 0x%x\n", needle_ln);
+    DPrint("needle: %p\n", find_cfg->needle);
+    DPrint("needle_ln: 0x%x\n", find_cfg->needle_ln);
+    DPrint("find_flags: 0x%x\n", find_cfg->flags);
     DPrint("buffer_size: 0x%zx\n", buffer_size);
     DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
     DPrint("mode_flags: 0x%x\n", print_flags->mode);
-    DPrint("find_flags: 0x%x\n", find_flags);
     DPrint("\n");
 
     errno = 0;
@@ -146,10 +142,10 @@ void print(FILE_INFO* file_info, PRINT_CFG *print_flags, uint8_t* _needle, uint3
     Printer_setSkipBytes(print_flags->skip);
     if ( print_flags->mode&MODE_FLAG_FIND )
     {
-        Finder_initFailure(needle, needle_ln, NULL);
+        Finder_initFailure(find_cfg->needle, find_cfg->needle_ln, NULL);
     }
     
-    printBlockLoop(print_flags, nr_of_parts, buffer, fi, buffer_size, block_start, print_flags->end);
+    printBlockLoop(print_flags, nr_of_parts, buffer, fi, buffer_size, block_start, print_flags->end, find_cfg);
 
 
 clean:
@@ -204,7 +200,7 @@ void Printer_cleanUp(uint8_t* buffer, FILE* fi)
     FLeave();
 }
 
-void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t start, size_t max_offset)
+void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer, FILE* fi, size_t buffer_size, size_t start, size_t max_offset, FIND_CFG *find_cfg)
 {
     FEnter();
 
@@ -220,6 +216,7 @@ void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer,
     DPrint("start: 0x%zx\n", start);
     DPrint("max_offset: 0x%zx\n", max_offset);
     DPrint("find_offset: 0x%zx\n", find_start_offset);
+    DPrint("find_flags: 0x%x\n", find_cfg->flags);
     DPrint("input: %c\n", input);
     DPrint("continuing: %u\n", continuing);
     
@@ -256,24 +253,24 @@ void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer,
 
         if ( (print_flags->mode&MODE_FLAG_FIND) && (input == NEXT) )
         {
-            found = findNeedleInFP(needle, needle_ln, find_start_offset, fi, max_offset, find_flags);
-            if ( found == FIND_FAILURE )
+            g_found = findNeedleInFP(find_cfg->needle, find_cfg->needle_ln, find_start_offset, fi, max_offset, find_cfg->flags);
+            if ( g_found == FIND_FAILURE )
             {
                 DPrint("Nothing found break.\n");
                 break;
             }
-            find_start_offset = found+needle_ln;
+            find_start_offset = g_found+find_cfg->needle_ln;
             
             uint32_t skip_bytes = 0;
 
-            start = normalizeOffset(found, &skip_bytes);
+            start = normalizeOffset(g_found, &skip_bytes);
             Printer_setSkipBytes(skip_bytes);
-            Printer_setHighlightBytes(needle_ln);
+            Printer_setHighlightBytes(find_cfg->needle_ln);
 
             printf("\n");
             DPrint("skip_bytes: 0x%x\n", skip_bytes);
             DPrint("buffer_size: 0x%zx\n", buffer_size);
-            DPrint("found: 0x%zx\n", found);
+            DPrint("found: 0x%zx\n", g_found);
             DPrint("nr_of_parts: 0x%zx\n", nr_of_parts);
 
             // check if found needle exceeds current printing length
@@ -285,14 +282,14 @@ void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer,
             }
             size_t end = start + length;
             
-            if ( found + needle_ln > end )
+            if ( g_found + find_cfg->needle_ln > end )
             {
-                length += needle_ln;
+                length += find_cfg->needle_ln;
                 length = ALIGN_UP_BY(length, print_flags->block_length);
             }
 
             if ( print_flags->mode&MODE_FLAG_PRINT_START_OFFSET )
-                printf("found: 0x%zx\n", found);
+                printf("found: 0x%zx\n", g_found);
             start = printBlock(print_flags, nr_of_parts, buffer, fi, buffer_size, start, max_offset, length);
 
             if ( find_start_offset >= max_offset )
@@ -301,10 +298,10 @@ void printBlockLoop(PRINT_CFG *print_flags, size_t nr_of_parts, uint8_t* buffer,
                 break;
             }
 
-            if ( g_find_cfg.find_max_count )
+            if ( find_cfg->max_count )
             {
                 found_count++;
-                if ( found_count == g_find_cfg.find_max_count )
+                if ( found_count == find_cfg->max_count )
                 {
                     DPrint("max find count of 0x%zx reached!\n", found_count);
                     break;

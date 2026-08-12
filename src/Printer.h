@@ -8,8 +8,7 @@
 void print(
     FILE_INFO* file_info, 
     PRINT_CFG *print_flags, 
-    uint8_t* needle, 
-    uint32_t needle_ln
+    FIND_CFG *find_cfg
 );
 
 void setPrintingStyle(uint32_t mode);

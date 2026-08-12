@@ -1,6 +1,15 @@
 # Change Log
 
-## v1.10.14
+
+## v1.11.3 - 2026/08/11
+
+- fixed /ci bug for /fu
+- added change log
+- refactoring
+
+
+
+## v1.11.2 - 2026/08/07
 
 - -e end parameter to limit file window to an hard end less than file size for printing and searching
 - -mfc max find count parameter to limit find mode to a max number of found items
@@ -8,17 +17,20 @@
 - some further ongoing refactoring
 
 
-## v1.10.14
+
+## v1.10.14 - 2026/07/31
 
 - dropped unicode printing for complexity and security reasons
 
 
-## v1.10.2:
+
+## v1.10.2 - 2026/07/28
 
 - linux process int size fix
 
 
-## v1.10.1:
+
+## v1.10.1 - 2026/07/24 
 
 - column layout options
 - hex value/group size options

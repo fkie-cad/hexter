@@ -89,6 +89,10 @@
 #define MODE_FLAG_CASE_INSENSITIVE       (0x80)
 #define MODE_FLAG_PRINT_START_OFFSET    (0x100)
 
+#define FIND_FLAG_CASE_INSENSITIVE (0x1)
+#define FIND_FLAG_ASCII            (0x2)
+
+
 typedef struct _FILE_INFO {
     size_t size;
     char path[PATH_MAX];
@@ -117,9 +121,12 @@ typedef struct _COL_SIZES {
 extern COL_SIZES g_col_sizes;
 
 typedef struct _FIND_CFG {
-    uint32_t find_max_count; // max number of found entries before break
-} FIND_CFG;
-extern FIND_CFG g_find_cfg;
+    uint32_t max_count; // 00 max number of found entries before break
+    uint32_t flags; // 04 mode flags for finding
+    uint8_t* needle; // 08 needle to find
+    uint32_t needle_ln; // 10 needle cb
+} FIND_CFG; // 14
+//extern FIND_CFG g_find_cfg;
 
 
 #ifndef ALIGN_UP_BY
